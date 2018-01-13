@@ -229,15 +229,6 @@ impl UnixReady {
         self.contains(ready_from_usize(AIO))
     }
 
-    #[deprecated(since = "0.6.12", note = "this function is now platform specific")]
-    #[cfg(feature = "with-deprecated")]
-    #[cfg(not(any(target_os = "dragonfly",
-        target_os = "freebsd", target_os = "ios", target_os = "macos")))]
-    #[doc(hidden)]
-    pub fn is_aio(&self) -> bool {
-        false
-    }
-
     /// Returns true if the value includes error readiness
     ///
     /// **Note that only readable and writable readiness is guaranteed to be
@@ -372,18 +363,6 @@ impl ops::Sub for UnixReady {
     #[inline]
     fn sub(self, other: UnixReady) -> UnixReady {
         ready_from_usize(ready_as_usize(self.0) & !ready_as_usize(other.0)).into()
-    }
-}
-
-#[deprecated(since = "0.6.10", note = "removed")]
-#[cfg(feature = "with-deprecated")]
-#[doc(hidden)]
-impl ops::Not for UnixReady {
-    type Output = UnixReady;
-
-    #[inline]
-    fn not(self) -> UnixReady {
-        (!self.0).into()
     }
 }
 

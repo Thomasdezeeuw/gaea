@@ -1,5 +1,3 @@
-extern crate mio;
-
 use mio::{Events, Poll, Token, Ready, PollOpt};
 use mio::net::TcpListener;
 use std::time::Duration;
