@@ -11,8 +11,8 @@ pub fn test_udp_level_triggered() {
     let events = &mut events;
 
     // Create the listener
-    let tx = UdpSocket::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
-    let rx = UdpSocket::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let tx = UdpSocket::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let rx = UdpSocket::bind("127.0.0.1:0".parse().unwrap()).unwrap();
 
     poll.register(&tx, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
     poll.register(&rx, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
@@ -25,7 +25,7 @@ pub fn test_udp_level_triggered() {
         ]);
     }
 
-    tx.send_to(b"hello world!", &rx.local_addr().unwrap()).unwrap();
+    tx.send_to(b"hello world!", rx.local_addr().unwrap()).unwrap();
 
     sleep_ms(250);
 
@@ -42,7 +42,7 @@ pub fn test_udp_level_triggered() {
         expect_events(poll, events, 4, vec![Event::new(Ready::WRITABLE, Token(1))]);
     }
 
-    tx.send_to(b"hello world!", &rx.local_addr().unwrap()).unwrap();
+    tx.send_to(b"hello world!", rx.local_addr().unwrap()).unwrap();
     sleep_ms(250);
 
     expect_events(poll, events, 10,

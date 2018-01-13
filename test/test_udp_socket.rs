@@ -91,7 +91,7 @@ fn test_send_recv_udp(tx: UdpSocket, rx: UdpSocket, connected: bool) {
                     SENDER => {
                         let cnt = if !handler.connected {
                             let addr = handler.rx.local_addr().unwrap();
-                            handler.tx.send_to(handler.buf.bytes(), &addr).unwrap()
+                            handler.tx.send_to(handler.buf.bytes(), addr).unwrap()
                         } else {
                             handler.tx.send(handler.buf.bytes()).unwrap()
                         };
@@ -110,8 +110,8 @@ pub fn test_udp_socket() {
     let addr = localhost();
     let any = localhost();
 
-    let tx = UdpSocket::bind(&any).unwrap();
-    let rx = UdpSocket::bind(&addr).unwrap();
+    let tx = UdpSocket::bind(any).unwrap();
+    let rx = UdpSocket::bind(addr).unwrap();
 
     test_send_recv_udp(tx, rx, false);
 }
@@ -121,8 +121,8 @@ pub fn test_udp_socket_send_recv() {
     let addr = localhost();
     let any = localhost();
 
-    let tx = UdpSocket::bind(&any).unwrap();
-    let rx = UdpSocket::bind(&addr).unwrap();
+    let tx = UdpSocket::bind(any).unwrap();
+    let rx = UdpSocket::bind(addr).unwrap();
 
     let tx_addr = tx.local_addr().unwrap();
     let rx_addr = rx.local_addr().unwrap();
@@ -139,13 +139,13 @@ pub fn test_udp_socket_discard() {
     let any = localhost();
     let outside = localhost();
 
-    let tx = UdpSocket::bind(&any).unwrap();
-    let rx = UdpSocket::bind(&addr).unwrap();
-    let udp_outside = UdpSocket::bind(&outside).unwrap();
+    let tx = UdpSocket::bind(any).unwrap();
+    let rx = UdpSocket::bind(addr).unwrap();
+    let udp_outside = UdpSocket::bind(outside).unwrap();
 
     let tx_addr = tx.local_addr().unwrap();
     let rx_addr = rx.local_addr().unwrap();
- 
+
     assert!(tx.connect(rx_addr).is_ok());
     assert!(udp_outside.connect(rx_addr).is_ok());
     assert!(rx.connect(tx_addr).is_ok());
