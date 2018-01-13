@@ -2499,7 +2499,7 @@ impl ReadinessState {
     #[inline]
     fn new(interest: Ready, opt: PollOpt) -> ReadinessState {
         let interest = interest.bits() as usize;
-        let opt = event::opt_as_usize(opt);
+        let opt = opt.bits() as usize;
 
         debug_assert!(interest <= MASK_8);
         debug_assert!(opt <= MASK_4);
@@ -2560,13 +2560,13 @@ impl ReadinessState {
     #[inline]
     fn poll_opt(&self) -> PollOpt {
         let v = self.get(MASK_4, POLL_OPT_SHIFT);
-        event::opt_from_usize(v)
+        PollOpt::from_bits_truncate(v as u8)
     }
 
     /// Set the poll options
     #[inline]
     fn set_poll_opt(&mut self, v: PollOpt) {
-        self.set(event::opt_as_usize(v), MASK_4, POLL_OPT_SHIFT);
+        self.set(v.bits() as usize, MASK_4, POLL_OPT_SHIFT);
     }
 
     #[inline]

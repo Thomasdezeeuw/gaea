@@ -425,14 +425,6 @@ impl Event {
  *
  */
 
-pub fn opt_as_usize(opt: PollOpt) -> usize {
-    opt.bits() as usize
-}
-
-pub fn opt_from_usize(opt: usize) -> PollOpt {
-    PollOpt::from_bits_truncate(opt as u8)
-}
-
 // Used internally to mutate an `Event` in place
 // Not used on all platforms
 #[allow(dead_code)]
