@@ -1,16 +1,13 @@
-use {sys, Token};
-use event_imp::{self as event, Ready, Event, Evented, PollOpt};
-use std::{fmt, io, ptr, usize};
+use std::{fmt, io, ptr, mem, ops};
 use std::cell::UnsafeCell;
-use std::{mem, ops, isize};
 #[cfg(all(unix, not(target_os = "fuchsia")))]
-use std::os::unix::io::AsRawFd;
-#[cfg(all(unix, not(target_os = "fuchsia")))]
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{RawFd, AsRawFd} ;
 use std::sync::{Arc, Mutex, Condvar};
-use std::sync::atomic::{AtomicUsize, AtomicPtr, AtomicBool};
-use std::sync::atomic::Ordering::{self, Acquire, Release, AcqRel, Relaxed, SeqCst};
+use std::sync::atomic::{AtomicUsize, AtomicPtr, AtomicBool, Ordering};
 use std::time::{Duration, Instant};
+
+use super::{sys, Token};
+use super::event_imp::{Ready, Event, Evented, PollOpt};
 
 // Poll is backed by two readiness queues. The first is a system readiness queue
 // represented by `sys::Selector`. The system readiness queue handles events
@@ -601,8 +598,8 @@ enum Dequeue {
     Inconsistent,
 }
 
-const AWAKEN: Token = Token(usize::MAX);
-const MAX_REFCOUNT: usize = (isize::MAX) as usize;
+const AWAKEN: Token = Token(::std::usize::MAX);
+const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
 
 /*
  *
@@ -1036,7 +1033,7 @@ impl Poll {
         // If there are any waiters, which is atomically determined while
         // unsetting the locked flag, then the condvar is notified.
 
-        let mut curr = self.lock_state.compare_and_swap(0, 1, SeqCst);
+        let mut curr = self.lock_state.compare_and_swap(0, 1, Ordering::SeqCst);
 
         if 0 != curr {
             // Enter slower path
@@ -1054,7 +1051,7 @@ impl Poll {
                         next -= 2;
                     }
 
-                    let actual = self.lock_state.compare_and_swap(curr, next, SeqCst);
+                    let actual = self.lock_state.compare_and_swap(curr, next, Ordering::SeqCst);
 
                     if actual != curr {
                         curr = actual;
@@ -1067,7 +1064,7 @@ impl Poll {
 
                 if timeout == zero {
                     if inc {
-                        self.lock_state.fetch_sub(2, SeqCst);
+                        self.lock_state.fetch_sub(2, Ordering::SeqCst);
                     }
 
                     return Ok(0);
@@ -1078,7 +1075,7 @@ impl Poll {
                 // so now
                 if !inc {
                     let next = curr.checked_add(2).expect("overflow");
-                    let actual = self.lock_state.compare_and_swap(curr, next, SeqCst);
+                    let actual = self.lock_state.compare_and_swap(curr, next, Ordering::SeqCst);
 
                     if actual != curr {
                         curr = actual;
@@ -1117,7 +1114,7 @@ impl Poll {
                 };
 
                 // Reload the state
-                curr = self.lock_state.load(SeqCst);
+                curr = self.lock_state.load(Ordering::SeqCst);
 
                 // Try to lock again...
             }
@@ -1126,7 +1123,7 @@ impl Poll {
         let ret = self.poll2(events, timeout);
 
         // Release the lock
-        if 1 != self.lock_state.fetch_and(!1, Release) {
+        if 1 != self.lock_state.fetch_and(!1, Ordering::Release) {
             // Acquire the mutex
             let _lock = self.lock.lock().unwrap();
 
@@ -1788,7 +1785,7 @@ impl fmt::Debug for SetReadiness {
 impl RegistrationInner {
     /// Get the registration's readiness.
     fn readiness(&self) -> Ready {
-        self.state.load(Relaxed).readiness()
+        self.state.load(Ordering::Relaxed).readiness()
     }
 
     /// Set the registration's readiness.
@@ -1797,7 +1794,7 @@ impl RegistrationInner {
     /// SetReadiness handles.
     fn set_readiness(&self, ready: Ready) -> io::Result<()> {
         // Load the current atomic state.
-        let mut state = self.state.load(Acquire);
+        let mut state = self.state.load(Ordering::Acquire);
         let mut next;
 
         loop {
@@ -1817,7 +1814,7 @@ impl RegistrationInner {
                 next.set_queued();
             }
 
-            let actual = self.state.compare_and_swap(state, next, AcqRel);
+            let actual = self.state.compare_and_swap(state, next, Ordering::AcqRel);
 
             if state == actual {
                 break;
@@ -1842,7 +1839,7 @@ impl RegistrationInner {
         // Load the queue pointer, `Relaxed` is sufficient here as only the
         // pointer is being operated on. The actual memory is guaranteed to be
         // visible the `poll: &Poll` ref passed as an argument to the function.
-        let mut queue = self.readiness_queue.load(Relaxed);
+        let mut queue = self.readiness_queue.load(Ordering::Relaxed);
         let other: &*mut () = unsafe { mem::transmute(&poll.readiness_queue.inner) };
         let other = *other;
 
@@ -1852,7 +1849,7 @@ impl RegistrationInner {
             // Attempt to set the queue pointer. `Release` ordering synchronizes
             // with `Acquire` in `ensure_with_wakeup`.
             let actual = self.readiness_queue.compare_and_swap(
-                queue, other, Release);
+                queue, other, Ordering::Release);
 
             if actual.is_null() {
                 // The CAS succeeded, this means that the node's ref count
@@ -1861,7 +1858,7 @@ impl RegistrationInner {
                 //
                 // `Relaxed` ordering used for the same reason as in
                 // RegistrationInner::clone
-                self.ref_count.fetch_add(1, Relaxed);
+                self.ref_count.fetch_add(1, Ordering::Relaxed);
 
                 // Note that the `queue` reference stored in our
                 // `readiness_queue` field is intended to be a strong reference,
@@ -1900,7 +1897,7 @@ impl RegistrationInner {
         // section.
 
         // Acquire the update lock.
-        if self.update_lock.compare_and_swap(false, true, Acquire) {
+        if self.update_lock.compare_and_swap(false, true, Ordering::Acquire) {
             // The lock is already held. Discard the update
             return Ok(());
         }
@@ -1908,7 +1905,7 @@ impl RegistrationInner {
         // Relaxed ordering is acceptable here as the only memory that needs to
         // be visible as part of the update are the `token_*` variables, and
         // ordering has already been handled by the `update_lock` access.
-        let mut state = self.state.load(Relaxed);
+        let mut state = self.state.load(Ordering::Relaxed);
         let mut next;
 
         // Read the current token, again this memory has been ordered by the
@@ -1969,7 +1966,7 @@ impl RegistrationInner {
             // The `Release` ensures that `Poll::poll` will see the token
             // update and the update function doesn't care about any other
             // memory visibility.
-            let actual = self.state.compare_and_swap(state, next, Release);
+            let actual = self.state.compare_and_swap(state, next, Ordering::Release);
 
             if actual == state {
                 break;
@@ -1983,7 +1980,7 @@ impl RegistrationInner {
         }
 
         // Release the lock
-        self.update_lock.store(false, Release);
+        self.update_lock.store(false, Ordering::Release);
 
         if !state.is_queued() && next.is_queued() {
             // We are responsible for enqueing the node.
@@ -2015,7 +2012,7 @@ impl Clone for RegistrationInner {
         // another must already provide any required synchronization.
         //
         // [1]: (www.boost.org/doc/libs/1_55_0/doc/html/atomic/usage_examples.html)
-        let old_size = self.ref_count.fetch_add(1, Relaxed);
+        let old_size = self.ref_count.fetch_add(1, Ordering::Relaxed);
 
         // However we need to guard against massive refcounts in case someone
         // is `mem::forget`ing Arcs. If we don't do this the count can overflow
@@ -2097,7 +2094,7 @@ impl ReadinessQueue {
 
             // Read the node state with Acquire ordering. This allows reading
             // the token variables.
-            let mut state = node.state.load(Acquire);
+            let mut state = node.state.load(Ordering::Acquire);
             let mut next;
             let mut readiness;
             let mut opt;
@@ -2142,7 +2139,7 @@ impl ReadinessQueue {
                     break;
                 }
 
-                let actual = node.state.compare_and_swap(state, next, AcqRel);
+                let actual = node.state.compare_and_swap(state, next, Ordering::AcqRel);
 
                 if actual == state {
                     break;
@@ -2187,7 +2184,7 @@ impl ReadinessQueue {
         // sleep. If it is not, then the queue is not empty and there should be
         // no sleeping.
         if tail == sleep_marker {
-            return self.inner.head_readiness.load(Acquire) == sleep_marker;
+            return self.inner.head_readiness.load(Ordering::Acquire) == sleep_marker;
         }
 
         // If the tail is not currently set to `end_marker`, then the queue is
@@ -2206,10 +2203,10 @@ impl ReadinessQueue {
         // Before inserting a node into the queue, the next pointer has to be
         // set to null. Again, this is only safe to do when the node is not
         // currently in the queue, but we already have ensured this.
-        self.inner.sleep_marker.next_readiness.store(ptr::null_mut(), Relaxed);
+        self.inner.sleep_marker.next_readiness.store(ptr::null_mut(), Ordering::Relaxed);
 
         let actual = self.inner.head_readiness.compare_and_swap(
-            end_marker, sleep_marker, AcqRel);
+            end_marker, sleep_marker, Ordering::AcqRel);
 
         debug_assert!(actual != sleep_marker);
 
@@ -2221,7 +2218,7 @@ impl ReadinessQueue {
         // The current tail should be pointing to `end_marker`
         debug_assert!(unsafe { *self.inner.tail_readiness.get() == end_marker });
         // The `end_marker` next pointer should be null
-        debug_assert!(self.inner.end_marker.next_readiness.load(Relaxed).is_null());
+        debug_assert!(self.inner.end_marker.next_readiness.load(Ordering::Relaxed).is_null());
 
         // Update tail pointer.
         unsafe { *self.inner.tail_readiness.get() = sleep_marker; }
@@ -2249,7 +2246,7 @@ impl Drop for ReadinessQueue {
 
             let node = unsafe { &*ptr };
 
-            let state = node.state.load(Acquire);
+            let state = node.state.load(Ordering::Acquire);
 
             debug_assert!(state.is_queued());
 
@@ -2280,10 +2277,10 @@ impl ReadinessQueueInner {
 
         // Relaxed used as the ordering is "released" when swapping
         // `head_readiness`
-        node.next_readiness.store(ptr::null_mut(), Relaxed);
+        node.next_readiness.store(ptr::null_mut(), Ordering::Relaxed);
 
         unsafe {
-            let mut prev = self.head_readiness.load(Acquire);
+            let mut prev = self.head_readiness.load(Ordering::Acquire);
 
             loop {
                 if prev == self.closed_marker() {
@@ -2295,14 +2292,14 @@ impl ReadinessQueueInner {
                         // The readiness queue is shutdown, but the enqueue flag was
                         // set. This means that we are responsible for decrementing
                         // the ready queue's ref count
-                        debug_assert!(node.ref_count.load(Relaxed) >= 2);
+                        debug_assert!(node.ref_count.load(Ordering::Relaxed) >= 2);
                         release_node(node_ptr);
                     }
 
                     return false;
                 }
 
-                let act = self.head_readiness.compare_and_swap(prev, node_ptr, AcqRel);
+                let act = self.head_readiness.compare_and_swap(prev, node_ptr, Ordering::AcqRel);
 
                 if prev == act {
                     break;
@@ -2311,9 +2308,9 @@ impl ReadinessQueueInner {
                 prev = act;
             }
 
-            debug_assert!((*prev).next_readiness.load(Relaxed).is_null());
+            debug_assert!((*prev).next_readiness.load(Ordering::Relaxed).is_null());
 
-            (*prev).next_readiness.store(node_ptr, Release);
+            (*prev).next_readiness.store(node_ptr, Ordering::Release);
 
             prev == self.sleep_marker()
         }
@@ -2324,7 +2321,7 @@ impl ReadinessQueueInner {
         // This is the 1024cores.net intrusive MPSC queue [1] "pop" function
         // with the modifications mentioned at the top of the file.
         let mut tail = *self.tail_readiness.get();
-        let mut next = (*tail).next_readiness.load(Acquire);
+        let mut next = (*tail).next_readiness.load(Ordering::Acquire);
 
         if tail == self.end_marker() || tail == self.sleep_marker() || tail == self.closed_marker() {
             if next.is_null() {
@@ -2333,7 +2330,7 @@ impl ReadinessQueueInner {
 
             *self.tail_readiness.get() = next;
             tail = next;
-            next = (*next).next_readiness.load(Acquire);
+            next = (*next).next_readiness.load(Ordering::Acquire);
         }
 
         // Only need to check `until` at this point. `until` is either null,
@@ -2352,14 +2349,14 @@ impl ReadinessQueueInner {
             return Dequeue::Data(tail);
         }
 
-        if self.head_readiness.load(Acquire) != tail {
+        if self.head_readiness.load(Ordering::Acquire) != tail {
             return Dequeue::Inconsistent;
         }
 
         // Push the stub node
         self.enqueue_node(&*self.end_marker);
 
-        next = (*tail).next_readiness.load(Acquire);
+        next = (*tail).next_readiness.load(Ordering::Acquire);
 
         if !next.is_null() {
             *self.tail_readiness.get() = next;
@@ -2417,7 +2414,7 @@ impl ReadinessNode {
     }
 
     fn enqueue_with_wakeup(&self) -> io::Result<()> {
-        let queue = self.readiness_queue.load(Acquire);
+        let queue = self.readiness_queue.load(Ordering::Acquire);
 
         if queue.is_null() {
             // Not associated with a queue, nothing to do
@@ -2448,14 +2445,14 @@ fn release_node(ptr: *mut ReadinessNode) {
     unsafe {
         // `AcqRel` synchronizes with other `release_node` functions and ensures
         // that the drop happens after any reads / writes on other threads.
-        if (*ptr).ref_count.fetch_sub(1, AcqRel) != 1 {
+        if (*ptr).ref_count.fetch_sub(1, Ordering::AcqRel) != 1 {
             return;
         }
 
         let node = Box::from_raw(ptr);
 
         // Decrement the readiness_queue Arc
-        let queue = node.readiness_queue.load(Acquire);
+        let queue = node.readiness_queue.load(Ordering::Acquire);
 
         if queue.is_null() {
             return;
@@ -2486,7 +2483,7 @@ impl AtomicState {
 
     // Returns `true` if the node should be queued
     fn flag_as_dropped(&self) -> bool {
-        let prev: ReadinessState = self.inner.fetch_or(DROPPED_MASK | QUEUED_MASK, Release).into();
+        let prev: ReadinessState = self.inner.fetch_or(DROPPED_MASK | QUEUED_MASK, Ordering::Release).into();
         // The flag should not have been previously set
         debug_assert!(!prev.is_dropped());
 
