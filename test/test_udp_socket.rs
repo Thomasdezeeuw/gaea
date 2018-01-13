@@ -52,10 +52,10 @@ fn test_send_recv_udp(tx: UdpSocket, rx: UdpSocket, connected: bool) {
     assert_eq!(ErrorKind::WouldBlock, rx.recv_from(&mut buf).unwrap_err().kind());
 
     info!("Registering SENDER");
-    poll.register(&tx, SENDER, Ready::writable(), PollOpt::edge()).unwrap();
+    poll.register(&tx, SENDER, Ready::WRITABLE, PollOpt::edge()).unwrap();
 
     info!("Registering LISTENER");
-    poll.register(&rx, LISTENER, Ready::readable(), PollOpt::edge()).unwrap();
+    poll.register(&rx, LISTENER, Ready::READABLE, PollOpt::edge()).unwrap();
 
     let mut events = Events::with_capacity(1024);
 
@@ -155,8 +155,8 @@ pub fn test_udp_socket_discard() {
     let r = udp_outside.send("hello world".as_bytes());
     assert!(r.is_ok() || r.unwrap_err().kind() == ErrorKind::WouldBlock);
 
-    poll.register(&rx, LISTENER, Ready::readable(), PollOpt::edge()).unwrap();
-    poll.register(&tx, SENDER, Ready::writable(), PollOpt::edge()).unwrap();
+    poll.register(&rx, LISTENER, Ready::READABLE, PollOpt::edge()).unwrap();
+    poll.register(&tx, SENDER, Ready::WRITABLE, PollOpt::edge()).unwrap();
 
     let mut events = Events::with_capacity(1024);
 

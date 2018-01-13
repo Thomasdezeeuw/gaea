@@ -100,8 +100,8 @@ impl Selector {
                     libc::EV_RECEIPT;
 
         unsafe {
-            let r = if interests.contains(Ready::readable()) { libc::EV_ADD } else { libc::EV_DELETE };
-            let w = if interests.contains(Ready::writable()) { libc::EV_ADD } else { libc::EV_DELETE };
+            let r = if interests.contains(Ready::READABLE) { libc::EV_ADD } else { libc::EV_DELETE };
+            let w = if interests.contains(Ready::WRITABLE) { libc::EV_ADD } else { libc::EV_DELETE };
             let mut changes = [
                 kevent!(fd, libc::EVFILT_READ, flags | r, usize::from(token)),
                 kevent!(fd, libc::EVFILT_WRITE, flags | w, usize::from(token)),
@@ -350,7 +350,7 @@ fn does_not_register_rw() {
 
     // registering kqueue fd will fail if write is requested (On anything but some versions of OS
     // X)
-    poll.register(&kqf, Token(1234), Ready::readable(),
+    poll.register(&kqf, Token(1234), Ready::READABLE,
                   PollOpt::edge() | PollOpt::oneshot()).unwrap();
 }
 

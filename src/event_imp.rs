@@ -88,7 +88,7 @@ use std::{fmt, io, ops};
 ///                 thread::sleep(when - now);
 ///             }
 ///
-///             set_readiness.set_readiness(Ready::readable());
+///             set_readiness.set_readiness(Ready::READABLE);
 ///         });
 ///
 ///         Deadline {
@@ -474,7 +474,7 @@ bitflags! {
     /// A set of readiness event kinds
     ///
     /// `Ready` is a set of operation descriptors indicating which kind of an
-    /// operation is ready to be performed. For example, `Ready::readable()`
+    /// operation is ready to be performed. For example, `Ready::READABLE`
     /// indicates that the associated `Evented` handle is ready to perform a
     /// `read` operation.
     ///
@@ -488,16 +488,13 @@ bitflags! {
     /// ```
     /// use mio::Ready;
     ///
-    /// let ready = Ready::readable() | Ready::writable();
+    /// let ready = Ready::READABLE | Ready::WRITABLE;
     ///
     /// assert!(ready.is_readable());
     /// assert!(ready.is_writable());
     /// ```
     ///
     /// [`Poll`]: struct.Poll.html
-    /// [`readable`]: #method.readable
-    /// [`writable`]: #method.writable
-    /// [readiness]: struct.Poll.html#readiness-operations
     pub struct Ready: usize {
         /// Readable readiness
         const READABLE = 0b0000001;
@@ -520,46 +517,6 @@ bitflags! {
 }
 
 impl Ready {
-    /// Returns a `Ready` representing readable readiness.
-    ///
-    /// See [`Poll`] for more documentation on polling.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let ready = Ready::readable();
-    ///
-    /// assert!(ready.is_readable());
-    /// ```
-    ///
-    /// [`Poll`]: struct.Poll.html
-    #[inline]
-    pub fn readable() -> Ready {
-        Ready::READABLE
-    }
-
-    /// Returns a `Ready` representing writable readiness.
-    ///
-    /// See [`Poll`] for more documentation on polling.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let ready = Ready::writable();
-    ///
-    /// assert!(ready.is_writable());
-    /// ```
-    ///
-    /// [`Poll`]: struct.Poll.html
-    #[inline]
-    pub fn writable() -> Ready {
-        Ready::WRITABLE
-    }
-
     /// Returns true if the value includes readable readiness
     ///
     /// See [`Poll`] for more documentation on polling.
@@ -569,7 +526,7 @@ impl Ready {
     /// ```
     /// use mio::Ready;
     ///
-    /// let ready = Ready::readable();
+    /// let ready = Ready::READABLE;
     ///
     /// assert!(ready.is_readable());
     /// ```
@@ -589,7 +546,7 @@ impl Ready {
     /// ```
     /// use mio::Ready;
     ///
-    /// let ready = Ready::writable();
+    /// let ready = Ready::WRITABLE;
     ///
     /// assert!(ready.is_writable());
     /// ```
@@ -614,9 +571,9 @@ impl Ready {
 /// use mio::{Ready, Token};
 /// use mio::event::Event;
 ///
-/// let event = Event::new(Ready::readable() | Ready::writable(), Token(0));
+/// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
 ///
-/// assert_eq!(event.readiness(), Ready::readable() | Ready::writable());
+/// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// assert_eq!(event.token(), Token(0));
 /// ```
 ///
@@ -639,9 +596,9 @@ impl Event {
     /// use mio::{Ready, Token};
     /// use mio::event::Event;
     ///
-    /// let event = Event::new(Ready::readable() | Ready::writable(), Token(0));
+    /// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
     ///
-    /// assert_eq!(event.readiness(), Ready::readable() | Ready::writable());
+    /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
     /// assert_eq!(event.token(), Token(0));
     /// ```
     pub fn new(readiness: Ready, token: Token) -> Event {
@@ -659,9 +616,9 @@ impl Event {
     /// use mio::{Ready, Token};
     /// use mio::event::Event;
     ///
-    /// let event = Event::new(Ready::readable() | Ready::writable(), Token(0));
+    /// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
     ///
-    /// assert_eq!(event.readiness(), Ready::readable() | Ready::writable());
+    /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
     /// ```
     pub fn readiness(&self) -> Ready {
         self.kind
@@ -675,7 +632,7 @@ impl Event {
     /// use mio::{Ready, Token};
     /// use mio::event::Event;
     ///
-    /// let event = Event::new(Ready::readable() | Ready::writable(), Token(0));
+    /// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
     ///
     /// assert_eq!(event.token(), Token(0));
     /// ```

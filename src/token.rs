@@ -42,7 +42,7 @@
 /// // Register the listener
 /// poll.register(&listener,
 ///               LISTENER,
-///               Ready::readable(),
+///               Ready::READABLE,
 ///               PollOpt::edge())?;
 ///
 /// // Spawn a thread that will connect a bunch of sockets then close them
@@ -88,7 +88,7 @@
 ///                             // Register the new socket w/ poll
 ///                             poll.register(&socket,
 ///                                          token,
-///                                          Ready::readable(),
+///                                          Ready::READABLE,
 ///                                          PollOpt::edge())?;
 ///
 ///                             // Store the socket

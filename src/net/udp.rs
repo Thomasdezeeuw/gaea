@@ -50,8 +50,8 @@ use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
 /// let poll = Poll::new()?;
 ///
 /// // We register our sockets here so that we can check if they are ready to be written/read.
-/// poll.register(&sender_socket, SENDER, Ready::writable(), PollOpt::edge())?;
-/// poll.register(&echoer_socket, ECHOER, Ready::readable(), PollOpt::edge())?;
+/// poll.register(&sender_socket, SENDER, Ready::WRITABLE, PollOpt::edge())?;
+/// poll.register(&echoer_socket, ECHOER, Ready::READABLE, PollOpt::edge())?;
 ///
 /// let msg_to_send = [9; 9];
 /// let mut buffer = [0; 9];

@@ -271,7 +271,7 @@ impl TcpStream {
         // generated immediately, so do so here.
         if interest.is_writable() {
             if let State::Empty = me.write {
-                self.imp.add_readiness(me, Ready::writable());
+                self.imp.add_readiness(me, Ready::WRITABLE);
             }
         }
     }
@@ -415,13 +415,13 @@ impl StreamImp {
         match me.read {
             State::Empty => {}
             State::Ready(_) | State::Error(_) => {
-                self.add_readiness(me, Ready::readable());
+                self.add_readiness(me, Ready::READABLE);
                 return;
             }
             _ => return,
         }
 
-        me.iocp.set_readiness(me.iocp.readiness() - Ready::readable());
+        me.iocp.set_readiness(me.iocp.readiness() - Ready::READABLE);
 
         trace!("scheduling a read");
         let res = unsafe {
@@ -448,7 +448,7 @@ impl StreamImp {
             // worth looking into!
             Ok(Some(_)) if me.instant_notify => {
                 me.read = State::Ready(());
-                self.add_readiness(me, Ready::readable());
+                self.add_readiness(me, Ready::READABLE);
             }
             Ok(_) => {
                 // see docs above on StreamImp.inner for rationale on forget
@@ -457,7 +457,7 @@ impl StreamImp {
             }
             Err(e) => {
                 me.read = State::Error(e);
-                self.add_readiness(me, Ready::readable());
+                self.add_readiness(me, Ready::READABLE);
             }
         }
     }
@@ -477,7 +477,7 @@ impl StreamImp {
                       me: &mut StreamInner) {
 
         // About to write, clear any pending level triggered events
-        me.iocp.set_readiness(me.iocp.readiness() - Ready::writable());
+        me.iocp.set_readiness(me.iocp.readiness() - Ready::WRITABLE);
 
         loop {
             trace!("scheduling a write of {} bytes", buf[pos..].len());
@@ -488,7 +488,7 @@ impl StreamImp {
                 Ok(Some(transferred_bytes)) if me.instant_notify => {
                     trace!("done immediately with {} bytes", transferred_bytes);
                     if transferred_bytes == buf.len() - pos {
-                        self.add_readiness(me, Ready::writable());
+                        self.add_readiness(me, Ready::WRITABLE);
                         me.write = State::Empty;
                         break;
                     }
@@ -504,7 +504,7 @@ impl StreamImp {
                 Err(e) => {
                     trace!("write error: {}", e);
                     me.write = State::Error(e);
-                    self.add_readiness(me, Ready::writable());
+                    self.add_readiness(me, Ready::WRITABLE);
                     me.iocp.put_buffer(buf);
                     break;
                 }
@@ -572,7 +572,7 @@ fn write_done(status: &OVERLAPPED_ENTRY) {
     };
     let new_pos = pos + (status.bytes_transferred() as usize);
     if new_pos == buf.len() {
-        me2.add_readiness(&mut me, Ready::writable());
+        me2.add_readiness(&mut me, Ready::WRITABLE);
     } else {
         me2.schedule_write(buf, new_pos, &mut me);
     }
@@ -738,7 +738,7 @@ impl ListenerImp {
             _ => return
         }
 
-        me.iocp.set_readiness(me.iocp.readiness() - Ready::readable());
+        me.iocp.set_readiness(me.iocp.readiness() - Ready::READABLE);
 
         let res = match self.inner.family {
             Family::V4 => TcpBuilder::new_v4(),
@@ -756,7 +756,7 @@ impl ListenerImp {
             }
             Err(e) => {
                 me.accept = State::Error(e);
-                self.add_readiness(me, Ready::readable());
+                self.add_readiness(me, Ready::READABLE);
             }
         }
     }
@@ -790,7 +790,7 @@ fn accept_done(status: &OVERLAPPED_ENTRY) {
         Ok(remote_addr) => State::Ready((socket, remote_addr)),
         Err(e) => State::Error(e),
     };
-    me2.add_readiness(&mut me, Ready::readable());
+    me2.add_readiness(&mut me, Ready::READABLE);
 }
 
 impl Evented for TcpListener {

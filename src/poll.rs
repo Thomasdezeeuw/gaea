@@ -106,7 +106,7 @@ use std::time::{Duration, Instant};
 /// let stream = TcpStream::connect(&server.local_addr()?)?;
 ///
 /// // Register the stream with `Poll`
-/// poll.register(&stream, Token(0), Ready::readable() | Ready::writable(), PollOpt::edge())?;
+/// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
 ///
 /// // Wait for the socket to become ready. This has to happens in a loop to
 /// // handle spurious wakeups.
@@ -278,7 +278,7 @@ use std::time::{Duration, Instant};
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point
-/// poll.register(&sock, Token(0), Ready::readable() | Ready::writable(), PollOpt::edge())?;
+/// poll.register(&sock, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
 /// #     Ok(())
 /// # }
 /// #
@@ -394,7 +394,7 @@ pub struct Poll {
 ///                 thread::sleep(when - now);
 ///             }
 ///
-///             set_readiness.set_readiness(Ready::readable());
+///             set_readiness.set_readiness(Ready::READABLE);
 ///         });
 ///
 ///         Deadline {
@@ -660,7 +660,7 @@ impl Poll {
         };
 
         // Register the notification wakeup FD with the IO poller
-        poll.readiness_queue.inner.awakener.register(&poll, AWAKEN, Ready::readable(), PollOpt::edge())?;
+        poll.readiness_queue.inner.awakener.register(&poll, AWAKEN, Ready::READABLE, PollOpt::edge())?;
 
         Ok(poll)
     }
@@ -741,7 +741,7 @@ impl Poll {
     /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&socket, Token(0), Ready::readable() | Ready::writable(), PollOpt::edge())?;
+    /// poll.register(&socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
     ///
     /// let mut events = Events::with_capacity(1024);
     /// let start = Instant::now();
@@ -825,12 +825,12 @@ impl Poll {
     /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`, requesting readable
-    /// poll.register(&socket, Token(0), Ready::readable(), PollOpt::edge())?;
+    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::edge())?;
     ///
     /// // Reregister the socket specifying a different token and write interest
     /// // instead. `PollOpt::edge()` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&socket, Token(2), Ready::writable(), PollOpt::edge())?;
+    /// poll.reregister(&socket, Token(2), Ready::WRITABLE, PollOpt::edge())?;
     /// #     Ok(())
     /// # }
     /// #
@@ -841,8 +841,8 @@ impl Poll {
     ///
     /// [`struct`]: #
     /// [`register`]: #method.register
-    /// [`readable`]: struct.Ready.html#method.readable
-    /// [`writable`]: struct.Ready.html#method.writable
+    /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
+    /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
     pub fn reregister<E: ?Sized>(&self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented
     {
@@ -883,7 +883,7 @@ impl Poll {
     /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&socket, Token(0), Ready::readable(), PollOpt::edge())?;
+    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::edge())?;
     ///
     /// poll.deregister(&socket)?;
     ///
@@ -944,8 +944,8 @@ impl Poll {
     /// See the [struct] level documentation for a higher level discussion of
     /// polling.
     ///
-    /// [`readable`]: struct.Ready.html#method.readable
-    /// [`writable`]: struct.Ready.html#method.writable
+    /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
+    /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
     /// [`iter`]: struct.Events.html#method.iter
     ///
@@ -980,7 +980,7 @@ impl Poll {
     /// let stream = TcpStream::connect(&addr)?;
     ///
     /// // Register the stream with `Poll`
-    /// poll.register(&stream, Token(0), Ready::readable() | Ready::writable(), PollOpt::edge())?;
+    /// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
     ///
     /// // Wait for the socket to become ready. This has to happens in a loop to
     /// // handle spurious wakeups.
@@ -1544,11 +1544,11 @@ impl Registration {
     ///     use std::time::Duration;
     ///     thread::sleep(Duration::from_millis(500));
     ///
-    ///     set_readiness.set_readiness(Ready::readable());
+    ///     set_readiness.set_readiness(Ready::READABLE);
     /// });
     ///
     /// let poll = Poll::new()?;
-    /// poll.register(&registration, Token(0), Ready::readable() | Ready::writable(), PollOpt::edge())?;
+    /// poll.register(&registration, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
     ///
     /// let mut events = Events::with_capacity(256);
     ///
@@ -1680,7 +1680,7 @@ impl SetReadiness {
     ///
     /// assert!(set_readiness.readiness().is_empty());
     ///
-    /// set_readiness.set_readiness(Ready::readable())?;
+    /// set_readiness.set_readiness(Ready::READABLE)?;
     /// assert!(set_readiness.readiness().is_readable());
     /// #     Ok(())
     /// # }
@@ -1721,12 +1721,12 @@ impl SetReadiness {
     ///
     /// poll.register(&registration,
     ///               Token(0),
-    ///               Ready::readable(),
+    ///               Ready::READABLE,
     ///               PollOpt::edge())?;
     ///
     /// // Set the readiness, then immediately poll to try to get the readiness
     /// // event
-    /// set_readiness.set_readiness(Ready::readable())?;
+    /// set_readiness.set_readiness(Ready::READABLE)?;
     ///
     /// let mut events = Events::with_capacity(1024);
     /// poll.poll(&mut events, None)?;
@@ -1758,7 +1758,7 @@ impl SetReadiness {
     ///
     /// assert!(set_readiness.readiness().is_empty());
     ///
-    /// set_readiness.set_readiness(Ready::readable())?;
+    /// set_readiness.set_readiness(Ready::READABLE)?;
     /// assert!(set_readiness.readiness().is_readable());
     /// #     Ok(())
     /// # }
