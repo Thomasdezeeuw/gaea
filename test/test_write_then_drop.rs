@@ -8,9 +8,9 @@ use mio::{Poll, Events, Ready, PollOpt, Token};
 fn write_then_drop() {
     drop(::env_logger::init());
 
-    let a = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let a = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
     let addr = a.local_addr().unwrap();
-    let mut s = TcpStream::connect(&addr).unwrap();
+    let mut s = TcpStream::connect(addr).unwrap();
 
     let poll = Poll::new().unwrap();
 
@@ -67,9 +67,9 @@ fn write_then_drop() {
 fn write_then_deregister() {
     drop(::env_logger::init());
 
-    let a = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let a = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
     let addr = a.local_addr().unwrap();
-    let mut s = TcpStream::connect(&addr).unwrap();
+    let mut s = TcpStream::connect(addr).unwrap();
 
     let poll = Poll::new().unwrap();
 

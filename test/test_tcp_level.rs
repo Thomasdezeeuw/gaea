@@ -13,12 +13,12 @@ pub fn test_tcp_listener_level_triggered() {
     let mut pevents = Events::with_capacity(1024);
 
     // Create the listener
-    let l = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
 
     // Register the listener with `Poll`
     poll.register(&l, Token(0), Ready::READABLE, PollOpt::LEVEL).unwrap();
 
-    let s1 = TcpStream::connect(&l.local_addr().unwrap()).unwrap();
+    let s1 = TcpStream::connect(l.local_addr().unwrap()).unwrap();
     poll.register(&s1, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
 
     while filter(&pevents, Token(0)).len() == 0 {
@@ -41,7 +41,7 @@ pub fn test_tcp_listener_level_triggered() {
     let events = filter(&pevents, Token(0));
     assert!(events.is_empty(), "actual={:?}", events);
 
-    let s3 = TcpStream::connect(&l.local_addr().unwrap()).unwrap();
+    let s3 = TcpStream::connect(l.local_addr().unwrap()).unwrap();
     poll.register(&s3, Token(2), Ready::READABLE, PollOpt::EDGE).unwrap();
 
     while filter(&pevents, Token(0)).len() == 0 {
@@ -66,12 +66,12 @@ pub fn test_tcp_stream_level_triggered() {
     let mut pevents = Events::with_capacity(1024);
 
     // Create the listener
-    let l = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
 
     // Register the listener with `Poll`
     poll.register(&l, Token(0), Ready::READABLE, PollOpt::EDGE).unwrap();
 
-    let mut s1 = TcpStream::connect(&l.local_addr().unwrap()).unwrap();
+    let mut s1 = TcpStream::connect(l.local_addr().unwrap()).unwrap();
     poll.register(&s1, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
 
     // Sleep a bit to ensure it arrives at dest

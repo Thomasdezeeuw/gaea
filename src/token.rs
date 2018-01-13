@@ -37,7 +37,7 @@
 /// let poll = Poll::new()?;
 ///
 /// // Tcp listener
-/// let listener = TcpListener::bind(&"127.0.0.1:0".parse()?)?;
+/// let listener = TcpListener::bind("127.0.0.1:0".parse()?)?;
 ///
 /// // Register the listener
 /// poll.register(&listener,

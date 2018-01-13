@@ -84,12 +84,12 @@ pub fn test_close_on_drop() {
     let addr = localhost();
 
     // == Create & setup server socket
-    let srv = TcpListener::bind(&addr).unwrap();
+    let srv = TcpListener::bind(addr).unwrap();
 
     poll.register(&srv, SERVER, Ready::READABLE, PollOpt::EDGE).unwrap();
 
     // == Create & setup client socket
-    let sock = TcpStream::connect(&addr).unwrap();
+    let sock = TcpStream::connect(addr).unwrap();
 
     poll.register(&sock, CLIENT, Ready::WRITABLE, PollOpt::EDGE).unwrap();
 

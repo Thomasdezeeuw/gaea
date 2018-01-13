@@ -62,12 +62,12 @@ pub fn test_register_deregister() {
 
     let addr = localhost();
 
-    let server = TcpListener::bind(&addr).unwrap();
+    let server = TcpListener::bind(addr).unwrap();
 
     info!("register server socket");
     poll.register(&server, SERVER, Ready::READABLE, PollOpt::EDGE).unwrap();
 
-    let client = TcpStream::connect(&addr).unwrap();
+    let client = TcpStream::connect(addr).unwrap();
 
     // Register client socket only as writable
     poll.register(&client, CLIENT, Ready::READABLE, PollOpt::LEVEL).unwrap();
@@ -99,11 +99,11 @@ pub fn test_register_empty_interest() {
     let mut events = Events::with_capacity(1024);
     let addr = localhost();
 
-    let sock = TcpListener::bind(&addr).unwrap();
+    let sock = TcpListener::bind(addr).unwrap();
 
     poll.register(&sock, Token(0), Ready::empty(), PollOpt::EDGE).unwrap();
 
-    let client = TcpStream::connect(&addr).unwrap();
+    let client = TcpStream::connect(addr).unwrap();
 
     // The connect is not guaranteed to have started until it is registered
     // https://docs.rs/mio/0.6.10/mio/struct.Poll.html#registering-handles

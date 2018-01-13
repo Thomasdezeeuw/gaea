@@ -264,13 +264,13 @@ pub fn test_echo_server() {
     let mut poll = Poll::new().unwrap();
 
     let addr = localhost();
-    let srv = TcpListener::bind(&addr).unwrap();
+    let srv = TcpListener::bind(addr).unwrap();
 
     info!("listen for connections");
     poll.register(&srv, SERVER, Ready::READABLE,
                             PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
 
-    let sock = TcpStream::connect(&addr).unwrap();
+    let sock = TcpStream::connect(addr).unwrap();
 
     // Connect to the server
     poll.register(&sock, CLIENT, Ready::WRITABLE,

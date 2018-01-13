@@ -6,7 +6,7 @@ use std::io::ErrorKind;
 #[test]
 fn test_tcp_register_multiple_event_loops() {
     let addr = localhost();
-    let listener = TcpListener::bind(&addr).unwrap();
+    let listener = TcpListener::bind(addr).unwrap();
 
     let poll1 = Poll::new().unwrap();
     poll1.register(&listener, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE).unwrap();
@@ -25,7 +25,7 @@ fn test_tcp_register_multiple_event_loops() {
     assert_eq!(res.unwrap_err().kind(), ErrorKind::Other);
 
     // Try the stream
-    let stream = TcpStream::connect(&addr).unwrap();
+    let stream = TcpStream::connect(addr).unwrap();
 
     poll1.register(&stream, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE).unwrap();
 

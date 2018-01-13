@@ -17,11 +17,11 @@ use mio::net::{TcpListener, TcpStream};
 fn accept() {
     struct H { hit: bool, listener: TcpListener, shutdown: bool }
 
-    let l = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
     let addr = l.local_addr().unwrap();
 
     let t = thread::spawn(move || {
-        net::TcpStream::connect(&addr).unwrap();
+        net::TcpStream::connect(addr).unwrap();
     });
 
     let poll = Poll::new().unwrap();
@@ -64,7 +64,7 @@ fn connect() {
     });
 
     let poll = Poll::new().unwrap();
-    let s = TcpStream::connect(&addr).unwrap();
+    let s = TcpStream::connect(addr).unwrap();
 
     poll.register(&s, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE).unwrap();
 
@@ -125,7 +125,7 @@ fn read() {
     });
 
     let poll = Poll::new().unwrap();
-    let s = TcpStream::connect(&addr).unwrap();
+    let s = TcpStream::connect(addr).unwrap();
 
     poll.register(&s, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
 
@@ -172,7 +172,7 @@ fn peek() {
     });
 
     let poll = Poll::new().unwrap();
-    let s = TcpStream::connect(&addr).unwrap();
+    let s = TcpStream::connect(addr).unwrap();
 
     poll.register(&s, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
 
@@ -228,7 +228,7 @@ fn read_bufs() {
     let poll = Poll::new().unwrap();
     let mut events = Events::with_capacity(128);
 
-    let s = TcpStream::connect(&addr).unwrap();
+    let s = TcpStream::connect(addr).unwrap();
 
     poll.register(&s, Token(1), Ready::READABLE, PollOpt::LEVEL).unwrap();
 
@@ -299,7 +299,7 @@ fn write() {
     });
 
     let poll = Poll::new().unwrap();
-    let s = TcpStream::connect(&addr).unwrap();
+    let s = TcpStream::connect(addr).unwrap();
 
     poll.register(&s, Token(1), Ready::WRITABLE, PollOpt::EDGE).unwrap();
 
@@ -353,7 +353,7 @@ fn write_bufs() {
 
     let poll = Poll::new().unwrap();
     let mut events = Events::with_capacity(128);
-    let s = TcpStream::connect(&addr).unwrap();
+    let s = TcpStream::connect(addr).unwrap();
     poll.register(&s, Token(1), Ready::WRITABLE, PollOpt::LEVEL).unwrap();
 
     let b1 = &[1; 10][..];
@@ -387,8 +387,8 @@ fn connect_then_close() {
     struct H { listener: TcpListener, shutdown: bool }
 
     let poll = Poll::new().unwrap();
-    let l = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
-    let s = TcpStream::connect(&l.local_addr().unwrap()).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let s = TcpStream::connect(l.local_addr().unwrap()).unwrap();
 
     poll.register(&l, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
     poll.register(&s, Token(2), Ready::READABLE, PollOpt::EDGE).unwrap();
@@ -415,7 +415,7 @@ fn connect_then_close() {
 #[test]
 fn listen_then_close() {
     let poll = Poll::new().unwrap();
-    let l = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
 
     poll.register(&l, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
     drop(l);
@@ -447,9 +447,9 @@ fn test_tcp_sockets_are_send() {
 
 #[test]
 fn bind_twice_bad() {
-    let l1 = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let l1 = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
     let addr = l1.local_addr().unwrap();
-    assert!(TcpListener::bind(&addr).is_err());
+    assert!(TcpListener::bind(addr).is_err());
 }
 
 #[test]
@@ -475,7 +475,7 @@ fn multiple_writes_immediate_success() {
     });
 
     let poll = Poll::new().unwrap();
-    let mut s = TcpStream::connect(&addr).unwrap();
+    let mut s = TcpStream::connect(addr).unwrap();
     poll.register(&s, Token(1), Ready::WRITABLE, PollOpt::LEVEL).unwrap();
     let mut events = Events::with_capacity(16);
 
@@ -503,7 +503,7 @@ fn connection_reset_by_peer() {
     let mut buf = [0u8; 16];
 
     // Create listener
-    let l = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
     let addr = l.local_addr().unwrap();
 
     // Connect client
@@ -579,7 +579,7 @@ fn connect_error() {
     let mut events = Events::with_capacity(16);
 
     // Pick a "random" port that shouldn't be in use.
-    let l = TcpStream::connect(&"127.0.0.1:38381".parse().unwrap()).unwrap();
+    let l = TcpStream::connect("127.0.0.1:38381".parse().unwrap()).unwrap();
     poll.register(&l, Token(0), Ready::WRITABLE, PollOpt::EDGE).unwrap();
 
     'outer:
@@ -611,7 +611,7 @@ fn write_error() {
         drop(conn);
     });
 
-    let mut s = TcpStream::connect(&addr).unwrap();
+    let mut s = TcpStream::connect(addr).unwrap();
     poll.register(&s,
                   Token(0),
                   Ready::READABLE | Ready::WRITABLE,

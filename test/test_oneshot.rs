@@ -13,13 +13,13 @@ pub fn test_tcp_edge_oneshot() {
     let mut events = Events::with_capacity(1024);
 
     // Create the listener
-    let l = TcpListener::bind(&"127.0.0.1:0".parse().unwrap()).unwrap();
+    let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
 
     // Register the listener with `Poll`
     poll.register(&l, Token(0), Ready::READABLE, PollOpt::LEVEL).unwrap();
 
     // Connect a socket, we are going to write to it
-    let mut s1 = TcpStream::connect(&l.local_addr().unwrap()).unwrap();
+    let mut s1 = TcpStream::connect(l.local_addr().unwrap()).unwrap();
     poll.register(&s1, Token(1), Ready::WRITABLE, PollOpt::LEVEL).unwrap();
 
     wait_for(&mut poll, &mut events, Token(0));

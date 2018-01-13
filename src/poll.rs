@@ -93,14 +93,14 @@ use super::event_imp::{Ready, Event, Evented, PollOpt};
 ///
 /// // Bind a server socket to connect to.
 /// let addr: SocketAddr = "127.0.0.1:0".parse()?;
-/// let server = TcpListener::bind(&addr)?;
+/// let server = TcpListener::bind(addr)?;
 ///
 /// // Construct a new `Poll` handle as well as the `Events` we'll store into
 /// let poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
 ///
 /// // Connect the stream
-/// let stream = TcpStream::connect(&server.local_addr()?)?;
+/// let stream = TcpStream::connect(server.local_addr()?)?;
 ///
 /// // Register the stream with `Poll`
 /// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
@@ -267,7 +267,7 @@ use super::event_imp::{Ready, Event, Evented, PollOpt};
 /// use std::time::Duration;
 /// use std::thread;
 ///
-/// let sock = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
+/// let sock = TcpStream::connect("216.58.193.100:80".parse()?)?;
 ///
 /// thread::sleep(Duration::from_secs(1));
 ///
@@ -736,7 +736,7 @@ impl Poll {
     /// use std::time::{Duration, Instant};
     ///
     /// let poll = Poll::new()?;
-    /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
+    /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
     /// poll.register(&socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
@@ -820,7 +820,7 @@ impl Poll {
     /// use mio::net::TcpStream;
     ///
     /// let poll = Poll::new()?;
-    /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
+    /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`, requesting readable
     /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
@@ -878,7 +878,7 @@ impl Poll {
     /// use std::time::Duration;
     ///
     /// let poll = Poll::new()?;
-    /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
+    /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
     /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
@@ -962,7 +962,7 @@ impl Poll {
     ///
     /// // Bind a server socket to connect to.
     /// let addr: SocketAddr = "127.0.0.1:0".parse()?;
-    /// let server = TcpListener::bind(&addr)?;
+    /// let server = TcpListener::bind(addr)?;
     /// let addr = server.local_addr()?.clone();
     ///
     /// // Spawn a thread to accept the socket
@@ -975,7 +975,7 @@ impl Poll {
     /// let mut events = Events::with_capacity(1024);
     ///
     /// // Connect the stream
-    /// let stream = TcpStream::connect(&addr)?;
+    /// let stream = TcpStream::connect(addr)?;
     ///
     /// // Register the stream with `Poll`
     /// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;

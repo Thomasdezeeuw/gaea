@@ -16,14 +16,14 @@ struct MyHandler {
 #[test]
 fn local_addr_ready() {
     let addr = "127.0.0.1:0".parse().unwrap();
-    let server = TcpListener::bind(&addr).unwrap();
+    let server = TcpListener::bind(addr).unwrap();
     let addr = server.local_addr().unwrap();
 
     let poll = Poll::new().unwrap();
     poll.register(&server, LISTEN, Ready::READABLE,
                         PollOpt::EDGE).unwrap();
 
-    let sock = TcpStream::connect(&addr).unwrap();
+    let sock = TcpStream::connect(addr).unwrap();
     poll.register(&sock, CLIENT, Ready::READABLE,
                         PollOpt::EDGE).unwrap();
 
