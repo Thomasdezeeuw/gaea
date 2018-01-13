@@ -7,8 +7,6 @@
 //!
 //! [portability guidelines]: ../struct.Poll.html#portability
 
-#![allow(deprecated)]
-
 use {sys, Ready, Poll, PollOpt, Token};
 use io::{self, MapNonBlock};
 use event::Evented;
@@ -119,7 +117,7 @@ impl UdpSocket {
         self.sys.recv(buf).map_non_block()
     }
 
-    /// Connects the UDP socket setting the default destination for `send()` 
+    /// Connects the UDP socket setting the default destination for `send()`
     /// and limiting packets that are read via `recv` from the address specified
     /// in `addr`.
     pub fn connect(&self, addr: SocketAddr)
