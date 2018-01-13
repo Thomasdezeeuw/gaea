@@ -1,6 +1,8 @@
-use {io, poll, Ready, Poll, PollOpt, Token};
-use event::Evented;
+use std::io;
 use std::os::unix::io::RawFd;
+
+use {poll, Ready, Poll, PollOpt, Token};
+use event::Evented;
 
 /*
  *

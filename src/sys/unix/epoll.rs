@@ -3,13 +3,13 @@ use std::os::unix::io::AsRawFd;
 use std::os::unix::io::RawFd;
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::time::Duration;
-use std::{cmp, i32};
+use std::{cmp, io, i32};
 
 use libc::{self, c_int};
 use libc::{EPOLLERR, EPOLLHUP, EPOLLRDHUP, EPOLLONESHOT};
 use libc::{EPOLLET, EPOLLOUT, EPOLLIN, EPOLLPRI};
 
-use {io, Ready, PollOpt, Token};
+use {Ready, PollOpt, Token};
 use event_imp::Event;
 use sys::unix::{cvt, UnixReady};
 use sys::unix::io::set_cloexec;

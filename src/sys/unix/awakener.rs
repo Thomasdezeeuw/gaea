@@ -2,10 +2,11 @@ pub use self::pipe::Awakener;
 
 /// Default awakener backed by a pipe
 mod pipe {
+    use std::io::{self, Read, Write};
+
     use sys::unix;
-    use {io, Ready, Poll, PollOpt, Token};
+    use {Ready, Poll, PollOpt, Token};
     use event::Evented;
-    use std::io::{Read, Write};
 
     /*
      *

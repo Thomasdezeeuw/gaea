@@ -7,7 +7,8 @@
 //!
 /// [portability guidelines]: ../struct.Poll.html#portability
 
-use {io, sys, Ready, Poll, PollOpt, Token};
+use std::io;
+use {sys, Ready, Poll, PollOpt, Token};
 use event::Evented;
 use poll::SelectorId;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
@@ -192,7 +193,7 @@ impl UdpSocket {
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio::net::UdpSocket;
-    /// 
+    ///
     /// let socket = UdpSocket::bind(&"127.0.0.1:7777".parse()?)?;
     ///
     /// // We must check if the socket is writable before calling send_to,
@@ -279,7 +280,7 @@ impl UdpSocket {
     /// if broadcast_socket.broadcast()? == false {
     ///     broadcast_socket.set_broadcast(true)?;
     /// }
-    /// 
+    ///
     /// assert_eq!(broadcast_socket.broadcast()?, true);
     /// #
     /// #    Ok(())

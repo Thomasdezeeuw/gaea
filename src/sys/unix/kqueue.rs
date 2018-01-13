@@ -1,4 +1,4 @@
-use std::{cmp, fmt, ptr};
+use std::{cmp, fmt, io, ptr};
 #[cfg(not(target_os = "netbsd"))]
 use std::os::raw::{c_int, c_short};
 use std::os::unix::io::AsRawFd;
@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use libc::{self, time_t};
 
-use {io, Ready, PollOpt, Token};
+use {Ready, PollOpt, Token};
 use event_imp::{self as event, Event};
 use sys::unix::{cvt, UnixReady};
 use sys::unix::io::set_cloexec;

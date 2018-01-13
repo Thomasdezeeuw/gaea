@@ -1,8 +1,9 @@
-use {io, Ready, Poll, PollOpt, Token};
+use {Ready, Poll, PollOpt, Token};
 use event::Evented;
 use unix::EventedFd;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::os::unix::io::{RawFd, IntoRawFd, AsRawFd, FromRawFd};
+use std::io;
 
 #[allow(unused_imports)] // only here for Rust 1.8
 use net2::UdpSocketExt;

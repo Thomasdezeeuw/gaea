@@ -1,5 +1,5 @@
 use std::cmp;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{RawFd, FromRawFd, IntoRawFd, AsRawFd};
 use std::time::Duration;
@@ -9,7 +9,7 @@ use net2::TcpStreamExt;
 use iovec::IoVec;
 use iovec::unix as iovec;
 
-use {io, Ready, Poll, PollOpt, Token};
+use {Ready, Poll, PollOpt, Token};
 use event::Evented;
 
 use sys::unix::eventedfd::EventedFd;
