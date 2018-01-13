@@ -40,10 +40,7 @@
 /// let listener = TcpListener::bind("127.0.0.1:0".parse()?)?;
 ///
 /// // Register the listener
-/// poll.register(&listener,
-///               LISTENER,
-///               Ready::READABLE,
-///               PollOpt::EDGE)?;
+/// poll.register(&listener, LISTENER, Ready::READABLE, PollOpt::EDGE)?;
 ///
 /// // Spawn a thread that will connect a bunch of sockets then close them
 /// let addr = listener.local_addr()?;

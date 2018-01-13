@@ -1,5 +1,7 @@
 use std::io;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
+#[cfg(all(unix, not(target_os = "fuchsia")))]
+use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
 use {sys, Ready, Poll, PollOpt, Token};
 use event::Evented;
@@ -469,9 +471,6 @@ impl Evented for UdpSocket {
         self.socket.deregister(poll)
     }
 }
-
-#[cfg(all(unix, not(target_os = "fuchsia")))]
-use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 impl IntoRawFd for UdpSocket {
