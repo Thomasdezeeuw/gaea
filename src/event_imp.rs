@@ -499,18 +499,22 @@ bitflags! {
     /// [`writable`]: #method.writable
     /// [readiness]: struct.Poll.html#readiness-operations
     pub struct Ready: usize {
+        /// Readable readiness
         const READABLE = 0b0000001;
+        /// Writable readiness.
         const WRITABLE = 0b0000010;
+        /// Error readiness.
         const ERROR    = 0b0000100;
-        /// This signal is Unix specific.
+        /// Hup readiness, this signal is Unix specific.
         #[cfg(all(unix, not(target_os = "fuchsia")))]
         const HUP      = 0b0010000;
         #[cfg(any(target_os = "dragonfly",
             target_os = "freebsd", target_os = "ios", target_os = "macos"))]
-        /// This signal is specific to the BSD family.
+        /// AIO completion readiness, this signal is specific to the BSD family.
         const AIO      = 0b0100000;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        /// This signal is specific to DragonFly and FreeBSD.
+        /// LIO completion readiness, this signal is specific to DragonFly and
+        /// FreeBSD.
         const LIO      = 0b1000000;
     }
 }

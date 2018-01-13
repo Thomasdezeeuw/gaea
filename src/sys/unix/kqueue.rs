@@ -361,6 +361,6 @@ fn test_coalesce_aio() {
     let mut events = Events::with_capacity(1);
     events.sys_events.0.push(kevent!(0x1234, libc::EVFILT_AIO, 0, 42));
     events.coalesce(Token(0));
-    assert!(events.events[0].readiness() == UnixReady::aio().into());
+    assert!(events.events[0].readiness() == Ready::AIO);
     assert!(events.events[0].token() == Token(42));
 }
