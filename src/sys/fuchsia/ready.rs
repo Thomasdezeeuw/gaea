@@ -1,4 +1,4 @@
-use event_imp::{Ready, ready_as_usize, ready_from_usize};
+use event_imp::{Ready};
 pub use zircon_sys::{
     zx_signals_t,
     ZX_OBJECT_READABLE,
@@ -14,11 +14,11 @@ use std::ops;
 #[inline]
 pub fn assert_fuchsia_ready_repr() {
     debug_assert!(
-        ZX_OBJECT_READABLE.bits() as usize == ready_as_usize(Ready::READABLE),
+        ZX_OBJECT_READABLE.bits() as usize == Ready::READABLE.bits() as usize,
         "Zircon ZX_OBJECT_READABLE should have the same repr as Ready::READABLE"
     );
     debug_assert!(
-        ZX_OBJECT_WRITABLE.bits() as usize == ready_as_usize(Ready::WRITABLE),
+        ZX_OBJECT_WRITABLE.bits() as usize == Ready::WRITABLE.bits() as usize,
         "Zircon ZX_OBJECT_WRITABLE should have the same repr as Ready::WRITABLE"
     );
 }
@@ -41,7 +41,7 @@ impl FuchsiaReady {
     /// `FuchsiaReady::into`.
     #[inline]
     pub fn into_zx_signals(self) -> zx_signals_t {
-        zx_signals_t::from_bits_truncate(ready_as_usize(self.0) as u32)
+        zx_signals_t::from_bits_truncate(self.0.bits() as u32)
     }
 }
 
@@ -62,7 +62,7 @@ impl From<zx_signals_t> for FuchsiaReady {
 impl From<zx_signals_t> for Ready {
     #[inline]
     fn from(src: zx_signals_t) -> Self {
-        ready_from_usize(src.bits() as usize)
+        Ready::from_bits_truncate(src.bits() as u8)
     }
 }
 

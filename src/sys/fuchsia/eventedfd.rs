@@ -230,9 +230,6 @@ impl Evented for EventedFd {
 }
 
 fn ioevent_to_epoll(interest: Ready, opts: PollOpt) -> u32 {
-    use event_imp::ready_from_usize;
-    const HUP: usize   = 0b01000;
-
     let mut kind = 0;
 
     if interest.is_readable() {
@@ -243,7 +240,7 @@ fn ioevent_to_epoll(interest: Ready, opts: PollOpt) -> u32 {
         kind |= libc::EPOLLOUT;
     }
 
-    if interest.contains(ready_from_usize(HUP)) {
+    if interest.contains(Ready::HUP) {
         kind |= libc::EPOLLRDHUP;
     }
 

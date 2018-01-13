@@ -495,7 +495,7 @@ bitflags! {
     /// ```
     ///
     /// [`Poll`]: struct.Poll.html
-    pub struct Ready: usize {
+    pub struct Ready: u8 {
         /// Readable readiness
         const READABLE = 0b0000001;
         /// Writable readiness.
@@ -647,17 +647,8 @@ impl Event {
  *
  */
 
-pub fn ready_as_usize(events: Ready) -> usize {
-    events.bits()
-}
-
 pub fn opt_as_usize(opt: PollOpt) -> usize {
     opt.0
-}
-
-pub fn ready_from_usize(events: usize) -> Ready {
-    // FIXME: don't unwrap here.
-    Ready::from_bits(events).unwrap()
 }
 
 pub fn opt_from_usize(opt: usize) -> PollOpt {

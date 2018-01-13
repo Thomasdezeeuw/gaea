@@ -568,22 +568,23 @@ struct AtomicState {
 
 const MASK_2: usize = 4 - 1;
 const MASK_4: usize = 16 - 1;
+const MASK_8: usize = 256 - 1;
 const QUEUED_MASK: usize = 1 << QUEUED_SHIFT;
 const DROPPED_MASK: usize = 1 << DROPPED_SHIFT;
 
 const READINESS_SHIFT: usize = 0;
-const INTEREST_SHIFT: usize = 4;
-const POLL_OPT_SHIFT: usize = 8;
-const TOKEN_RD_SHIFT: usize = 12;
-const TOKEN_WR_SHIFT: usize = 14;
-const QUEUED_SHIFT: usize = 16;
-const DROPPED_SHIFT: usize = 17;
+const INTEREST_SHIFT: usize = 8;
+const POLL_OPT_SHIFT: usize = 16;
+const TOKEN_RD_SHIFT: usize = 20;
+const TOKEN_WR_SHIFT: usize = 22;
+const QUEUED_SHIFT: usize = 24;
+const DROPPED_SHIFT: usize = 25;
 
 /// Tracks all state for a single `ReadinessNode`. The state is packed into a
 /// `usize` variable from low to high bit as follows:
 ///
-/// 4 bits: Registration current readiness
-/// 4 bits: Registration interest
+/// 8 bits: Registration current readiness
+/// 8 bits: Registration interest
 /// 4 bits: Poll options
 /// 2 bits: Token position currently being read from by `poll`
 /// 2 bits: Token position last written to by `update`
@@ -2497,10 +2498,10 @@ impl ReadinessState {
     // Create a `ReadinessState` initialized with the provided arguments
     #[inline]
     fn new(interest: Ready, opt: PollOpt) -> ReadinessState {
-        let interest = event::ready_as_usize(interest);
+        let interest = interest.bits() as usize;
         let opt = event::opt_as_usize(opt);
 
-        debug_assert!(interest <= MASK_4);
+        debug_assert!(interest <= MASK_8);
         debug_assert!(opt <= MASK_4);
 
         let mut val = interest << INTEREST_SHIFT;
@@ -2519,11 +2520,11 @@ impl ReadinessState {
         self.0 = (self.0 & !(mask << shift)) | (val << shift)
     }
 
-    /// Get the readiness
+    /// Get the readiness.
     #[inline]
     fn readiness(&self) -> Ready {
-        let v = self.get(MASK_4, READINESS_SHIFT);
-        event::ready_from_usize(v)
+        let v = self.get(MASK_8, READINESS_SHIFT);
+        Ready::from_bits_truncate(v as u8)
     }
 
     #[inline]
@@ -2531,23 +2532,23 @@ impl ReadinessState {
         self.readiness() & self.interest()
     }
 
-    /// Set the readiness
+    /// Set the readiness.
     #[inline]
     fn set_readiness(&mut self, v: Ready) {
-        self.set(event::ready_as_usize(v), MASK_4, READINESS_SHIFT);
+        self.set(v.bits() as usize, MASK_8, READINESS_SHIFT);
     }
 
-    /// Get the interest
+    /// Get the interest.
     #[inline]
     fn interest(&self) -> Ready {
-        let v = self.get(MASK_4, INTEREST_SHIFT);
-        event::ready_from_usize(v)
+        let v = self.get(MASK_8, INTEREST_SHIFT);
+        Ready::from_bits_truncate(v as u8)
     }
 
     /// Set the interest
     #[inline]
     fn set_interest(&mut self, v: Ready) {
-        self.set(event::ready_as_usize(v), MASK_4, INTEREST_SHIFT);
+        self.set(v.bits() as usize, MASK_8, INTEREST_SHIFT);
     }
 
     #[inline]
