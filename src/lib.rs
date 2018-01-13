@@ -107,15 +107,13 @@ mod poll;
 mod sys;
 mod token;
 
+pub mod event;
 pub mod net;
 
-pub use poll::{Poll, Registration, SetReadiness};
-pub use event_imp::{PollOpt, Ready};
-pub use token::Token;
-
-pub mod event;
-
 pub use event::Events;
+pub use event_imp::{PollOpt, Ready};
+pub use poll::{Poll, Registration, SetReadiness};
+pub use token::Token;
 
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 pub mod unix {
