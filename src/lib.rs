@@ -103,11 +103,10 @@ extern crate winapi;
 extern crate kernel32;
 
 mod event_imp;
+mod poll;
 mod poll2;
 mod sys;
 mod token;
-
-use poll2 as poll;
 
 pub mod event;
 pub mod net;
