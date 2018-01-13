@@ -46,7 +46,7 @@ use event::Evented;
 ///
 /// // Register the listener
 /// poll.register(&EventedFd(&listener.as_raw_fd()),
-///              Token(0), Ready::READABLE, PollOpt::edge())?;
+///              Token(0), Ready::READABLE, PollOpt::EDGE)?;
 /// #     Ok(())
 /// # }
 /// #

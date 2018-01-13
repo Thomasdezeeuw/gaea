@@ -41,14 +41,14 @@
 //!
 //! // Start listening for incoming connections
 //! poll.register(&server, SERVER, Ready::READABLE,
-//!               PollOpt::edge()).unwrap();
+//!               PollOpt::EDGE).unwrap();
 //!
 //! // Setup the client socket
 //! let sock = TcpStream::connect(&addr).unwrap();
 //!
 //! // Register the socket
 //! poll.register(&sock, CLIENT, Ready::READABLE,
-//!               PollOpt::edge()).unwrap();
+//!               PollOpt::EDGE).unwrap();
 //!
 //! // Create storage for events
 //! let mut events = Events::with_capacity(1024);

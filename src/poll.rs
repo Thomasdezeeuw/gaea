@@ -106,7 +106,7 @@ use std::time::{Duration, Instant};
 /// let stream = TcpStream::connect(&server.local_addr()?)?;
 ///
 /// // Register the stream with `Poll`
-/// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
+/// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 ///
 /// // Wait for the socket to become ready. This has to happens in a loop to
 /// // handle spurious wakeups.
@@ -278,7 +278,7 @@ use std::time::{Duration, Instant};
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point
-/// poll.register(&sock, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
+/// poll.register(&sock, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 /// #     Ok(())
 /// # }
 /// #
@@ -661,7 +661,7 @@ impl Poll {
         };
 
         // Register the notification wakeup FD with the IO poller
-        poll.readiness_queue.inner.awakener.register(&poll, AWAKEN, Ready::READABLE, PollOpt::edge())?;
+        poll.readiness_queue.inner.awakener.register(&poll, AWAKEN, Ready::READABLE, PollOpt::EDGE)?;
 
         Ok(poll)
     }
@@ -742,7 +742,7 @@ impl Poll {
     /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
+    /// poll.register(&socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// let mut events = Events::with_capacity(1024);
     /// let start = Instant::now();
@@ -826,12 +826,12 @@ impl Poll {
     /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`, requesting readable
-    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::edge())?;
+    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
     /// // Reregister the socket specifying a different token and write interest
-    /// // instead. `PollOpt::edge()` must be specified even though that value
+    /// // instead. `PollOpt::EDGE` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&socket, Token(2), Ready::WRITABLE, PollOpt::edge())?;
+    /// poll.reregister(&socket, Token(2), Ready::WRITABLE, PollOpt::EDGE)?;
     /// #     Ok(())
     /// # }
     /// #
@@ -884,7 +884,7 @@ impl Poll {
     /// let socket = TcpStream::connect(&"216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::edge())?;
+    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
     /// poll.deregister(&socket)?;
     ///
@@ -981,7 +981,7 @@ impl Poll {
     /// let stream = TcpStream::connect(&addr)?;
     ///
     /// // Register the stream with `Poll`
-    /// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
+    /// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// // Wait for the socket to become ready. This has to happens in a loop to
     /// // handle spurious wakeups.
@@ -1549,7 +1549,7 @@ impl Registration {
     /// });
     ///
     /// let poll = Poll::new()?;
-    /// poll.register(&registration, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::edge())?;
+    /// poll.register(&registration, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// let mut events = Events::with_capacity(256);
     ///
@@ -1723,7 +1723,7 @@ impl SetReadiness {
     /// poll.register(&registration,
     ///               Token(0),
     ///               Ready::READABLE,
-    ///               PollOpt::edge())?;
+    ///               PollOpt::EDGE)?;
     ///
     /// // Set the readiness, then immediately poll to try to get the readiness
     /// // event

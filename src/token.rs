@@ -43,7 +43,7 @@
 /// poll.register(&listener,
 ///               LISTENER,
 ///               Ready::READABLE,
-///               PollOpt::edge())?;
+///               PollOpt::EDGE)?;
 ///
 /// // Spawn a thread that will connect a bunch of sockets then close them
 /// let addr = listener.local_addr()?;
@@ -89,7 +89,7 @@
 ///                             poll.register(&socket,
 ///                                          token,
 ///                                          Ready::READABLE,
-///                                          PollOpt::edge())?;
+///                                          PollOpt::EDGE)?;
 ///
 ///                             // Store the socket
 ///                             sockets.insert(token, socket);

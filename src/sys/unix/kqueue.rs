@@ -95,8 +95,8 @@ impl Selector {
     pub fn register(&self, fd: RawFd, token: Token, interests: Ready, opts: PollOpt) -> io::Result<()> {
         trace!("registering; token={:?}; interests={:?}", token, interests);
 
-        let flags = if opts.contains(PollOpt::edge()) { libc::EV_CLEAR } else { 0 } |
-                    if opts.contains(PollOpt::oneshot()) { libc::EV_ONESHOT } else { 0 } |
+        let flags = if opts.contains(PollOpt::EDGE) { libc::EV_CLEAR } else { 0 } |
+                    if opts.contains(PollOpt::ONESHOT) { libc::EV_ONESHOT } else { 0 } |
                     libc::EV_RECEIPT;
 
         unsafe {
@@ -351,7 +351,7 @@ fn does_not_register_rw() {
     // registering kqueue fd will fail if write is requested (On anything but some versions of OS
     // X)
     poll.register(&kqf, Token(1234), Ready::READABLE,
-                  PollOpt::edge() | PollOpt::oneshot()).unwrap();
+                  PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
 }
 
 #[cfg(any(target_os = "dragonfly",
