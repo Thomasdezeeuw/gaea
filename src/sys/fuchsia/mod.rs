@@ -99,11 +99,11 @@ fn epoll_event_to_ready(epoll: u32) -> Ready {
     /* TODO: support?
     // EPOLLHUP - Usually means a socket error happened
     if (epoll & libc::EPOLLERR) != 0 {
-        kind = kind | UnixReady::error();
+        kind = kind | Ready::ERROR;
     }
 
     if (epoll & libc::EPOLLRDHUP) != 0 || (epoll & libc::EPOLLHUP) != 0 {
-        kind = kind | UnixReady::hup();
+        kind = kind | Ready::HUP;
     }
     */
 }

@@ -83,6 +83,8 @@
 extern crate lazycell;
 extern crate net2;
 extern crate iovec;
+#[macro_use]
+extern crate bitflags;
 
 #[cfg(target_os = "fuchsia")]
 extern crate fuchsia_zircon as zircon;

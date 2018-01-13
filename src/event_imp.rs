@@ -470,66 +470,52 @@ fn test_debug_pollopt() {
     assert_eq!("OneShot", format!("{:?}", PollOpt::oneshot()));
 }
 
-/// A set of readiness event kinds
-///
-/// `Ready` is a set of operation descriptors indicating which kind of an
-/// operation is ready to be performed. For example, `Ready::readable()`
-/// indicates that the associated `Evented` handle is ready to perform a
-/// `read` operation.
-///
-/// This struct only represents portable event kinds. Since only readable and
-/// writable events are guaranteed to be raised on all systems, those are the
-/// only ones available via the `Ready` struct. There are also platform specific
-/// extensions to `Ready`, i.e. `UnixReady`, which provide additional readiness
-/// event kinds only available on unix platforms.
-///
-/// `Ready` values can be combined together using the various bitwise operators.
-///
-/// For high level documentation on polling and readiness, see [`Poll`].
-///
-/// # Examples
-///
-/// ```
-/// use mio::Ready;
-///
-/// let ready = Ready::readable() | Ready::writable();
-///
-/// assert!(ready.is_readable());
-/// assert!(ready.is_writable());
-/// ```
-///
-/// [`Poll`]: struct.Poll.html
-/// [`readable`]: #method.readable
-/// [`writable`]: #method.writable
-/// [readiness]: struct.Poll.html#readiness-operations
-#[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord)]
-pub struct Ready(usize);
-
-const READABLE: usize = 0b00001;
-const WRITABLE: usize = 0b00010;
-const ERROR: usize    = 0b00100;
-const HUP: usize      = 0b01000;
-
-impl Ready {
-    /// Returns the empty `Ready` set.
+bitflags! {
+    /// A set of readiness event kinds
     ///
-    /// See [`Poll`] for more documentation on polling.
+    /// `Ready` is a set of operation descriptors indicating which kind of an
+    /// operation is ready to be performed. For example, `Ready::readable()`
+    /// indicates that the associated `Evented` handle is ready to perform a
+    /// `read` operation.
+    ///
+    /// `Ready` values can be combined together using the various bitwise
+    /// operators.
+    ///
+    /// For high level documentation on polling and readiness, see [`Poll`].
     ///
     /// # Examples
     ///
     /// ```
     /// use mio::Ready;
     ///
-    /// let ready = Ready::empty();
+    /// let ready = Ready::readable() | Ready::writable();
     ///
-    /// assert!(!ready.is_readable());
+    /// assert!(ready.is_readable());
+    /// assert!(ready.is_writable());
     /// ```
     ///
     /// [`Poll`]: struct.Poll.html
-    pub fn empty() -> Ready {
-        Ready(0)
+    /// [`readable`]: #method.readable
+    /// [`writable`]: #method.writable
+    /// [readiness]: struct.Poll.html#readiness-operations
+    pub struct Ready: usize {
+        const READABLE = 0b0000001;
+        const WRITABLE = 0b0000010;
+        const ERROR    = 0b0000100;
+        /// This signal is Unix specific.
+        #[cfg(all(unix, not(target_os = "fuchsia")))]
+        const HUP      = 0b0010000;
+        #[cfg(any(target_os = "dragonfly",
+            target_os = "freebsd", target_os = "ios", target_os = "macos"))]
+        /// This signal is specific to the BSD family.
+        const AIO      = 0b0100000;
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        /// This signal is specific to DragonFly and FreeBSD.
+        const LIO      = 0b1000000;
     }
+}
 
+impl Ready {
     /// Returns a `Ready` representing readable readiness.
     ///
     /// See [`Poll`] for more documentation on polling.
@@ -547,7 +533,7 @@ impl Ready {
     /// [`Poll`]: struct.Poll.html
     #[inline]
     pub fn readable() -> Ready {
-        Ready(READABLE)
+        Ready::READABLE
     }
 
     /// Returns a `Ready` representing writable readiness.
@@ -567,24 +553,7 @@ impl Ready {
     /// [`Poll`]: struct.Poll.html
     #[inline]
     pub fn writable() -> Ready {
-        Ready(WRITABLE)
-    }
-
-    /// Returns true if `Ready` is the empty set
-    ///
-    /// See [`Poll`] for more documentation on polling.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let ready = Ready::empty();
-    /// assert!(ready.is_empty());
-    /// ```
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        *self == Ready::empty()
+        Ready::WRITABLE
     }
 
     /// Returns true if the value includes readable readiness
@@ -604,7 +573,7 @@ impl Ready {
     /// [`Poll`]: struct.Poll.html
     #[inline]
     pub fn is_readable(&self) -> bool {
-        self.contains(Ready::readable())
+        self.contains(Ready::READABLE)
     }
 
     /// Returns true if the value includes writable readiness
@@ -624,189 +593,8 @@ impl Ready {
     /// [`Poll`]: struct.Poll.html
     #[inline]
     pub fn is_writable(&self) -> bool {
-        self.contains(Ready::writable())
+        self.contains(Ready::WRITABLE)
     }
-
-    /// Adds all readiness represented by `other` into `self`.
-    ///
-    /// This is equivalent to `*self = *self | other`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let mut readiness = Ready::empty();
-    /// readiness.insert(Ready::readable());
-    ///
-    /// assert!(readiness.is_readable());
-    /// ```
-    #[inline]
-    pub fn insert<T: Into<Self>>(&mut self, other: T) {
-        let other = other.into();
-        self.0 |= other.0;
-    }
-
-    /// Removes all options represented by `other` from `self`.
-    ///
-    /// This is equivalent to `*self = *self & !other`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let mut readiness = Ready::readable();
-    /// readiness.remove(Ready::readable());
-    ///
-    /// assert!(!readiness.is_readable());
-    /// ```
-    #[inline]
-    pub fn remove<T: Into<Self>>(&mut self, other: T) {
-        let other = other.into();
-        self.0 &= !other.0;
-    }
-
-    /// Returns true if `self` is a superset of `other`.
-    ///
-    /// `other` may represent more than one readiness operations, in which case
-    /// the function only returns true if `self` contains all readiness
-    /// specified in `other`.
-    ///
-    /// See [`Poll`] for more documentation on polling.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let readiness = Ready::readable();
-    ///
-    /// assert!(readiness.contains(Ready::readable()));
-    /// assert!(!readiness.contains(Ready::writable()));
-    /// ```
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let readiness = Ready::readable() | Ready::writable();
-    ///
-    /// assert!(readiness.contains(Ready::readable()));
-    /// assert!(readiness.contains(Ready::writable()));
-    /// ```
-    ///
-    /// ```
-    /// use mio::Ready;
-    ///
-    /// let readiness = Ready::readable() | Ready::writable();
-    ///
-    /// assert!(!Ready::readable().contains(readiness));
-    /// assert!(readiness.contains(readiness));
-    /// ```
-    ///
-    /// [`Poll`]: struct.Poll.html
-    #[inline]
-    pub fn contains<T: Into<Self>>(&self, other: T) -> bool {
-        let other = other.into();
-        (*self & other) == other
-    }
-}
-
-impl<T: Into<Ready>> ops::BitOr<T> for Ready {
-    type Output = Ready;
-
-    #[inline]
-    fn bitor(self, other: T) -> Ready {
-        Ready(self.0 | other.into().0)
-    }
-}
-
-impl<T: Into<Ready>> ops::BitOrAssign<T> for Ready {
-    #[inline]
-    fn bitor_assign(&mut self, other: T) {
-        self.0 |= other.into().0;
-    }
-}
-
-impl<T: Into<Ready>> ops::BitXor<T> for Ready {
-    type Output = Ready;
-
-    #[inline]
-    fn bitxor(self, other: T) -> Ready {
-        Ready(self.0 ^ other.into().0)
-    }
-}
-
-impl<T: Into<Ready>> ops::BitXorAssign<T> for Ready {
-    #[inline]
-    fn bitxor_assign(&mut self, other: T) {
-        self.0 ^= other.into().0;
-    }
-}
-
-impl<T: Into<Ready>> ops::BitAnd<T> for Ready {
-    type Output = Ready;
-
-    #[inline]
-    fn bitand(self, other: T) -> Ready {
-        Ready(self.0 & other.into().0)
-    }
-}
-
-impl<T: Into<Ready>> ops::BitAndAssign<T> for Ready {
-    #[inline]
-    fn bitand_assign(&mut self, other: T) {
-        self.0 &= other.into().0
-    }
-}
-
-impl<T: Into<Ready>> ops::Sub<T> for Ready {
-    type Output = Ready;
-
-    #[inline]
-    fn sub(self, other: T) -> Ready {
-        Ready(self.0 & !other.into().0)
-    }
-}
-
-impl<T: Into<Ready>> ops::SubAssign<T> for Ready {
-    #[inline]
-    fn sub_assign(&mut self, other: T) {
-        self.0 &= !other.into().0;
-    }
-}
-
-impl fmt::Debug for Ready {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let mut one = false;
-        let flags = [
-            (Ready::readable(), "Readable"),
-            (Ready::writable(), "Writable"),
-            (Ready(ERROR), "Error"),
-            (Ready(HUP), "Hup")];
-
-        for &(flag, msg) in &flags {
-            if self.contains(flag) {
-                if one { write!(fmt, " | ")? }
-                write!(fmt, "{}", msg)?;
-
-                one = true
-            }
-        }
-
-        if !one {
-            fmt.write_str("(empty)")?;
-        }
-
-        Ok(())
-    }
-}
-
-#[test]
-fn test_debug_ready() {
-    assert_eq!("(empty)", format!("{:?}", Ready::empty()));
-    assert_eq!("Readable", format!("{:?}", Ready::readable()));
-    assert_eq!("Writable", format!("{:?}", Ready::writable()));
 }
 
 /// An readiness event returned by [`Poll::poll`].
@@ -899,7 +687,7 @@ impl Event {
  */
 
 pub fn ready_as_usize(events: Ready) -> usize {
-    events.0
+    events.bits()
 }
 
 pub fn opt_as_usize(opt: PollOpt) -> usize {
@@ -907,7 +695,8 @@ pub fn opt_as_usize(opt: PollOpt) -> usize {
 }
 
 pub fn ready_from_usize(events: usize) -> Ready {
-    Ready(events)
+    // FIXME: don't unwrap here.
+    Ready::from_bits(events).unwrap()
 }
 
 pub fn opt_from_usize(opt: usize) -> PollOpt {

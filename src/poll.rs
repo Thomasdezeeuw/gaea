@@ -252,8 +252,8 @@ use std::time::{Duration, Instant};
 ///
 /// [`readable`]: struct.Ready.html#method.readable
 /// [`writable`]: struct.Ready.html#method.writable
-/// [`error`]: unix/struct.UnixReady.html#method.error
-/// [`hup`]: unix/struct.UnixReady.html#method.hup
+/// [`error`]: struct.Ready.html#associatedconstant.ERROR
+/// [`hup`]: struct.Ready.html#associatedconstant.HUP
 ///
 /// ### Registering handles
 ///

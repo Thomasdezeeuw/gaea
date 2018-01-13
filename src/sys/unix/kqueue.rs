@@ -11,7 +11,7 @@ use libc::{self, time_t};
 
 use {Ready, PollOpt, Token};
 use event_imp::{self as event, Event};
-use sys::unix::{cvt, UnixReady};
+use sys::unix::cvt;
 use sys::unix::io::set_cloexec;
 
 /// Each Selector has a globally unique(ish) ID associated with it. This ID
@@ -284,35 +284,35 @@ impl Events {
             }
 
             if e.flags & libc::EV_ERROR != 0 {
-                event::kind_mut(&mut self.events[idx]).insert(*UnixReady::error());
+                event::kind_mut(&mut self.events[idx]).insert(Ready::ERROR);
             }
 
             if e.filter == libc::EVFILT_READ as Filter {
-                event::kind_mut(&mut self.events[idx]).insert(Ready::readable());
+                event::kind_mut(&mut self.events[idx]).insert(Ready::READABLE);
             } else if e.filter == libc::EVFILT_WRITE as Filter {
-                event::kind_mut(&mut self.events[idx]).insert(Ready::writable());
+                event::kind_mut(&mut self.events[idx]).insert(Ready::WRITABLE);
             }
 #[cfg(any(target_os = "dragonfly",
     target_os = "freebsd", target_os = "ios", target_os = "macos"))]
             {
                 if e.filter == libc::EVFILT_AIO {
-                    event::kind_mut(&mut self.events[idx]).insert(UnixReady::aio());
+                    event::kind_mut(&mut self.events[idx]).insert(Ready::AIO);
                 }
             }
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
             {
                 if e.filter == libc::EVFILT_LIO {
-                    event::kind_mut(&mut self.events[idx]).insert(UnixReady::lio());
+                    event::kind_mut(&mut self.events[idx]).insert(Ready::LIO);
                 }
             }
 
             if e.flags & libc::EV_EOF != 0 {
-                event::kind_mut(&mut self.events[idx]).insert(UnixReady::hup());
+                event::kind_mut(&mut self.events[idx]).insert(Ready::HUP);
 
                 // When the read end of the socket is closed, EV_EOF is set on
                 // flags, and fflags contains the error if there is one.
                 if e.fflags != 0 {
-                    event::kind_mut(&mut self.events[idx]).insert(UnixReady::error());
+                    event::kind_mut(&mut self.events[idx]).insert(Ready::ERROR);
                 }
             }
         }

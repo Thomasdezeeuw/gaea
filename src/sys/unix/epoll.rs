@@ -11,7 +11,7 @@ use libc::{EPOLLET, EPOLLOUT, EPOLLIN, EPOLLPRI};
 
 use {Ready, PollOpt, Token};
 use event_imp::Event;
-use sys::unix::{cvt, UnixReady};
+use sys::unix::cvt;
 use sys::unix::io::set_cloexec;
 
 /// Each Selector has a globally unique(ish) ID associated with it. This ID
@@ -141,7 +141,7 @@ fn ioevent_to_epoll(interest: Ready, opts: PollOpt) -> u32 {
         kind |= EPOLLOUT;
     }
 
-    if UnixReady::from(interest).is_hup() {
+    if interest.contains(Ready::HUP) {
         kind |= EPOLLRDHUP;
     }
 
@@ -207,20 +207,20 @@ impl Events {
             let mut kind = Ready::empty();
 
             if (epoll & EPOLLIN) != 0 || (epoll & EPOLLPRI) != 0 {
-                kind = kind | Ready::readable();
+                kind = kind | Ready::READABLE;
             }
 
             if (epoll & EPOLLOUT) != 0 {
-                kind = kind | Ready::writable();
+                kind = kind | Ready::WRITABLE;
             }
 
             // EPOLLHUP - Usually means a socket error happened
             if (epoll & EPOLLERR) != 0 {
-                kind = kind | UnixReady::error();
+                kind = kind | Ready::ERROR;
             }
 
             if (epoll & EPOLLRDHUP) != 0 || (epoll & EPOLLHUP) != 0 {
-                kind = kind | UnixReady::hup();
+                kind = kind | Ready::HUP;
             }
 
             let token = self.events[idx].u64;
