@@ -1,10 +1,12 @@
-use event_imp::{Ready};
+use std::ops;
+
+use event::Ready;
+
 pub use zircon_sys::{
     zx_signals_t,
     ZX_OBJECT_READABLE,
     ZX_OBJECT_WRITABLE,
 };
-use std::ops;
 
 // The following impls are valid because Fuchsia and mio both represent
 // "readable" as `1 << 0` and "writable" as `1 << 2`.

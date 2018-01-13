@@ -113,12 +113,7 @@ pub use poll::{Poll, Registration, SetReadiness};
 pub use event_imp::{PollOpt, Ready};
 pub use token::Token;
 
-pub mod event {
-    //! Readiness event types and utilities.
-
-    pub use super::poll::{Events, Iter};
-    pub use super::event_imp::{Event, Evented};
-}
+pub mod event;
 
 pub use event::Events;
 

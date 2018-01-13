@@ -7,7 +7,8 @@ use std::sync::atomic::{AtomicUsize, AtomicPtr, AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use super::{sys, Token};
-use super::event_imp::{Ready, Event, Evented, PollOpt};
+use super::event_imp::{Ready, PollOpt};
+use event::{Event, Evented};
 
 // Poll is backed by two readiness queues. The first is a system readiness queue
 // represented by `sys::Selector`. The system readiness queue handles events
