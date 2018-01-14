@@ -17,6 +17,16 @@ impl Awakener {
         })
     }
 
+    pub fn init(&mut self, selector: &mut Selector, token: Token, _: Ready, _: PollOpt) -> io::Result<()> {
+        let mut inner_locked = self.inner.lock().unwrap();
+        if inner_locked.is_some() {
+            panic!("Called register on already-registered Awakener.");
+        }
+        *inner_locked = Some((token, Arc::downgrade(selector.port())));
+
+        Ok(())
+    }
+
     /// Send a wakeup signal to the `Selector` on which the `Awakener` was registered.
     pub fn wakeup(&self) -> io::Result<()> {
         let inner_locked = self.inner.lock().unwrap();
@@ -36,12 +46,7 @@ impl Awakener {
 }
 
 impl Evented for Awakener {
-    fn register(&self,
-                poll: &Poll,
-                token: Token,
-                _events: Ready,
-                _opts: PollOpt) -> io::Result<()>
-    {
+    fn register(&mut self, poll: &mut Poll, token: Token, _events: Ready, _opts: PollOpt) -> io::Result<()> {
         let mut inner_locked = self.inner.lock().unwrap();
         if inner_locked.is_some() {
             panic!("Called register on already-registered Awakener.");
@@ -51,20 +56,14 @@ impl Evented for Awakener {
         Ok(())
     }
 
-    fn reregister(&self,
-                  poll: &Poll,
-                  token: Token,
-                  _events: Ready,
-                  _opts: PollOpt) -> io::Result<()>
-    {
+    fn reregister(&mut self, poll: &mut Poll, token: Token, _events: Ready, _opts: PollOpt) -> io::Result<()> {
         let mut inner_locked = self.inner.lock().unwrap();
         *inner_locked = Some((token, Arc::downgrade(poll.selector().port())));
 
         Ok(())
     }
 
-    fn deregister(&self, _poll: &Poll) -> io::Result<()>
-    {
+    fn deregister(&mut self, _poll: &mut Poll) -> io::Result<()> {
         let mut inner_locked = self.inner.lock().unwrap();
         *inner_locked = None;
 

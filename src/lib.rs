@@ -34,19 +34,19 @@
 //! let addr = "127.0.0.1:13265".parse().unwrap();
 //!
 //! // Setup the server socket
-//! let server = TcpListener::bind(addr).unwrap();
+//! let mut server = TcpListener::bind(addr).unwrap();
 //!
 //! // Create a poll instance
 //! let mut poll = Poll::new().unwrap();
 //!
 //! // Start listening for incoming connections
-//! poll.register(&server, SERVER, Ready::READABLE, PollOpt::EDGE).unwrap();
+//! poll.register(&mut server, SERVER, Ready::READABLE, PollOpt::EDGE).unwrap();
 //!
 //! // Setup the client socket
-//! let sock = TcpStream::connect(addr).unwrap();
+//! let mut sock = TcpStream::connect(addr).unwrap();
 //!
 //! // Register the socket
-//! poll.register(&sock, CLIENT, Ready::READABLE, PollOpt::EDGE).unwrap();
+//! poll.register(&mut sock, CLIENT, Ready::READABLE, PollOpt::EDGE).unwrap();
 //!
 //! // Create storage for events
 //! let mut events = Events::with_capacity(1024);
@@ -117,7 +117,7 @@ pub mod poll;
 pub mod registration;
 
 // TODO: fix the imports in other files.
-pub use poll::{Token, Poll, Ready, PollOpt};
+pub use poll::{Poll, PollOpt};
 pub use registration::{Registration, SetReadiness};
 pub use event::{Event, Events};
 

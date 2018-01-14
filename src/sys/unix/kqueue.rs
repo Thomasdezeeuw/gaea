@@ -345,12 +345,12 @@ fn does_not_register_rw() {
     use unix::EventedFd;
 
     let kq = unsafe { libc::kqueue() };
-    let kqf = EventedFd(&kq);
+    let mut kqf = EventedFd(&kq);
     let mut poll = Poll::new().unwrap();
 
-    // registering kqueue fd will fail if write is requested (On anything but some versions of OS
-    // X)
-    poll.register(&kqf, Token(1234), Ready::READABLE,
+    // registering kqueue fd will fail if write is requested (On anything but
+    // some versions of OS X).
+    poll.register(&mut kqf, Token(1234), Ready::READABLE,
                   PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
 }
 

@@ -9,11 +9,11 @@ pub fn test_udp_level_triggered() {
     let mut events = Events::with_capacity(1024);
 
     // Create the listener
-    let tx = UdpSocket::bind("127.0.0.1:0".parse().unwrap()).unwrap();
-    let rx = UdpSocket::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut tx = UdpSocket::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut rx = UdpSocket::bind("127.0.0.1:0".parse().unwrap()).unwrap();
 
-    poll.register(&tx, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
-    poll.register(&rx, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
+    poll.register(&mut tx, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
+    poll.register(&mut rx, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
 
 
     for _ in 0..2 {

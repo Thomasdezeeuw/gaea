@@ -14,7 +14,7 @@ pub fn test_fuchsia_channel() {
     let (channel0, channel1) = zircon::Channel::create(zircon::ChannelOpts::Normal).unwrap();
     let channel1_evented = unsafe { EventedHandle::new(channel1.raw_handle()) };
 
-    poll.register(&channel1_evented, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
+    poll.register(&mut channel1_evented, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
 
     poll.poll(event_buffer, Some(Duration::from_millis(MS))).unwrap();
     assert_eq!(event_buffer.len(), 0);
@@ -26,5 +26,5 @@ pub fn test_fuchsia_channel() {
     assert_eq!(event.token(), Token(1));
     assert!(event.readiness().is_readable());
 
-    poll.deregister(&channel1_evented).unwrap();
+    poll.deregister(&mut channel1_evented).unwrap();
 }

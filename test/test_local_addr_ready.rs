@@ -16,15 +16,15 @@ struct MyHandler {
 #[test]
 fn local_addr_ready() {
     let addr = "127.0.0.1:0".parse().unwrap();
-    let server = TcpListener::bind(addr).unwrap();
+    let mut server = TcpListener::bind(addr).unwrap();
     let addr = server.local_addr().unwrap();
 
     let mut poll = Poll::new().unwrap();
-    poll.register(&server, LISTEN, Ready::READABLE,
+    poll.register(&mut server, LISTEN, Ready::READABLE,
                         PollOpt::EDGE).unwrap();
 
-    let sock = TcpStream::connect(addr).unwrap();
-    poll.register(&sock, CLIENT, Ready::READABLE,
+    let mut sock = TcpStream::connect(addr).unwrap();
+    poll.register(&mut sock, CLIENT, Ready::READABLE,
                         PollOpt::EDGE).unwrap();
 
     let mut events = Events::with_capacity(1024);
@@ -42,8 +42,8 @@ fn local_addr_ready() {
         for event in &events {
             match event.token() {
                 LISTEN => {
-                    let sock = handler.listener.accept().unwrap().0;
-                    poll.register(&sock,
+                    let mut sock = handler.listener.accept().unwrap().0;
+                    poll.register(&mut sock,
                                   SERVER,
                                   Ready::WRITABLE,
                                   PollOpt::EDGE).unwrap();

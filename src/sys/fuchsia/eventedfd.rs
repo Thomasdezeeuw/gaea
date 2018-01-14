@@ -189,12 +189,7 @@ impl EventedFd {
 }
 
 impl Evented for EventedFd {
-    fn register(&self,
-                poll: &Poll,
-                token: Token,
-                interest: Ready,
-                opts: PollOpt) -> io::Result<()>
-    {
+    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         self.register_with_lock(
             &mut *self.inner.registration.lock().unwrap(),
             poll,
@@ -203,12 +198,7 @@ impl Evented for EventedFd {
             opts)
     }
 
-    fn reregister(&self,
-                  poll: &Poll,
-                  token: Token,
-                  interest: Ready,
-                  opts: PollOpt) -> io::Result<()>
-    {
+    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         // Take out the registration lock
         let mut registration_lock = self.inner.registration.lock().unwrap();
 
@@ -223,7 +213,7 @@ impl Evented for EventedFd {
             opts)
     }
 
-    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
         let mut registration_lock = self.inner.registration.lock().unwrap();
         self.deregister_with_lock(&mut *registration_lock, poll)
     }

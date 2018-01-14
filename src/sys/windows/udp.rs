@@ -329,8 +329,7 @@ impl Imp {
 }
 
 impl Evented for UdpSocket {
-    fn register(&self, poll: &Poll, token: Token,
-                interest: Ready, opts: PollOpt) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         let mut me = self.inner();
         me.iocp.register_socket(&self.imp.inner.socket,
                                      poll, token, interest, opts,
@@ -339,8 +338,7 @@ impl Evented for UdpSocket {
         Ok(())
     }
 
-    fn reregister(&self, poll: &Poll, token: Token,
-                  interest: Ready, opts: PollOpt) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         let mut me = self.inner();
         me.iocp.reregister_socket(&self.imp.inner.socket,
                                        poll, token, interest,
@@ -349,7 +347,7 @@ impl Evented for UdpSocket {
         Ok(())
     }
 
-    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
         self.inner().iocp.deregister(&self.imp.inner.socket,
                                      poll, &self.registration)
     }

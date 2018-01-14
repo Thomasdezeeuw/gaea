@@ -75,8 +75,8 @@ pub fn test_multicast() {
     let addr = localhost();
     let any = "0.0.0.0:0".parse().unwrap();
 
-    let tx = UdpSocket::bind(any).unwrap();
-    let rx = UdpSocket::bind(addr).unwrap();
+    let mut tx = UdpSocket::bind(any).unwrap();
+    let mut rx = UdpSocket::bind(addr).unwrap();
 
     info!("Joining group 227.1.1.100");
     let any = "0.0.0.0".parse().unwrap();
@@ -86,10 +86,10 @@ pub fn test_multicast() {
     rx.join_multicast_v4(&"227.1.1.101".parse().unwrap(), &any).unwrap();
 
     info!("Registering SENDER");
-    poll.register(&tx, SENDER, Ready::WRITABLE, PollOpt::EDGE).unwrap();
+    poll.register(&mut tx, SENDER, Ready::WRITABLE, PollOpt::EDGE).unwrap();
 
     info!("Registering LISTENER");
-    poll.register(&rx, LISTENER, Ready::READABLE, PollOpt::EDGE).unwrap();
+    poll.register(&mut rx, LISTENER, Ready::READABLE, PollOpt::EDGE).unwrap();
 
     let mut events = Events::with_capacity(1024);
 

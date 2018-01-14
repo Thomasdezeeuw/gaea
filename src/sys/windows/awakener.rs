@@ -21,6 +21,14 @@ impl Awakener {
         })
     }
 
+    pub fn init(&mut self, selector: &mut Selector, token: Token, _: Ready, _: PollOpt) -> io::Result<()> {
+        *self.inner.lock().unwrap() = Some(AwakenerInner {
+            selector: selector.clone_ref(),
+            token: token,
+        });
+        Ok(())
+    }
+
     pub fn wakeup(&self) -> io::Result<()> {
         // Each wakeup notification has NULL as its `OVERLAPPED` pointer to
         // indicate that it's from this awakener and not part of an I/O
@@ -43,8 +51,7 @@ impl Awakener {
 }
 
 impl Evented for Awakener {
-    fn register(&self, poll: &Poll, token: Token, events: Ready,
-                opts: PollOpt) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, token: Token, events: Ready, opts: PollOpt) -> io::Result<()> {
         assert_eq!(opts, PollOpt::EDGE);
         assert_eq!(events, Ready::READABLE);
         *self.inner.lock().unwrap() = Some(AwakenerInner {
@@ -54,12 +61,11 @@ impl Evented for Awakener {
         Ok(())
     }
 
-    fn reregister(&self, poll: &Poll, token: Token, events: Ready,
-                  opts: PollOpt) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, token: Token, events: Ready, opts: PollOpt) -> io::Result<()> {
         self.register(poll, token, events, opts)
     }
 
-    fn deregister(&self, _poll: &Poll) -> io::Result<()> {
+    fn deregister(&mut self, _poll: &mut Poll) -> io::Result<()> {
         *self.inner.lock().unwrap() = None;
         Ok(())
     }

@@ -6,6 +6,7 @@ use super::{Ready, PollOpt, Token};
 use event::Evented;
 
 use poll::*;
+use poll2::*;
 
 /// Handle to a user space `Poll` registration.
 ///
@@ -74,19 +75,19 @@ use poll::*;
 /// }
 ///
 /// impl Evented for Deadline {
-///     fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt)
+///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt)
 ///         -> io::Result<()>
 ///     {
 ///         self.registration.register(poll, token, interest, opts)
 ///     }
 ///
-///     fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt)
+///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt)
 ///         -> io::Result<()>
 ///     {
 ///         self.registration.reregister(poll, token, interest, opts)
 ///     }
 ///
-///     fn deregister(&self, poll: &Poll) -> io::Result<()> {
+///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
 ///         self.registration.deregister(poll)
 ///     }
 /// }
@@ -123,7 +124,7 @@ impl Registration {
     /// use mio::{Events, Ready, Registration, Poll, PollOpt, Token};
     /// use std::thread;
     ///
-    /// let (registration, set_readiness) = Registration::new2();
+    /// let (mut registration, set_readiness) = Registration::new2();
     ///
     /// thread::spawn(move || {
     ///     use std::time::Duration;
@@ -133,7 +134,7 @@ impl Registration {
     /// });
     ///
     /// let mut poll = Poll::new()?;
-    /// poll.register(&registration, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut registration, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// let mut events = Events::with_capacity(256);
     ///
@@ -208,15 +209,15 @@ impl Registration {
 }
 
 impl Evented for Registration {
-    fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         self.inner.update(poll, token, interest, opts)
     }
 
-    fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         self.inner.update(poll, token, interest, opts)
     }
 
-    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
         self.inner.update(poll, Token(0), Ready::empty(), PollOpt::empty())
     }
 }
@@ -312,9 +313,9 @@ impl SetReadiness {
     /// use mio::{Events, Registration, Ready, Poll, PollOpt, Token};
     ///
     /// let mut poll = Poll::new()?;
-    /// let (registration, set_readiness) = Registration::new2();
+    /// let (mut registration, set_readiness) = Registration::new2();
     ///
-    /// poll.register(&registration, Token(0), Ready::READABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut registration, Token(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
     /// // Set the readiness, then immediately poll to try to get the readiness
     /// // event

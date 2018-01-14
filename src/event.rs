@@ -44,21 +44,19 @@ use {sys, Poll, Token, Ready, PollOpt};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt)
-///         -> io::Result<()>
+///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
 ///     {
 ///         // Delegate the `register` call to `socket`
 ///         self.socket.register(poll, token, interest, opts)
 ///     }
 ///
-///     fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt)
-///         -> io::Result<()>
+///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
 ///     {
 ///         // Delegate the `reregister` call to `socket`
 ///         self.socket.reregister(poll, token, interest, opts)
 ///     }
 ///
-///     fn deregister(&self, poll: &Poll) -> io::Result<()> {
+///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
 ///         // Delegate the `deregister` call to `socket`
 ///         self.socket.deregister(poll)
 ///     }
@@ -106,19 +104,17 @@ use {sys, Poll, Token, Ready, PollOpt};
 /// }
 ///
 /// impl Evented for Deadline {
-///     fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt)
-///         -> io::Result<()>
+///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
 ///     {
 ///         self.registration.register(poll, token, interest, opts)
 ///     }
 ///
-///     fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt)
-///         -> io::Result<()>
+///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
 ///     {
 ///         self.registration.reregister(poll, token, interest, opts)
 ///     }
 ///
-///     fn deregister(&self, poll: &Poll) -> io::Result<()> {
+///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
 ///         self.registration.deregister(poll)
 ///     }
 /// }
@@ -132,7 +128,7 @@ pub trait Evented {
     ///
     /// [`Poll::register`]: ../struct.Poll.html#method.register
     /// [`Registration`]: ../struct.Registration.html
-    fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>;
+    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>;
 
     /// Re-register `self` with the given `Poll` instance.
     ///
@@ -143,7 +139,7 @@ pub trait Evented {
     ///
     /// [`Poll::reregister`]: ../struct.Poll.html#method.reregister
     /// [`SetReadiness::set_readiness`]: ../struct.SetReadiness.html#method.set_readiness
-    fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>;
+    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poll` instance
     ///
@@ -154,7 +150,7 @@ pub trait Evented {
     ///
     /// [`Poll::deregister`]: ../struct.Poll.html#method.deregister
     /// [`Registration`]: ../struct.Registration.html
-    fn deregister(&self, poll: &Poll) -> io::Result<()>;
+    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()>;
 }
 
 /// An iterator over a collection of readiness events.

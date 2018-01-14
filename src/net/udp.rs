@@ -5,7 +5,7 @@ use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
 use {sys, Ready, Poll, PollOpt, Token};
 use event::Evented;
-use poll::SelectorId;
+use super::SelectorId;
 
 /// A User Datagram Protocol socket.
 ///
@@ -35,8 +35,8 @@ use poll::SelectorId;
 ///
 /// // This operation will fail if the address is in use, so we select different
 /// // ports for each socket.
-/// let sender_socket = UdpSocket::bind(sender_address)?;
-/// let echoer_socket = UdpSocket::bind(echoer_address)?;
+/// let mut sender_socket = UdpSocket::bind(sender_address)?;
+/// let mut echoer_socket = UdpSocket::bind(echoer_address)?;
 ///
 /// // If we do not use connect here, SENDER and ECHOER would need to call
 /// // send_to and recv_from respectively.
@@ -48,8 +48,8 @@ use poll::SelectorId;
 ///
 /// // We register our sockets here so that we can check if they are ready to be
 /// // written/read.
-/// poll.register(&sender_socket, SENDER, Ready::WRITABLE, PollOpt::EDGE)?;
-/// poll.register(&echoer_socket, ECHOER, Ready::READABLE, PollOpt::EDGE)?;
+/// poll.register(&mut sender_socket, SENDER, Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut echoer_socket, ECHOER, Ready::READABLE, PollOpt::EDGE)?;
 ///
 /// let msg_to_send = [9; 9];
 /// let mut buffer = [0; 9];
@@ -213,7 +213,7 @@ impl UdpSocket {
     /// use mio::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
-    /// let socket = UdpSocket::bind(addr)?;
+    /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// // We must check if the socket is readable before calling recv_from,
     /// // or we could run into a WouldBlock error.
@@ -458,16 +458,16 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         self.selector_id.associate_selector(poll)?;
         self.socket.register(poll, token, interest, opts)
     }
 
-    fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         self.socket.reregister(poll, token, interest, opts)
     }
 
-    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
         self.socket.deregister(poll)
     }
 }

@@ -51,7 +51,7 @@ impl EchoConn {
         }
 
         assert!(self.interest.is_readable() || self.interest.is_writable(), "actual={:?}", self.interest);
-        poll.reregister(&self.sock, self.token.unwrap(), self.interest,
+        poll.reregister(&mut self.sock, self.token.unwrap(), self.interest,
                               PollOpt::EDGE | PollOpt::ONESHOT)
     }
 
@@ -80,7 +80,7 @@ impl EchoConn {
         };
 
         assert!(self.interest.is_readable() || self.interest.is_writable(), "actual={:?}", self.interest);
-        poll.reregister(&self.sock, self.token.unwrap(), self.interest,
+        poll.reregister(&mut self.sock, self.token.unwrap(), self.interest,
                               PollOpt::EDGE)
     }
 }
@@ -101,7 +101,7 @@ impl EchoServer {
 
         // Register the connection
         self.conns[tok].token = Some(tok);
-        poll.register(&self.conns[tok].sock, tok, Ready::READABLE,
+        poll.register(&mut self.conns[tok].sock, tok, Ready::READABLE,
                                 PollOpt::EDGE | PollOpt::ONESHOT)
             .ok().expect("could not register socket with event loop");
 
@@ -192,7 +192,7 @@ impl EchoClient {
 
         if !self.interest.is_empty() {
             assert!(self.interest.is_readable() || self.interest.is_writable(), "actual={:?}", self.interest);
-            poll.reregister(&self.sock, self.token, self.interest,
+            poll.reregister(&mut self.sock, self.token, self.interest,
                                        PollOpt::EDGE | PollOpt::ONESHOT)?;
         }
 
@@ -216,7 +216,7 @@ impl EchoClient {
         }
 
         if self.interest.is_readable() || self.interest.is_writable() {
-            try!(poll.reregister(&self.sock, self.token, self.interest,
+            try!(poll.reregister(&mut self.sock, self.token, self.interest,
                                   PollOpt::EDGE | PollOpt::ONESHOT));
         }
 
@@ -236,7 +236,7 @@ impl EchoClient {
         self.rx = SliceBuf::wrap(curr.as_bytes());
 
         self.interest.insert(Ready::WRITABLE);
-        poll.reregister(&self.sock, self.token, self.interest,
+        poll.reregister(&mut self.sock, self.token, self.interest,
                               PollOpt::EDGE | PollOpt::ONESHOT)
     }
 }
@@ -264,16 +264,16 @@ pub fn test_echo_server() {
     let mut poll = Poll::new().unwrap();
 
     let addr = localhost();
-    let srv = TcpListener::bind(addr).unwrap();
+    let mut srv = TcpListener::bind(addr).unwrap();
 
     info!("listen for connections");
-    poll.register(&srv, SERVER, Ready::READABLE,
+    poll.register(&mut srv, SERVER, Ready::READABLE,
                             PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
 
-    let sock = TcpStream::connect(addr).unwrap();
+    let mut sock = TcpStream::connect(addr).unwrap();
 
     // Connect to the server
-    poll.register(&sock, CLIENT, Ready::WRITABLE,
+    poll.register(&mut sock, CLIENT, Ready::WRITABLE,
                         PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
     // == Create storage for events
     let mut events = Events::with_capacity(1024);

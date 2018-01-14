@@ -3,8 +3,9 @@ pub use self::pipe::Awakener;
 /// Default awakener backed by a pipe
 mod pipe {
     use std::io::{self, Read, Write};
+    use std::os::unix::io::AsRawFd;
 
-    use sys::unix;
+    use sys::unix::{self, Selector};
     use {Ready, Poll, PollOpt, Token};
     use event::Evented;
 
@@ -27,6 +28,10 @@ mod pipe {
                 reader: rd,
                 writer: wr,
             })
+        }
+
+        pub fn init(&mut self, selector: &mut Selector, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+            selector.register(self.reader.as_raw_fd(), token, interest, opts)
         }
 
         pub fn wakeup(&self) -> io::Result<()> {
@@ -54,21 +59,21 @@ mod pipe {
             }
         }
 
-        fn reader(&self) -> &unix::Io {
-            &self.reader
+        fn reader(&mut self) -> &mut unix::Io {
+            &mut self.reader
         }
     }
 
     impl Evented for Awakener {
-        fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
             self.reader().register(poll, token, interest, opts)
         }
 
-        fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
             self.reader().reregister(poll, token, interest, opts)
         }
 
-        fn deregister(&self, poll: &Poll) -> io::Result<()> {
+        fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
             self.reader().deregister(poll)
         }
     }

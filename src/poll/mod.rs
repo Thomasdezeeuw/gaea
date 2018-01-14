@@ -2,13 +2,14 @@ use std::{fmt, io};
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{RawFd, AsRawFd};
 use std::time::{Duration, Instant};
+use std::sync::Arc;
 
 use {sys, Ready};
 use event::{Events, Evented};
+use super::poll2::*;
 
 mod opt;
 
-pub use poll2::*;
 pub use token::Token;
 pub use self::opt::PollOpt;
 
@@ -96,17 +97,17 @@ pub use self::opt::PollOpt;
 ///
 /// // Bind a server socket to connect to.
 /// let addr: SocketAddr = "127.0.0.1:0".parse()?;
-/// let server = TcpListener::bind(addr)?;
+/// let mut server = TcpListener::bind(addr)?;
 ///
 /// // Construct a new `Poll` handle as well as the `Events` we'll store into
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
 ///
 /// // Connect the stream
-/// let stream = TcpStream::connect(server.local_addr()?)?;
+/// let mut stream = TcpStream::connect(server.local_addr()?)?;
 ///
 /// // Register the stream with `Poll`
-/// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 ///
 /// // Wait for the socket to become ready. This has to happens in a loop to
 /// // handle spurious wakeups.
@@ -270,7 +271,7 @@ pub use self::opt::PollOpt;
 /// use std::time::Duration;
 /// use std::thread;
 ///
-/// let sock = TcpStream::connect("216.58.193.100:80".parse()?)?;
+/// let mut sock = TcpStream::connect("216.58.193.100:80".parse()?)?;
 ///
 /// thread::sleep(Duration::from_secs(1));
 ///
@@ -278,7 +279,7 @@ pub use self::opt::PollOpt;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point
-/// poll.register(&sock, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut sock, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 /// #     Ok(())
 /// # }
 /// #
@@ -369,13 +370,20 @@ impl Poll {
     /// # }
     /// ```
     pub fn new() -> io::Result<Poll> {
-        let poll = Poll {
+        let mut poll = Poll {
             selector: sys::Selector::new()?,
             readiness_queue: ReadinessQueue::new()?,
         };
 
-        // Register the notification wakeup FD with the IO poller
-        poll.readiness_queue.inner.awakener.register(&poll, AWAKEN, Ready::READABLE, PollOpt::EDGE)?;
+        {
+            let  Poll {
+                ref mut selector,
+                ref mut readiness_queue,
+            } = poll;
+
+            Arc::get_mut(&mut readiness_queue.inner).unwrap()
+                .awakener.init(selector, AWAKEN, Ready::READABLE, PollOpt::EDGE)?;
+        }
 
         Ok(poll)
     }
@@ -455,10 +463,10 @@ impl Poll {
     /// use std::time::{Duration, Instant};
     ///
     /// let mut poll = Poll::new()?;
-    /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
+    /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// let mut events = Events::with_capacity(1024);
     /// let start = Instant::now();
@@ -489,7 +497,7 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn register<E>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn register<E>(&mut self, handle: &mut E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
         validate_args(token)?;
@@ -529,15 +537,15 @@ impl Poll {
     /// use mio::net::TcpStream;
     ///
     /// let mut poll = Poll::new()?;
-    /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
+    /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`, requesting readable
-    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
     /// // Reregister the socket specifying a different token and write interest
     /// // instead. `PollOpt::EDGE` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&socket, Token(2), Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.reregister(&mut socket, Token(2), Ready::WRITABLE, PollOpt::EDGE)?;
     /// #     Ok(())
     /// # }
     /// #
@@ -550,7 +558,7 @@ impl Poll {
     /// [`register`]: #method.register
     /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
     /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
-    pub fn reregister<E>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn reregister<E>(&mut self, handle: &mut E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
         validate_args(token)?;
@@ -582,12 +590,12 @@ impl Poll {
     /// use std::time::Duration;
     ///
     /// let mut poll = Poll::new()?;
-    /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
+    /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
-    /// poll.deregister(&socket)?;
+    /// poll.deregister(&mut socket)?;
     ///
     /// let mut events = Events::with_capacity(1024);
     ///
@@ -600,7 +608,7 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn deregister<E>(&mut self, handle: &E) -> io::Result<()>
+    pub fn deregister<E>(&mut self, handle: &mut E) -> io::Result<()>
         where E: Evented + ?Sized
     {
         trace!("deregistering handle with poller");
@@ -661,7 +669,7 @@ impl Poll {
     ///
     /// // Bind a server socket to connect to.
     /// let addr: SocketAddr = "127.0.0.1:0".parse()?;
-    /// let server = TcpListener::bind(addr)?;
+    /// let mut server = TcpListener::bind(addr)?;
     /// let addr = server.local_addr()?.clone();
     ///
     /// // Spawn a thread to accept the socket
@@ -674,10 +682,10 @@ impl Poll {
     /// let mut events = Events::with_capacity(1024);
     ///
     /// // Connect the stream
-    /// let stream = TcpStream::connect(addr)?;
+    /// let mut stream = TcpStream::connect(addr)?;
     ///
     /// // Register the stream with `Poll`
-    /// poll.register(&stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// // Wait for the socket to become ready. This has to happens in a loop to
     /// // handle spurious wakeups.

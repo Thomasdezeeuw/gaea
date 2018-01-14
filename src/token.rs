@@ -37,10 +37,10 @@
 /// let mut poll = Poll::new()?;
 ///
 /// // Tcp listener
-/// let listener = TcpListener::bind("127.0.0.1:0".parse()?)?;
+/// let mut listener = TcpListener::bind("127.0.0.1:0".parse()?)?;
 ///
 /// // Register the listener
-/// poll.register(&listener, LISTENER, Ready::READABLE, PollOpt::EDGE)?;
+/// poll.register(&mut listener, LISTENER, Ready::READABLE, PollOpt::EDGE)?;
 ///
 /// // Spawn a thread that will connect a bunch of sockets then close them
 /// let addr = listener.local_addr()?;
@@ -72,7 +72,7 @@
 ///                 // encountered.
 ///                 loop {
 ///                     match listener.accept() {
-///                         Ok((socket, _)) => {
+///                         Ok((mut socket, _)) => {
 ///                             // Shutdown the server
 ///                             if next_socket_index == MAX_SOCKETS {
 ///                                 return Ok(());
@@ -83,7 +83,7 @@
 ///                             next_socket_index += 1;
 ///
 ///                             // Register the new socket w/ poll
-///                             poll.register(&socket,
+///                             poll.register(&mut socket,
 ///                                          token,
 ///                                          Ready::READABLE,
 ///                                          PollOpt::EDGE)?;

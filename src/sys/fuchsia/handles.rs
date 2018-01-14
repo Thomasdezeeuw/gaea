@@ -32,12 +32,7 @@ impl EventedHandle {
 }
 
 impl Evented for EventedHandle {
-    fn register(&self,
-                poll: &Poll,
-                token: Token,
-                interest: Ready,
-                opts: PollOpt) -> io::Result<()>
-    {
+    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         let mut this_token = self.token.lock().unwrap();
         {
             poll.selector().register_handle(self.handle, token, interest, opts)?;
@@ -46,12 +41,7 @@ impl Evented for EventedHandle {
         Ok(())
     }
 
-    fn reregister(&self,
-        poll: &Poll,
-        token: Token,
-        interest: Ready,
-        opts: PollOpt) -> io::Result<()>
-    {
+    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         let mut this_token = self.token.lock().unwrap();
         {
             poll.selector().deregister_handle(self.handle, token)?;
@@ -62,7 +52,7 @@ impl Evented for EventedHandle {
         Ok(())
     }
 
-    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
         let mut this_token = self.token.lock().unwrap();
         let token = if let Some(token) = *this_token { token } else {
             return Err(io::Error::new(
