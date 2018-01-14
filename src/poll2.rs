@@ -152,7 +152,7 @@ pub(crate) const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
 
 // ===== Accessors for internal usage =====
 
-pub fn selector(poll: &Poll) -> &sys::Selector {
+pub(crate) fn selector(poll: &Poll) -> &sys::Selector {
     &poll.selector
 }
 
@@ -790,13 +790,13 @@ fn is_send<T: Send>() {}
 fn is_sync<T: Sync>() {}
 
 impl SelectorId {
-    pub fn new() -> SelectorId {
+    pub(crate) fn new() -> SelectorId {
         SelectorId {
             id: AtomicUsize::new(0),
         }
     }
 
-    pub fn associate_selector(&self, poll: &Poll) -> io::Result<()> {
+    pub(crate) fn associate_selector(&self, poll: &Poll) -> io::Result<()> {
         let selector_id = self.id.load(Ordering::SeqCst);
 
         if selector_id != 0 && selector_id != poll.selector.id() {

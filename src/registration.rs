@@ -1,6 +1,6 @@
 use std::{fmt, io, ptr, mem, ops};
 use std::sync::Arc;
-use std::sync::atomic::{Ordering};
+use std::sync::atomic::Ordering;
 
 use super::Token;
 use super::event_imp::{Ready, PollOpt};

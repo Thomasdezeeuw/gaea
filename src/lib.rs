@@ -103,19 +103,20 @@ extern crate winapi;
 extern crate kernel32;
 
 mod event_imp;
-mod poll;
 mod poll2;
-mod registration;
 mod sys;
 mod token;
 
+// TODO: move event as submodule of poll, rexport `Events` and `Event` in poll.
 pub mod event;
 pub mod net;
+pub mod poll;
+pub mod registration;
 
-pub use event::Events;
-pub use event_imp::{PollOpt, Ready};
-pub use poll::{Poll, Registration, SetReadiness};
-pub use token::Token;
+// TODO: fix the imports in other files.
+pub use poll::{Token, Poll, Ready, PollOpt};
+pub use registration::{Registration, SetReadiness};
+pub use event::{Event, Events};
 
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 pub mod unix {
