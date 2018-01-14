@@ -1,8 +1,6 @@
 use std::{fmt, io};
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{RawFd, AsRawFd};
-use std::sync::{Mutex, Condvar};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use super::{sys, Token};
@@ -329,17 +327,9 @@ pub struct Poll {
 
     // Custom readiness queue
     pub(crate) readiness_queue: ReadinessQueue,
-
-    // Use an atomic to first check if a full lock will be required. This is a
-    // fast-path check for single threaded cases avoiding the extra syscall
-    lock_state: AtomicUsize,
-
-    // Sequences concurrent calls to `Poll::poll`
-    lock: Mutex<()>,
-
-    // Wakeup the next waiter
-    condvar: Condvar,
 }
+
+const AWAKEN: Token = Token(::std::usize::MAX);
 
 impl Poll {
     /// Return a new `Poll` handle.
@@ -379,9 +369,6 @@ impl Poll {
         let poll = Poll {
             selector: sys::Selector::new()?,
             readiness_queue: ReadinessQueue::new()?,
-            lock_state: AtomicUsize::new(0),
-            lock: Mutex::new(()),
-            condvar: Condvar::new(),
         };
 
         // Register the notification wakeup FD with the IO poller
@@ -711,172 +698,24 @@ impl Poll {
     /// ```
     ///
     /// [struct]: #
-    pub fn poll(&mut self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<()> {
-        let zero = Some(Duration::from_millis(0));
-
-        // At a high level, the synchronization strategy is to acquire access to
-        // the critical section by transitioning the atomic from unlocked ->
-        // locked. If the attempt fails, the thread will wait on the condition
-        // variable.
-        //
-        // # Some more detail
-        //
-        // The `lock_state` atomic usize combines:
-        //
-        // - locked flag, stored in the least significant bit
-        // - number of waiting threads, stored in the rest of the bits.
-        //
-        // When a thread transitions the locked flag from 0 -> 1, it has
-        // obtained access to the critical section.
-        //
-        // When entering `poll`, a compare-and-swap from 0 -> 1 is attempted.
-        // This is a fast path for the case when there are no concurrent calls
-        // to poll, which is very common.
-        //
-        // On failure, the mutex is locked, and the thread attempts to increment
-        // the number of waiting threads component of `lock_state`. If this is
-        // successfully done while the locked flag is set, then the thread can
-        // wait on the condition variable.
-        //
-        // When a thread exits the critical section, it unsets the locked flag.
-        // If there are any waiters, which is atomically determined while
-        // unsetting the locked flag, then the condvar is notified.
-
-        let mut curr = self.lock_state.compare_and_swap(0, 1, Ordering::SeqCst);
-
-        if 0 != curr {
-            // Enter slower path
-            let mut lock = self.lock.lock().unwrap();
-            let mut inc = false;
-
-            loop {
-                if curr & 1 == 0 {
-                    // The lock is currently free, attempt to grab it
-                    let mut next = curr | 1;
-
-                    if inc {
-                        // The waiter count has previously been incremented, so
-                        // decrement it here
-                        next -= 2;
-                    }
-
-                    let actual = self.lock_state.compare_and_swap(curr, next, Ordering::SeqCst);
-
-                    if actual != curr {
-                        curr = actual;
-                        continue;
-                    }
-
-                    // Lock acquired, break from the loop
-                    break;
-                }
-
-                if timeout == zero {
-                    if inc {
-                        self.lock_state.fetch_sub(2, Ordering::SeqCst);
-                    }
-
-                    return Ok(());
-                }
-
-                // The lock is currently held, so wait for it to become
-                // free. If the waiter count hasn't been incremented yet, do
-                // so now
-                if !inc {
-                    let next = curr.checked_add(2).expect("overflow");
-                    let actual = self.lock_state.compare_and_swap(curr, next, Ordering::SeqCst);
-
-                    if actual != curr {
-                        curr = actual;
-                        continue;
-                    }
-
-                    // Track that the waiter count has been incremented for
-                    // this thread and fall through to the condvar waiting
-                    inc = true;
-                }
-
-                lock = match timeout {
-                    Some(to) => {
-                        let now = Instant::now();
-
-                        // Wait to be notified
-                        let (l, _) = self.condvar.wait_timeout(lock, to).unwrap();
-
-                        // See how much time was elapsed in the wait
-                        let elapsed = now.elapsed();
-
-                        // Update `timeout` to reflect how much time is left to
-                        // wait.
-                        if elapsed >= to {
-                            timeout = zero;
-                        } else {
-                            // Update the timeout
-                            timeout = Some(to - elapsed);
-                        }
-
-                        l
-                    }
-                    None => {
-                        self.condvar.wait(lock).unwrap()
-                    }
-                };
-
-                // Reload the state
-                curr = self.lock_state.load(Ordering::SeqCst);
-
-                // Try to lock again...
-            }
-        }
-
-        let ret = self.poll2(events, timeout);
-
-        // Release the lock
-        if 1 != self.lock_state.fetch_and(!1, Ordering::Release) {
-            // Acquire the mutex
-            let _lock = self.lock.lock().unwrap();
-
-            // There is at least one waiting thread, so notify one
-            self.condvar.notify_one();
-        }
-
-        ret
-    }
-
-    #[inline]
-    fn poll2(&mut self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<()> {
+    pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
+        let mut timeout = self.prepare_timeout(timeout);
         events.reset();
-
-        // Compute the timeout value passed to the system selector. If the
-        // readiness queue has pending nodes, we still want to poll the system
-        // selector for new events, but we don't want to block the thread to
-        // wait for new events.
-        if timeout == Some(Duration::from_millis(0)) {
-            // If blocking is not requested, then there is no need to prepare
-            // the queue for sleep
-        } else if self.readiness_queue.prepare_for_sleep() {
-            // The readiness queue is empty. The call to `prepare_for_sleep`
-            // inserts `sleep_marker` into the queue. This signals to any
-            // threads setting readiness that the `Poll::poll` is going to
-            // sleep, so the awakener should be used.
-        } else {
-            // The readiness queue is not empty, so do not block the thread.
-            timeout = Some(Duration::from_millis(0));
-        }
 
         loop {
             let now = Instant::now();
-            // First get selector events
+            // First get selector events.
             let res = self.selector.select(events.inner_mut(), AWAKEN, timeout);
             match res {
                 Ok(true) => {
                     // Some awakeners require reading from a FD.
                     self.readiness_queue.inner.awakener.cleanup();
                     break;
-                }
+                },
                 Ok(false) => break,
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
-                    // Interrupted by a signal; update timeout if necessary and retry
+                    // Interrupted by a signal; update timeout if necessary and
+                    // retry.
                     if let Some(to) = timeout {
                         let elapsed = now.elapsed();
                         if elapsed >= to {
@@ -885,18 +724,36 @@ impl Poll {
                             timeout = Some(to - elapsed);
                         }
                     }
-                }
+                },
                 Err(e) => return Err(e),
             }
         }
 
-        // Poll custom event queue
+        // Poll custom event queue.
         self.readiness_queue.poll(events.inner_mut());
         Ok(())
     }
-}
 
-const AWAKEN: Token = Token(::std::usize::MAX);
+    /// Compute the timeout value passed to the system selector. If the
+    /// readiness queue has pending nodes, we still want to poll the system
+    /// selector for new events, but we don't want to block the thread to wait
+    /// for new events.
+    fn prepare_timeout(&mut self, timeout: Option<Duration>) -> Option<Duration> {
+        if timeout == Some(Duration::from_millis(0)) {
+            // If blocking is not requested, then there is no need to prepare
+            // the queue for sleep.
+        } else if self.readiness_queue.prepare_for_sleep() {
+            // The readiness queue is empty. The call to `prepare_for_sleep`
+            // inserts `sleep_marker` into the queue. This signals to any
+            // threads setting readiness that the `Poll::poll` is going to
+            // sleep, so the awakener should be used.
+        } else {
+            // The readiness queue is not empty, so do not block the thread.
+            return Some(Duration::from_millis(0));
+        }
+        timeout
+    }
+}
 
 fn validate_args(token: Token) -> io::Result<()> {
     if token == AWAKEN {
