@@ -913,12 +913,14 @@ impl Poll {
     }
 }
 
+const AWAKEN: Token = Token(::std::usize::MAX);
+
 fn validate_args(token: Token) -> io::Result<()> {
     if token == AWAKEN {
-        return Err(io::Error::new(io::ErrorKind::Other, "invalid token"));
+        Err(io::Error::new(io::ErrorKind::Other, "invalid token"))
+    } else {
+        Ok(())
     }
-
-    Ok(())
 }
 
 impl fmt::Debug for Poll {

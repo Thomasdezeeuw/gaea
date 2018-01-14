@@ -270,8 +270,7 @@ enum Dequeue {
     Inconsistent,
 }
 
-pub(crate) const AWAKEN: Token = Token(::std::usize::MAX);
-pub(crate) const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
+const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
 
 // ===== Accessors for internal usage =====
 
