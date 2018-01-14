@@ -5,7 +5,6 @@ use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
 use {sys, Ready, Poll, PollOpt, Token};
 use event::Evented;
-use super::SelectorId;
 
 /// A User Datagram Protocol socket.
 ///
@@ -85,7 +84,6 @@ use super::SelectorId;
 #[derive(Debug)]
 pub struct UdpSocket {
     socket: sys::UdpSocket,
-    selector_id: SelectorId,
 }
 
 impl UdpSocket {
@@ -130,7 +128,6 @@ impl UdpSocket {
     pub fn from_socket(socket: net::UdpSocket) -> io::Result<UdpSocket> {
         Ok(UdpSocket {
             socket: sys::UdpSocket::new(socket)?,
-            selector_id: SelectorId::new(),
         })
     }
 
@@ -166,7 +163,6 @@ impl UdpSocket {
     pub fn try_clone(&self) -> io::Result<UdpSocket> {
         self.socket.try_clone().map(|s| UdpSocket {
             socket: s,
-            selector_id: self.selector_id.clone(),
         })
     }
 
@@ -459,7 +455,6 @@ impl UdpSocket {
 
 impl Evented for UdpSocket {
     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.selector_id.associate_selector(poll)?;
         self.socket.register(poll, token, interest, opts)
     }
 
@@ -491,7 +486,6 @@ impl FromRawFd for UdpSocket {
     unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
         UdpSocket {
             socket: FromRawFd::from_raw_fd(fd),
-            selector_id: SelectorId::new(),
         }
     }
 }

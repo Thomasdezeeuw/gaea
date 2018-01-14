@@ -9,7 +9,6 @@ use net2::TcpBuilder;
 
 use {sys, Ready, Poll, PollOpt, Token};
 use event::Evented;
-use super::SelectorId;
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -50,7 +49,6 @@ use super::SelectorId;
 #[derive(Debug)]
 pub struct TcpStream {
     inner: sys::TcpStream,
-    selector_id: SelectorId,
 }
 
 impl TcpStream {
@@ -97,7 +95,6 @@ impl TcpStream {
     pub fn connect_stream(stream: net::TcpStream, addr: SocketAddr) -> io::Result<TcpStream> {
         Ok(TcpStream {
             inner: sys::TcpStream::connect(stream, &addr)?,
-            selector_id: SelectorId::new(),
         })
     }
 
@@ -115,7 +112,6 @@ impl TcpStream {
         stream.set_nonblocking(true)?;
         Ok(TcpStream {
             inner: sys::TcpStream::from_stream(stream),
-            selector_id: SelectorId::new(),
         })
     }
 
@@ -138,7 +134,6 @@ impl TcpStream {
     pub fn try_clone(&self) -> io::Result<TcpStream> {
         self.inner.try_clone().map(|s| TcpStream {
             inner: s,
-            selector_id: self.selector_id.clone(),
         })
     }
 
@@ -390,7 +385,6 @@ impl<'a> Write for &'a TcpStream {
 
 impl Evented for TcpStream {
     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.selector_id.associate_selector(poll)?;
         self.inner.register(poll, token, interest, opts)
     }
 
@@ -422,7 +416,6 @@ impl FromRawFd for TcpStream {
     unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
         TcpStream {
             inner: FromRawFd::from_raw_fd(fd),
-            selector_id: SelectorId::new(),
         }
     }
 }
@@ -461,7 +454,6 @@ impl FromRawFd for TcpStream {
 #[derive(Debug)]
 pub struct TcpListener {
     inner: sys::TcpListener,
-    selector_id: SelectorId,
 }
 
 impl TcpListener {
@@ -493,7 +485,6 @@ impl TcpListener {
         let listener = sock.listen(1024)?;
         Ok(TcpListener {
             inner: sys::TcpListener::new(listener, &addr)?,
-            selector_id: SelectorId::new(),
         })
     }
 
@@ -509,7 +500,6 @@ impl TcpListener {
     pub fn from_listener(listener: net::TcpListener, addr: SocketAddr) -> io::Result<TcpListener> {
         sys::TcpListener::new(listener, &addr).map(|s| TcpListener {
             inner: s,
-            selector_id: SelectorId::new(),
         })
     }
 
@@ -549,7 +539,6 @@ impl TcpListener {
     pub fn try_clone(&self) -> io::Result<TcpListener> {
         self.inner.try_clone().map(|s| TcpListener {
             inner: s,
-            selector_id: self.selector_id.clone(),
         })
     }
 
@@ -603,7 +592,6 @@ impl TcpListener {
 
 impl Evented for TcpListener {
     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.selector_id.associate_selector(poll)?;
         self.inner.register(poll, token, interest, opts)
     }
 
@@ -635,7 +623,6 @@ impl FromRawFd for TcpListener {
     unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
         TcpListener {
             inner: FromRawFd::from_raw_fd(fd),
-            selector_id: SelectorId::new(),
         }
     }
 }

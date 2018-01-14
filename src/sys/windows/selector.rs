@@ -17,13 +17,6 @@ use poll::{self, Poll};
 use sys::windows::buffer_pool::BufferPool;
 use {Token, PollOpt};
 
-/// Each Selector has a globally unique(ish) ID associated with it. This ID
-/// gets tracked by `TcpStream`, `TcpListener`, etc... when they are first
-/// registered with the `Selector`. If a type that is previously associated with
-/// a `Selector` attempts to register itself with a different `Selector`, the
-/// operation will return with an error. This matches windows behavior.
-static NEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
-
 /// The guts of the Windows event loop, this is the struct which actually owns
 /// a completion port.
 ///
@@ -36,9 +29,6 @@ pub struct Selector {
 }
 
 struct SelectorInner {
-    /// Unique identifier of the `Selector`
-    id: usize,
-
     /// The actual completion port that's used to manage all I/O
     port: CompletionPort,
 
@@ -51,13 +41,9 @@ struct SelectorInner {
 
 impl Selector {
     pub fn new() -> io::Result<Selector> {
-        // offset by 1 to avoid choosing 0 as the id of a selector
-        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed) + 1;
-
         CompletionPort::new(1).map(|cp| {
             Selector {
                 inner: Arc::new(SelectorInner {
-                    id: id,
                     port: cp,
                     buffers: Mutex::new(BufferPool::new(256)),
                 }),
@@ -112,11 +98,6 @@ impl Selector {
     /// structures will refer to the same completion port.
     pub fn clone_ref(&self) -> Selector {
         Selector { inner: self.inner.clone() }
-    }
-
-    /// Return the `Selector`'s identifier
-    pub fn id(&self) -> usize {
-        self.inner.id
     }
 }
 

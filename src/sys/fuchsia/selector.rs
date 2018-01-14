@@ -54,16 +54,7 @@ fn token_and_type_from_key(key: u64) -> (Token, RegType) {
     )
 }
 
-/// Each Selector has a globally unique(ish) ID associated with it. This ID
-/// gets tracked by `TcpStream`, `TcpListener`, etc... when they are first
-/// registered with the `Selector`. If a type that is previously associated with
-/// a `Selector` attempts to register itself with a different `Selector`, the
-/// operation will return with an error. This matches windows behavior.
-static NEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
-
 pub struct Selector {
-    id: usize,
-
     /// Zircon object on which the handles have been registered, and on which events occur
     port: Arc<zircon::Port>,
 
@@ -98,24 +89,16 @@ impl Selector {
             zircon::Port::create(zircon::PortOpts::Default)?
         );
 
-        // offset by 1 to avoid choosing 0 as the id of a selector
-        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed) + 1;
-
         let has_tokens_to_rereg = AtomicBool::new(false);
         let tokens_to_rereg = Mutex::new(Vec::new());
         let token_to_fd = Mutex::new(hash_map::HashMap::new());
 
         Ok(Selector {
-            id: id,
             port: port,
             has_tokens_to_rereg: has_tokens_to_rereg,
             tokens_to_rereg: tokens_to_rereg,
             token_to_fd: token_to_fd,
         })
-    }
-
-    pub fn id(&self) -> usize {
-        self.id
     }
 
     /// Returns a reference to the underlying port `Arc`.
