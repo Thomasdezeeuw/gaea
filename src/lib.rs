@@ -105,6 +105,7 @@ extern crate kernel32;
 mod event_imp;
 mod poll;
 mod poll2;
+mod registration;
 mod sys;
 mod token;
 

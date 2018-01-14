@@ -8,6 +8,7 @@ use super::event_imp::{Ready, PollOpt};
 use event::{Events, Evented};
 
 pub use poll2::*;
+pub use registration::*;
 
 // Poll is backed by two readiness queues. The first is a system readiness queue
 // represented by `sys::Selector`. The system readiness queue handles events
