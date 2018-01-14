@@ -8,7 +8,7 @@ const MS: u64 = 1_000;
 #[test]
 pub fn test_reregister_different_without_poll() {
     let mut events = Events::with_capacity(1024);
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
 
     // Create the listener
     let l = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
@@ -24,5 +24,5 @@ pub fn test_reregister_different_without_poll() {
     poll.reregister(&l, Token(0), Ready::WRITABLE, PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
 
     poll.poll(&mut events, Some(Duration::from_millis(MS))).unwrap();
-    assert_eq!(events.len(), 0);
+    assert_eq!(events.into_iter().len(), 0);
 }

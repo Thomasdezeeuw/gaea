@@ -346,7 +346,7 @@ fn does_not_register_rw() {
 
     let kq = unsafe { libc::kqueue() };
     let kqf = EventedFd(&kq);
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
 
     // registering kqueue fd will fail if write is requested (On anything but some versions of OS
     // X)

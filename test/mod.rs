@@ -155,16 +155,13 @@ pub fn sleep_ms(ms: u64) {
     thread::sleep(Duration::from_millis(ms));
 }
 
-pub fn expect_events(poll: &Poll,
-                     event_buffer: &mut Events,
-                     poll_try_count: usize,
-                     mut expected: Vec<Event>)
+pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize, mut expected: Vec<Event>)
 {
     const MS: u64 = 1_000;
 
     for _ in 0..poll_try_count {
-        poll.poll(event_buffer, Some(Duration::from_millis(MS))).unwrap();
-        for event in event_buffer.iter() {
+        poll.poll(events, Some(Duration::from_millis(MS))).unwrap();
+        for event in &*events {
             let pos_opt = match expected.iter().position(|exp_event| {
                 (event.token() == exp_event.token()) &&
                 event.readiness().contains(exp_event.readiness())

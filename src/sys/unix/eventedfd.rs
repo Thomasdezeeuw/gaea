@@ -42,7 +42,7 @@ use event::Evented;
 /// // Bind a std listener
 /// let listener = TcpListener::bind("127.0.0.1:0")?;
 ///
-/// let poll = Poll::new()?;
+/// let mut poll = Poll::new()?;
 ///
 /// // Register the listener
 /// poll.register(&EventedFd(&listener.as_raw_fd()),

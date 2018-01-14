@@ -12,51 +12,42 @@ fn write_then_drop() {
     let addr = a.local_addr().unwrap();
     let mut s = TcpStream::connect(addr).unwrap();
 
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
 
-    a.register(&poll,
-               Token(1),
-               Ready::READABLE,
-               PollOpt::EDGE).unwrap();
-    s.register(&poll,
-               Token(3),
-               Ready::empty(),
-               PollOpt::EDGE).unwrap();
+    a.register(&poll, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
+    s.register(&poll, Token(3), Ready::empty(), PollOpt::EDGE).unwrap();
 
     let mut events = Events::with_capacity(1024);
-    while events.len() == 0 {
+    while events.into_iter().len() == 0 {
         poll.poll(&mut events, None).unwrap();
     }
-    assert_eq!(events.len(), 1);
-    assert_eq!(events.get(0).unwrap().token(), Token(1));
+    let mut iter = events.into_iter();
+    assert_eq!(iter.len(), 1);
+    assert_eq!(iter.next().unwrap().token(), Token(1));
 
     let mut s2 = a.accept().unwrap().0;
 
-    s2.register(&poll,
-                Token(2),
-                Ready::WRITABLE,
-                PollOpt::EDGE).unwrap();
+    s2.register(&poll, Token(2), Ready::WRITABLE, PollOpt::EDGE).unwrap();
 
     let mut events = Events::with_capacity(1024);
-    while events.len() == 0 {
+    while events.into_iter().len() == 0 {
         poll.poll(&mut events, None).unwrap();
     }
-    assert_eq!(events.len(), 1);
-    assert_eq!(events.get(0).unwrap().token(), Token(2));
+    let mut iter = events.into_iter();
+    assert_eq!(iter.len(), 1);
+    assert_eq!(iter.next().unwrap().token(), Token(2));
 
     s2.write(&[1, 2, 3, 4]).unwrap();
     drop(s2);
 
-    s.reregister(&poll,
-                 Token(3),
-                 Ready::READABLE,
-                 PollOpt::EDGE).unwrap();
+    s.reregister(&poll, Token(3), Ready::READABLE, PollOpt::EDGE).unwrap();
     let mut events = Events::with_capacity(1024);
-    while events.len() == 0 {
+    while events.into_iter().len() == 0 {
         poll.poll(&mut events, None).unwrap();
     }
-    assert_eq!(events.len(), 1);
-    assert_eq!(events.get(0).unwrap().token(), Token(3));
+    let mut iter = events.into_iter();
+    assert_eq!(iter.len(), 1);
+    assert_eq!(iter.next().unwrap().token(), Token(3));
 
     let mut buf = [0; 10];
     assert_eq!(s.read(&mut buf).unwrap(), 4);
@@ -71,7 +62,7 @@ fn write_then_deregister() {
     let addr = a.local_addr().unwrap();
     let mut s = TcpStream::connect(addr).unwrap();
 
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
 
     a.register(&poll,
                Token(1),
@@ -83,11 +74,12 @@ fn write_then_deregister() {
                PollOpt::EDGE).unwrap();
 
     let mut events = Events::with_capacity(1024);
-    while events.len() == 0 {
+    while events.into_iter().len() == 0 {
         poll.poll(&mut events, None).unwrap();
     }
-    assert_eq!(events.len(), 1);
-    assert_eq!(events.get(0).unwrap().token(), Token(1));
+    let mut iter = events.into_iter();
+    assert_eq!(iter.len(), 1);
+    assert_eq!(iter.next().unwrap().token(), Token(1));
 
     let mut s2 = a.accept().unwrap().0;
 
@@ -97,11 +89,12 @@ fn write_then_deregister() {
                 PollOpt::EDGE).unwrap();
 
     let mut events = Events::with_capacity(1024);
-    while events.len() == 0 {
+    while events.into_iter().len() == 0 {
         poll.poll(&mut events, None).unwrap();
     }
-    assert_eq!(events.len(), 1);
-    assert_eq!(events.get(0).unwrap().token(), Token(2));
+    let mut iter = events.into_iter();
+    assert_eq!(iter.len(), 1);
+    assert_eq!(iter.next().unwrap().token(), Token(2));
 
     s2.write(&[1, 2, 3, 4]).unwrap();
     s2.deregister(&poll).unwrap();
@@ -111,11 +104,12 @@ fn write_then_deregister() {
                  Ready::READABLE,
                  PollOpt::EDGE).unwrap();
     let mut events = Events::with_capacity(1024);
-    while events.len() == 0 {
+    while events.into_iter().len() == 0 {
         poll.poll(&mut events, None).unwrap();
     }
-    assert_eq!(events.len(), 1);
-    assert_eq!(events.get(0).unwrap().token(), Token(3));
+    let mut iter = events.into_iter();
+    assert_eq!(iter.len(), 1);
+    assert_eq!(iter.next().unwrap().token(), Token(3));
 
     let mut buf = [0; 10];
     assert_eq!(s.read(&mut buf).unwrap(), 4);

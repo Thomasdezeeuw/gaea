@@ -9,7 +9,7 @@ const MS: u64 = 1_000;
 
 #[test]
 pub fn test_tcp_listener_level_triggered() {
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
     let mut pevents = Events::with_capacity(1024);
 
     // Create the listener
@@ -62,7 +62,7 @@ pub fn test_tcp_listener_level_triggered() {
 #[test]
 pub fn test_tcp_stream_level_triggered() {
     drop(::env_logger::init());
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
     let mut pevents = Events::with_capacity(1024);
 
     // Create the listener
@@ -77,7 +77,7 @@ pub fn test_tcp_stream_level_triggered() {
     // Sleep a bit to ensure it arrives at dest
     sleep_ms(250);
 
-    expect_events(&poll, &mut pevents, 2, vec![
+    expect_events(&mut poll, &mut pevents, 2, vec![
         Event::new(Ready::READABLE, Token(0)),
         Event::new(Ready::WRITABLE, Token(1)),
     ]);
@@ -88,7 +88,7 @@ pub fn test_tcp_stream_level_triggered() {
     // Sleep a bit to ensure it arrives at dest
     sleep_ms(250);
 
-    expect_events(&poll, &mut pevents, 2, vec![
+    expect_events(&mut poll, &mut pevents, 2, vec![
         Event::new(Ready::WRITABLE, Token(1))
     ]);
 
@@ -107,7 +107,7 @@ pub fn test_tcp_stream_level_triggered() {
     debug!("looking at rx end ----------");
 
     // Poll rx end
-    expect_events(&poll, &mut pevents, 2, vec![
+    expect_events(&mut poll, &mut pevents, 2, vec![
         Event::new(Ready::READABLE, Token(1))
     ]);
 
@@ -122,7 +122,7 @@ pub fn test_tcp_stream_level_triggered() {
 
     debug!("checking just read ----------");
 
-    expect_events(&poll, &mut pevents, 1, vec![
+    expect_events(&mut poll, &mut pevents, 1, vec![
         Event::new(Ready::WRITABLE, Token(1))]);
 
     // Closing the socket clears all active level events
@@ -136,7 +136,5 @@ pub fn test_tcp_stream_level_triggered() {
 }
 
 fn filter(events: &Events, token: Token) -> Vec<Event> {
-    (0..events.len()).map(|i| events.get(i).unwrap())
-                     .filter(|e| e.token() == token)
-                     .collect()
+    events.into_iter().filter(|e| e.token() == token).collect()
 }

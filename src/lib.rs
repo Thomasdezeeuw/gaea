@@ -37,7 +37,7 @@
 //! let server = TcpListener::bind(addr).unwrap();
 //!
 //! // Create a poll instance
-//! let poll = Poll::new().unwrap();
+//! let mut poll = Poll::new().unwrap();
 //!
 //! // Start listening for incoming connections
 //! poll.register(&server, SERVER, Ready::READABLE, PollOpt::EDGE).unwrap();
@@ -54,7 +54,7 @@
 //! loop {
 //!     poll.poll(&mut events, None).unwrap();
 //!
-//!     for event in events.iter() {
+//!     for event in &events {
 //!         match event.token() {
 //!             SERVER => {
 //!                 // Accept and drop the socket immediately, this will close

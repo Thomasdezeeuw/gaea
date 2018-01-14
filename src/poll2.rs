@@ -317,7 +317,7 @@ impl Registration {
     ///     set_readiness.set_readiness(Ready::READABLE);
     /// });
     ///
-    /// let poll = Poll::new()?;
+    /// let mut poll = Poll::new()?;
     /// poll.register(&registration, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// let mut events = Events::with_capacity(256);
@@ -486,13 +486,10 @@ impl SetReadiness {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio::{Events, Registration, Ready, Poll, PollOpt, Token};
     ///
-    /// let poll = Poll::new()?;
+    /// let mut poll = Poll::new()?;
     /// let (registration, set_readiness) = Registration::new2();
     ///
-    /// poll.register(&registration,
-    ///               Token(0),
-    ///               Ready::READABLE,
-    ///               PollOpt::EDGE)?;
+    /// poll.register(&registration, Token(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
     /// // Set the readiness, then immediately poll to try to get the readiness
     /// // event
@@ -503,7 +500,8 @@ impl SetReadiness {
     ///
     /// // There is NO guarantee that the following will work. It is possible
     /// // that the readiness event will be delivered at a later time.
-    /// let event = events.get(0).unwrap();
+    /// let mut iter = events.into_iter();
+    /// let event = iter.next().unwrap();
     /// assert_eq!(event.token(), Token(0));
     /// assert!(event.readiness().is_readable());
     /// #     Ok(())

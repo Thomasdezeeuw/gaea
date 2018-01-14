@@ -7,7 +7,7 @@ const MS: u64 = 1_000;
 
 #[test]
 pub fn test_fuchsia_channel() {
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
     let mut event_buffer = Events::with_capacity(1);
     let event_buffer = &mut event_buffer;
 

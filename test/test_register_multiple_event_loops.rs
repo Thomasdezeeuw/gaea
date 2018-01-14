@@ -8,10 +8,10 @@ fn test_tcp_register_multiple_event_loops() {
     let addr = localhost();
     let listener = TcpListener::bind(addr).unwrap();
 
-    let poll1 = Poll::new().unwrap();
+    let mut poll1 = Poll::new().unwrap();
     poll1.register(&listener, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE).unwrap();
 
-    let poll2 = Poll::new().unwrap();
+    let mut poll2 = Poll::new().unwrap();
 
     // Try registering the same socket with the initial one
     let res = poll2.register(&listener, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE);
@@ -45,10 +45,10 @@ fn test_udp_register_multiple_event_loops() {
     let addr = localhost();
     let socket = UdpSocket::bind(addr).unwrap();
 
-    let poll1 = Poll::new().unwrap();
+    let mut poll1 = Poll::new().unwrap();
     poll1.register(&socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE).unwrap();
 
-    let poll2 = Poll::new().unwrap();
+    let mut poll2 = Poll::new().unwrap();
 
     // Try registering the same socket with the initial one
     let res = poll2.register(&socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE);

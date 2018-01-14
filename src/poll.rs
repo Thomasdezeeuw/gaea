@@ -98,7 +98,7 @@ pub use poll2::*;
 /// let server = TcpListener::bind(addr)?;
 ///
 /// // Construct a new `Poll` handle as well as the `Events` we'll store into
-/// let poll = Poll::new()?;
+/// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
 ///
 /// // Connect the stream
@@ -273,7 +273,7 @@ pub use poll2::*;
 ///
 /// thread::sleep(Duration::from_secs(1));
 ///
-/// let poll = Poll::new()?;
+/// let mut poll = Poll::new()?;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point
@@ -360,18 +360,14 @@ impl Poll {
     /// use mio::{Poll, Events};
     /// use std::time::Duration;
     ///
-    /// let poll = match Poll::new() {
-    ///     Ok(poll) => poll,
-    ///     Err(e) => panic!("failed to create Poll instance; err={:?}", e),
-    /// };
+    /// let mut poll = Poll::new()?;
     ///
     /// // Create a structure to receive polled events
     /// let mut events = Events::with_capacity(1024);
     ///
     /// // Wait for events, but none will be received because no `Evented`
     /// // handles have been registered with this `Poll` instance.
-    /// let n = poll.poll(&mut events, Some(Duration::from_millis(500)))?;
-    /// assert_eq!(n, 0);
+    /// poll.poll(&mut events, Some(Duration::from_millis(500)))?;
     /// #     Ok(())
     /// # }
     /// #
@@ -466,7 +462,7 @@ impl Poll {
     /// use mio::net::TcpStream;
     /// use std::time::{Duration, Instant};
     ///
-    /// let poll = Poll::new()?;
+    /// let mut poll = Poll::new()?;
     /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
@@ -501,7 +497,7 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn register<E: ?Sized>(&self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn register<E: ?Sized>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented
     {
         validate_args(token)?;
@@ -550,7 +546,7 @@ impl Poll {
     /// use mio::{Poll, Ready, PollOpt, Token};
     /// use mio::net::TcpStream;
     ///
-    /// let poll = Poll::new()?;
+    /// let mut poll = Poll::new()?;
     /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`, requesting readable
@@ -572,7 +568,7 @@ impl Poll {
     /// [`register`]: #method.register
     /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
     /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
-    pub fn reregister<E: ?Sized>(&self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn reregister<E: ?Sized>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented
     {
         validate_args(token)?;
@@ -608,7 +604,7 @@ impl Poll {
     /// use mio::net::TcpStream;
     /// use std::time::Duration;
     ///
-    /// let poll = Poll::new()?;
+    /// let mut poll = Poll::new()?;
     /// let socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
@@ -619,8 +615,7 @@ impl Poll {
     /// let mut events = Events::with_capacity(1024);
     ///
     /// // Set a timeout because this poll should never receive any events.
-    /// let n = poll.poll(&mut events, Some(Duration::from_secs(1)))?;
-    /// assert_eq!(0, n);
+    /// poll.poll(&mut events, Some(Duration::from_secs(1)))?;
     /// #     Ok(())
     /// # }
     /// #
@@ -628,7 +623,7 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn deregister<E: ?Sized>(&self, handle: &E) -> io::Result<()>
+    pub fn deregister<E: ?Sized>(&mut self, handle: &E) -> io::Result<()>
         where E: Evented
     {
         trace!("deregistering handle with poller");
@@ -702,7 +697,7 @@ impl Poll {
     /// });
     ///
     /// // Construct a new `Poll` handle as well as the `Events` we'll store into
-    /// let poll = Poll::new()?;
+    /// let mut poll = Poll::new()?;
     /// let mut events = Events::with_capacity(1024);
     ///
     /// // Connect the stream
@@ -733,7 +728,7 @@ impl Poll {
     /// ```
     ///
     /// [struct]: #
-    pub fn poll(&self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<usize> {
+    pub fn poll(&mut self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<()> {
         let zero = Some(Duration::from_millis(0));
 
         // At a high level, the synchronization strategy is to acquire access to
@@ -798,7 +793,7 @@ impl Poll {
                         self.lock_state.fetch_sub(2, Ordering::SeqCst);
                     }
 
-                    return Ok(0);
+                    return Ok(());
                 }
 
                 // The lock is currently held, so wait for it to become
@@ -866,7 +861,9 @@ impl Poll {
     }
 
     #[inline]
-    fn poll2(&self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<usize> {
+    fn poll2(&mut self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<()> {
+        events.reset();
+
         // Compute the timeout value passed to the system selector. If the
         // readiness queue has pending nodes, we still want to poll the system
         // selector for new events, but we don't want to block the thread to
@@ -912,9 +909,7 @@ impl Poll {
 
         // Poll custom event queue
         self.readiness_queue.poll(events.inner_mut());
-
-        // Return number of polled events
-        Ok(events.len())
+        Ok(())
     }
 }
 

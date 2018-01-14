@@ -44,7 +44,7 @@ use poll::SelectorId;
 ///
 /// // We need a Poll to check if SENDER is ready to be written into, and if
 /// // ECHOER is ready to be read from.
-/// let poll = Poll::new()?;
+/// let mut poll = Poll::new()?;
 ///
 /// // We register our sockets here so that we can check if they are ready to be
 /// // written/read.
@@ -57,7 +57,7 @@ use poll::SelectorId;
 /// let mut events = Events::with_capacity(128);
 /// loop {
 ///     poll.poll(&mut events, Some(Duration::from_millis(100)))?;
-///     for event in events.iter() {
+///     for event in &events {
 ///         match event.token() {
 ///             // Our SENDER is ready to be written into.
 ///             SENDER => {

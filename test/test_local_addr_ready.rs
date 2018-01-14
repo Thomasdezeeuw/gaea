@@ -19,7 +19,7 @@ fn local_addr_ready() {
     let server = TcpListener::bind(addr).unwrap();
     let addr = server.local_addr().unwrap();
 
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
     poll.register(&server, LISTEN, Ready::READABLE,
                         PollOpt::EDGE).unwrap();
 

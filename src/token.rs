@@ -34,7 +34,7 @@
 /// let mut next_socket_index = 0;
 ///
 /// // The `Poll` instance
-/// let poll = Poll::new()?;
+/// let mut poll = Poll::new()?;
 ///
 /// // Tcp listener
 /// let listener = TcpListener::bind("127.0.0.1:0".parse()?)?;

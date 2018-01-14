@@ -42,7 +42,7 @@ fn assert_sync<T: Sync>() {
 #[cfg(test)]
 fn test_send_recv_udp(tx: UdpSocket, rx: UdpSocket, connected: bool) {
     debug!("Starting TEST_UDP_SOCKETS");
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
 
     assert_send::<UdpSocket>();
     assert_sync::<UdpSocket>();
@@ -150,7 +150,7 @@ pub fn test_udp_socket_discard() {
     assert!(udp_outside.connect(rx_addr).is_ok());
     assert!(rx.connect(tx_addr).is_ok());
 
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
 
     let r = udp_outside.send("hello world".as_bytes());
     assert!(r.is_ok() || r.unwrap_err().kind() == ErrorKind::WouldBlock);

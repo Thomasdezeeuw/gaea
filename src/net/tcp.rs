@@ -31,7 +31,7 @@ use poll::SelectorId;
 /// let stream = TcpStream::connect(address)?;
 /// # let _listener = TcpListener::bind(address)?;
 ///
-/// let poll = Poll::new()?;
+/// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(128);
 ///
 /// // Register the socket with `Poll`.
@@ -442,7 +442,7 @@ impl FromRawFd for TcpStream {
 /// let address = "127.0.0.1:7777".parse()?;
 /// let listener = TcpListener::bind(address)?;
 ///
-/// let poll = Poll::new()?;
+/// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(128);
 ///
 /// // Register the socket with `Poll`

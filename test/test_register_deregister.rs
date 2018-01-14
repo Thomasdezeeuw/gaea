@@ -77,7 +77,7 @@ pub fn test_register_deregister() {
     loop {
         poll.poll(&mut events, None).unwrap();
 
-        if let Some(event) = events.get(0) {
+        if let Some(event) = events.into_iter().next() {
             if event.readiness().is_readable() {
                 handler.handle_read(&mut poll, event.token());
             }
@@ -90,12 +90,12 @@ pub fn test_register_deregister() {
     }
 
     poll.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
-    assert_eq!(events.len(), 0);
+    assert_eq!(events.into_iter().len(), 0);
 }
 
 #[test]
 pub fn test_register_empty_interest() {
-    let poll = Poll::new().unwrap();
+    let mut poll = Poll::new().unwrap();
     let mut events = Events::with_capacity(1024);
     let addr = localhost();
 
@@ -111,11 +111,14 @@ pub fn test_register_empty_interest() {
 
     // sock is registered with empty interest, we should not receive any event
     poll.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
-    assert_eq!(events.len(), 0, "Received unexpected event: {:?}", events.get(0).unwrap());
+    {
+        let mut iter = events.into_iter();
+        assert_eq!(iter.len(), 0, "Received unexpected event: {:?}", iter.next().unwrap());
+    }
 
     // now sock is reregistered with readable, we should receive the pending event
     poll.reregister(&sock, Token(0), Ready::READABLE, PollOpt::EDGE).unwrap();
-    expect_events(&poll, &mut events, 2, vec![
+    expect_events(&mut poll, &mut events, 2, vec![
         Event::new(Ready::READABLE, Token(0))
     ]);
 
