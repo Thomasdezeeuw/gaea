@@ -441,8 +441,10 @@ impl Poll {
     /// remains true even if the `Evented` handle is deregistered from the poll
     /// instance using [`deregister`].
     ///
-    /// This function is **thread safe**. It can be called concurrently from
-    /// multiple threads.
+    /// # Undefined behaviour
+    ///
+    /// Reusing a token with a different `Evented` without deregistering (or
+    /// closing) the original `Evented` will result in undefined behaviour.
     ///
     /// [`struct`]: #
     /// [`reregister`]: #method.reregister
@@ -497,22 +499,12 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn register<E: ?Sized>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
-        where E: Evented
+    pub fn register<E>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+        where E: Evented + ?Sized
     {
         validate_args(token)?;
-
-        /*
-         * Undefined behavior:
-         * - Reusing a token with a different `Evented` without deregistering
-         * (or closing) the original `Evented`.
-         */
-        trace!("registering with poller");
-
-        // Register interests for this socket
-        handle.register(self, token, interest, opts)?;
-
-        Ok(())
+        trace!("registering with poller, token: {:?}, interest: {:?}, opts: {:?}", token, interest, opts);
+        handle.register(self, token, interest, opts)
     }
 
     /// Re-register an `Evented` handle with the `Poll` instance.
@@ -568,17 +560,12 @@ impl Poll {
     /// [`register`]: #method.register
     /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
     /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
-    pub fn reregister<E: ?Sized>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
-        where E: Evented
+    pub fn reregister<E>(&mut self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+        where E: Evented + ?Sized
     {
         validate_args(token)?;
-
-        trace!("registering with poller");
-
-        // Register interests for this socket
-        handle.reregister(self, token, interest, opts)?;
-
-        Ok(())
+        trace!("reregistering with poller, token: {:?}, interest: {:?}, opts: {:?}", token, interest, opts);
+        handle.reregister(self, token, interest, opts)
     }
 
     /// Deregister an `Evented` handle with the `Poll` instance.
@@ -623,15 +610,11 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn deregister<E: ?Sized>(&mut self, handle: &E) -> io::Result<()>
-        where E: Evented
+    pub fn deregister<E>(&mut self, handle: &E) -> io::Result<()>
+        where E: Evented + ?Sized
     {
         trace!("deregistering handle with poller");
-
-        // Deregister interests for this socket
-        handle.deregister(self)?;
-
-        Ok(())
+        handle.deregister(self)
     }
 
     /// Wait for readiness events
