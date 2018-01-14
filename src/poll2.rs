@@ -151,20 +151,6 @@ pub(crate) const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
 
 /*
  *
- * ===== Registration =====
- *
- */
-
-// TODO: get rid of this, windows depends on it for now
-#[allow(dead_code)]
-pub fn new_registration(poll: &Poll, token: Token, ready: Ready, opt: PollOpt)
-        -> (Registration, SetReadiness)
-{
-    Registration::new_priv(poll, token, ready, opt)
-}
-
-/*
- *
  * ===== ReadinessQueue =====
  *
  */

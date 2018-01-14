@@ -360,7 +360,7 @@ impl ReadyBinding {
             self.binding.register_socket(socket, token, poll)?;
         }
 
-        let (r, s) = poll::new_registration(poll, token, events, opts);
+        let (r, s) = Registration::new_priv(poll, token, ready, opts);
         self.readiness = Some(s);
         *registration.lock().unwrap() = Some(r);
         Ok(())
