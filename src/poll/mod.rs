@@ -3,13 +3,14 @@ use std::{fmt, io};
 use std::os::unix::io::{RawFd, AsRawFd};
 use std::time::{Duration, Instant};
 
-use sys;
+use {sys, Ready};
 use event::{Events, Evented};
 
-pub use poll2::*;
+mod opt;
 
-pub use event_imp::{PollOpt, Ready};
+pub use poll2::*;
 pub use token::Token;
+pub use self::opt::PollOpt;
 
 // Poll is backed by two readiness queues. The first is a system readiness queue
 // represented by `sys::Selector`. The system readiness queue handles events
