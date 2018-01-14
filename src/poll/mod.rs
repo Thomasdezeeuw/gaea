@@ -756,6 +756,11 @@ impl Poll {
         }
         timeout
     }
+
+    /// Get access to the system selector.
+    pub(crate) fn selector(&self) -> &sys::Selector {
+        &self.selector
+    }
 }
 
 fn validate_args(token: Token) -> io::Result<()> {

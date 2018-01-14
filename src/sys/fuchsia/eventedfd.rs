@@ -160,7 +160,7 @@ impl EventedFd {
         // We don't have ownership of the handle, so we can't drop it
         let handle = DontDrop::new(unsafe { zircon::Handle::from_raw(raw_handle) });
 
-        let registered = poll::selector(poll)
+        let registered = poll.selector()
             .register_fd(handle.inner_ref(), self, token, signals, opts);
 
         if registered.is_err() {
@@ -183,7 +183,7 @@ impl EventedFd {
                 "Called rereregister on an unregistered file descriptor."))
         };
 
-        poll::selector(poll)
+        poll.selector()
             .deregister_fd(old_registration.handle.inner_ref(), old_registration.token)
     }
 }

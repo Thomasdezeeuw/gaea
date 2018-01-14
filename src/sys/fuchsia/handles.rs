@@ -40,7 +40,7 @@ impl Evented for EventedHandle {
     {
         let mut this_token = self.token.lock().unwrap();
         {
-            poll::selector(poll).register_handle(self.handle, token, interest, opts)?;
+            poll.selector().register_handle(self.handle, token, interest, opts)?;
             *this_token = Some(token);
         }
         Ok(())
@@ -54,9 +54,9 @@ impl Evented for EventedHandle {
     {
         let mut this_token = self.token.lock().unwrap();
         {
-            poll::selector(poll).deregister_handle(self.handle, token)?;
+            poll.selector().deregister_handle(self.handle, token)?;
             *this_token = None;
-            poll::selector(poll).register_handle(self.handle, token, interest, opts)?;
+            poll.selector().register_handle(self.handle, token, interest, opts)?;
             *this_token = Some(token);
         }
         Ok(())
@@ -70,7 +70,7 @@ impl Evented for EventedHandle {
                 "Attempted to deregister an unregistered handle."))
         };
         {
-            poll::selector(poll).deregister_handle(self.handle, token)?;
+            poll.selector().deregister_handle(self.handle, token)?;
             *this_token = None;
         }
         Ok(())

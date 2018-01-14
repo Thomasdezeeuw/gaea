@@ -46,7 +46,7 @@ impl Evented for Awakener {
         if inner_locked.is_some() {
             panic!("Called register on already-registered Awakener.");
         }
-        *inner_locked = Some((token, Arc::downgrade(poll::selector(poll).port())));
+        *inner_locked = Some((token, Arc::downgrade(poll.selector().port())));
 
         Ok(())
     }
@@ -58,7 +58,7 @@ impl Evented for Awakener {
                   _opts: PollOpt) -> io::Result<()>
     {
         let mut inner_locked = self.inner.lock().unwrap();
-        *inner_locked = Some((token, Arc::downgrade(poll::selector(poll).port())));
+        *inner_locked = Some((token, Arc::downgrade(poll.selector().port())));
 
         Ok(())
     }

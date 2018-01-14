@@ -179,7 +179,7 @@ impl Binding {
                                   handle: &AsRawHandle,
                                   token: Token,
                                   poll: &Poll) -> io::Result<()> {
-        let selector = poll::selector(poll);
+        let selector = poll.selector();
 
         // Ignore errors, we'll see them on the next line.
         drop(self.selector.fill(selector.inner.clone()));
@@ -193,7 +193,7 @@ impl Binding {
                                   handle: &AsRawSocket,
                                   token: Token,
                                   poll: &Poll) -> io::Result<()> {
-        let selector = poll::selector(poll);
+        let selector = poll.selector();
         drop(self.selector.fill(selector.inner.clone()));
         self.check_same_selector(poll)?;
         selector.inner.port.add_socket(usize::from(token), handle)
@@ -258,7 +258,7 @@ impl Binding {
     }
 
     fn check_same_selector(&self, poll: &Poll) -> io::Result<()> {
-        let selector = poll::selector(poll);
+        let selector = poll.selector();
         match self.selector.borrow() {
             Some(prev) if prev.identical(&selector.inner) => Ok(()),
             Some(_) |

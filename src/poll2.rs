@@ -149,12 +149,6 @@ enum Dequeue {
 
 pub(crate) const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
 
-// ===== Accessors for internal usage =====
-
-pub(crate) fn selector(poll: &Poll) -> &sys::Selector {
-    &poll.selector
-}
-
 /*
  *
  * ===== Registration =====
