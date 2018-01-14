@@ -2,8 +2,7 @@
 
 use std::io;
 
-use {sys, Poll, Token};
-use event_imp::{Ready, PollOpt};
+use {sys, Poll, Token, Ready, PollOpt};
 
 /// A value that may be registered with `Poll`
 ///

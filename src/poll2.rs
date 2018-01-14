@@ -3,8 +3,7 @@ use std::cell::UnsafeCell;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, AtomicPtr, AtomicBool, Ordering};
 
-use super::{sys, Token};
-use super::event_imp::{Ready, PollOpt};
+use super::{sys, Token, Ready, PollOpt};
 use event::Event;
 use poll::Poll;
 

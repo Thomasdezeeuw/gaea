@@ -102,10 +102,13 @@ extern crate winapi;
 #[cfg(windows)]
 extern crate kernel32;
 
-mod event_imp;
 mod poll2;
 mod sys;
 mod token;
+mod ready;
+
+pub use token::Token;
+pub use ready::Ready;
 
 // TODO: move event as submodule of poll, rexport `Events` and `Event` in poll.
 pub mod event;
