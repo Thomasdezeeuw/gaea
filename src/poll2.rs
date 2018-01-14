@@ -5,15 +5,7 @@ use std::sync::atomic::{AtomicUsize, AtomicPtr, AtomicBool, Ordering};
 
 use super::{sys, Token, Ready, PollOpt};
 use event::Event;
-use poll::Poll;
 
-use registration::*;
-
-/// Used to associate an IO type with a Selector
-#[derive(Debug)]
-pub struct SelectorId {
-    id: AtomicUsize,
-}
 
 #[derive(Clone)]
 pub(crate) struct ReadinessQueue {
@@ -23,144 +15,9 @@ pub(crate) struct ReadinessQueue {
 unsafe impl Send for ReadinessQueue {}
 unsafe impl Sync for ReadinessQueue {}
 
-pub(crate) struct ReadinessQueueInner {
-    // Used to wake up `Poll` when readiness is set in another thread.
-    pub(crate) awakener: sys::Awakener,
-
-    // Head of the MPSC queue used to signal readiness to `Poll::poll`.
-    head_readiness: AtomicPtr<ReadinessNode>,
-
-    // Tail of the readiness queue.
-    //
-    // Only accessed by Poll::poll. Coordination will be handled by the poll fn
-    tail_readiness: UnsafeCell<*mut ReadinessNode>,
-
-    // Fake readiness node used to punctuate the end of the readiness queue.
-    // Before attempting to read from the queue, this node is inserted in order
-    // to partition the queue between nodes that are "owned" by the dequeue end
-    // and nodes that will be pushed on by producers.
-    end_marker: Box<ReadinessNode>,
-
-    // Similar to `end_marker`, but this node signals to producers that `Poll`
-    // has gone to sleep and must be woken up.
-    sleep_marker: Box<ReadinessNode>,
-
-    // Similar to `end_marker`, but the node signals that the queue is closed.
-    // This happens when `ReadyQueue` is dropped and signals to producers that
-    // the nodes should no longer be pushed into the queue.
-    closed_marker: Box<ReadinessNode>,
-}
-
-/// Node shared by a `Registration` / `SetReadiness` pair as well as the node
-/// queued into the MPSC channel.
-#[derive(Debug)]
-pub(crate) struct ReadinessNode {
-    // Node state, see struct docs for `ReadinessState`
-    //
-    // This variable is the primary point of coordination between all the
-    // various threads concurrently accessing the node.
-    pub(crate) state: AtomicState,
-
-    // The registration token cannot fit into the `state` variable, so it is
-    // broken out here. In order to atomically update both the state and token
-    // we have to jump through a few hoops.
-    //
-    // First, `state` includes `token_read_pos` and `token_write_pos`. These can
-    // either be 0, 1, or 2 which represent a token slot. `token_write_pos` is
-    // the token slot that contains the most up to date registration token.
-    // `token_read_pos` is the token slot that `poll` is currently reading from.
-    //
-    // When a call to `update` includes a different token than the one currently
-    // associated with the registration (token_write_pos), first an unused token
-    // slot is found. The unused slot is the one not represented by
-    // `token_read_pos` OR `token_write_pos`. The new token is written to this
-    // slot, then `state` is updated with the new `token_write_pos` value. This
-    // requires that there is only a *single* concurrent call to `update`.
-    //
-    // When `poll` reads a node state, it checks that `token_read_pos` matches
-    // `token_write_pos`. If they do not match, then it atomically updates
-    // `state` such that `token_read_pos` is set to `token_write_pos`. It will
-    // then read the token at the newly updated `token_read_pos`.
-    pub(crate) token_0: UnsafeCell<Token>,
-    pub(crate) token_1: UnsafeCell<Token>,
-    pub(crate) token_2: UnsafeCell<Token>,
-
-    // Used when the node is queued in the readiness linked list. Accessing
-    // this field requires winning the "queue" lock
-    pub(crate) next_readiness: AtomicPtr<ReadinessNode>,
-
-    // Ensures that there is only one concurrent call to `update`.
-    //
-    // Each call to `update` will attempt to swap `update_lock` from `false` to
-    // `true`. If the CAS succeeds, the thread has obtained the update lock. If
-    // the CAS fails, then the `update` call returns immediately and the update
-    // is discarded.
-    pub(crate) update_lock: AtomicBool,
-
-    // Pointer to Arc<ReadinessQueueInner>
-    pub(crate) readiness_queue: AtomicPtr<()>,
-
-    // Tracks the number of `ReadyRef` pointers
-    pub(crate) ref_count: AtomicUsize,
-}
-
-/// Stores the ReadinessNode state in an AtomicUsize. This wrapper around the
-/// atomic variable handles encoding / decoding `ReadinessState` values.
-#[derive(Debug)]
-pub(crate) struct AtomicState {
-    inner: AtomicUsize,
-}
-
-const MASK_2: usize = 4 - 1;
-const MASK_4: usize = 16 - 1;
-const MASK_8: usize = 256 - 1;
-const QUEUED_MASK: usize = 1 << QUEUED_SHIFT;
-const DROPPED_MASK: usize = 1 << DROPPED_SHIFT;
-
-const READINESS_SHIFT: usize = 0;
-const INTEREST_SHIFT: usize = 8;
-const POLL_OPT_SHIFT: usize = 16;
-const TOKEN_RD_SHIFT: usize = 20;
-const TOKEN_WR_SHIFT: usize = 22;
-const QUEUED_SHIFT: usize = 24;
-const DROPPED_SHIFT: usize = 25;
-
-/// Tracks all state for a single `ReadinessNode`. The state is packed into a
-/// `usize` variable from low to high bit as follows:
-///
-/// 8 bits: Registration current readiness
-/// 8 bits: Registration interest
-/// 4 bits: Poll options
-/// 2 bits: Token position currently being read from by `poll`
-/// 2 bits: Token position last written to by `update`
-/// 1 bit:  Queued flag, set when node is being pushed into MPSC queue.
-/// 1 bit:  Dropped flag, set when all `Registration` handles have been dropped.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub(crate) struct ReadinessState(usize);
-
-/// Returned by `dequeue_node`. Represents the different states as described by
-/// the queue documentation on 1024cores.net.
-#[derive(Debug)]
-enum Dequeue {
-    Data(*mut ReadinessNode),
-    Empty,
-    Inconsistent,
-}
-
-pub(crate) const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
-
-/*
- *
- * ===== ReadinessQueue =====
- *
- */
-
 impl ReadinessQueue {
     /// Create a new `ReadinessQueue`.
     pub(crate) fn new() -> io::Result<ReadinessQueue> {
-        is_send::<Self>();
-        is_sync::<Self>();
-
         let end_marker = Box::new(ReadinessNode::marker());
         let sleep_marker = Box::new(ReadinessNode::marker());
         let closed_marker = Box::new(ReadinessNode::marker());
@@ -362,6 +219,34 @@ impl Drop for ReadinessQueue {
     }
 }
 
+pub(crate) struct ReadinessQueueInner {
+    // Used to wake up `Poll` when readiness is set in another thread.
+    pub(crate) awakener: sys::Awakener,
+
+    // Head of the MPSC queue used to signal readiness to `Poll::poll`.
+    head_readiness: AtomicPtr<ReadinessNode>,
+
+    // Tail of the readiness queue.
+    //
+    // Only accessed by Poll::poll. Coordination will be handled by the poll fn
+    tail_readiness: UnsafeCell<*mut ReadinessNode>,
+
+    // Fake readiness node used to punctuate the end of the readiness queue.
+    // Before attempting to read from the queue, this node is inserted in order
+    // to partition the queue between nodes that are "owned" by the dequeue end
+    // and nodes that will be pushed on by producers.
+    end_marker: Box<ReadinessNode>,
+
+    // Similar to `end_marker`, but this node signals to producers that `Poll`
+    // has gone to sleep and must be woken up.
+    sleep_marker: Box<ReadinessNode>,
+
+    // Similar to `end_marker`, but the node signals that the queue is closed.
+    // This happens when `ReadyQueue` is dropped and signals to producers that
+    // the nodes should no longer be pushed into the queue.
+    closed_marker: Box<ReadinessNode>,
+}
+
 impl ReadinessQueueInner {
     fn wakeup(&self) -> io::Result<()> {
         self.awakener.wakeup()
@@ -486,6 +371,63 @@ impl ReadinessQueueInner {
     }
 }
 
+
+
+
+
+/// Node shared by a `Registration` / `SetReadiness` pair as well as the node
+/// queued into the MPSC channel.
+#[derive(Debug)]
+pub(crate) struct ReadinessNode {
+    // Node state, see struct docs for `ReadinessState`
+    //
+    // This variable is the primary point of coordination between all the
+    // various threads concurrently accessing the node.
+    pub(crate) state: AtomicState,
+
+    // The registration token cannot fit into the `state` variable, so it is
+    // broken out here. In order to atomically update both the state and token
+    // we have to jump through a few hoops.
+    //
+    // First, `state` includes `token_read_pos` and `token_write_pos`. These can
+    // either be 0, 1, or 2 which represent a token slot. `token_write_pos` is
+    // the token slot that contains the most up to date registration token.
+    // `token_read_pos` is the token slot that `poll` is currently reading from.
+    //
+    // When a call to `update` includes a different token than the one currently
+    // associated with the registration (token_write_pos), first an unused token
+    // slot is found. The unused slot is the one not represented by
+    // `token_read_pos` OR `token_write_pos`. The new token is written to this
+    // slot, then `state` is updated with the new `token_write_pos` value. This
+    // requires that there is only a *single* concurrent call to `update`.
+    //
+    // When `poll` reads a node state, it checks that `token_read_pos` matches
+    // `token_write_pos`. If they do not match, then it atomically updates
+    // `state` such that `token_read_pos` is set to `token_write_pos`. It will
+    // then read the token at the newly updated `token_read_pos`.
+    pub(crate) token_0: UnsafeCell<Token>,
+    pub(crate) token_1: UnsafeCell<Token>,
+    pub(crate) token_2: UnsafeCell<Token>,
+
+    // Used when the node is queued in the readiness linked list. Accessing
+    // this field requires winning the "queue" lock
+    pub(crate) next_readiness: AtomicPtr<ReadinessNode>,
+
+    // Ensures that there is only one concurrent call to `update`.
+    //
+    // Each call to `update` will attempt to swap `update_lock` from `false` to
+    // `true`. If the CAS succeeds, the thread has obtained the update lock. If
+    // the CAS fails, then the `update` call returns immediately and the update
+    // is discarded.
+    pub(crate) update_lock: AtomicBool,
+
+    // Pointer to Arc<ReadinessQueueInner>
+    pub(crate) readiness_queue: AtomicPtr<()>,
+
+    // Tracks the number of `ReadyRef` pointers
+    pub(crate) ref_count: AtomicUsize,
+}
+
 impl ReadinessNode {
     /// Return a new `ReadinessNode`, initialized with a ref_count of 3.
     pub(crate) fn new(queue: *mut (),
@@ -569,6 +511,17 @@ pub(crate) fn release_node(ptr: *mut ReadinessNode) {
     }
 }
 
+
+
+
+
+/// Stores the ReadinessNode state in an AtomicUsize. This wrapper around the
+/// atomic variable handles encoding / decoding `ReadinessState` values.
+#[derive(Debug)]
+pub(crate) struct AtomicState {
+    inner: AtomicUsize,
+}
+
 impl AtomicState {
     fn new(interest: Ready, opt: PollOpt) -> AtomicState {
         let state = ReadinessState::new(interest, opt);
@@ -597,6 +550,36 @@ impl AtomicState {
         !prev.is_queued()
     }
 }
+
+
+
+
+const MASK_2: usize = 4 - 1;
+const MASK_4: usize = 16 - 1;
+const MASK_8: usize = 256 - 1;
+const QUEUED_MASK: usize = 1 << QUEUED_SHIFT;
+const DROPPED_MASK: usize = 1 << DROPPED_SHIFT;
+
+const READINESS_SHIFT: usize = 0;
+const INTEREST_SHIFT: usize = 8;
+const POLL_OPT_SHIFT: usize = 16;
+const TOKEN_RD_SHIFT: usize = 20;
+const TOKEN_WR_SHIFT: usize = 22;
+const QUEUED_SHIFT: usize = 24;
+const DROPPED_SHIFT: usize = 25;
+
+/// Tracks all state for a single `ReadinessNode`. The state is packed into a
+/// `usize` variable from low to high bit as follows:
+///
+/// 8 bits: Registration current readiness
+/// 8 bits: Registration interest
+/// 4 bits: Poll options
+/// 2 bits: Token position currently being read from by `poll`
+/// 2 bits: Token position last written to by `update`
+/// 1 bit:  Queued flag, set when node is being pushed into MPSC queue.
+/// 1 bit:  Dropped flag, set when all `Registration` handles have been dropped.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub(crate) struct ReadinessState(usize);
 
 impl ReadinessState {
     // Create a `ReadinessState` initialized with the provided arguments
@@ -765,32 +748,13 @@ impl From<usize> for ReadinessState {
     }
 }
 
-fn is_send<T: Send>() {}
-fn is_sync<T: Sync>() {}
-
-impl SelectorId {
-    pub(crate) fn new() -> SelectorId {
-        SelectorId {
-            id: AtomicUsize::new(0),
-        }
-    }
-
-    pub(crate) fn associate_selector(&self, poll: &Poll) -> io::Result<()> {
-        let selector_id = self.id.load(Ordering::SeqCst);
-
-        if selector_id != 0 && selector_id != poll.selector.id() {
-            Err(io::Error::new(io::ErrorKind::Other, "socket already registered"))
-        } else {
-            self.id.store(poll.selector.id(), Ordering::SeqCst);
-            Ok(())
-        }
-    }
+/// Returned by `dequeue_node`. Represents the different states as described by
+/// the queue documentation on 1024cores.net.
+#[derive(Debug)]
+enum Dequeue {
+    Data(*mut ReadinessNode),
+    Empty,
+    Inconsistent,
 }
 
-impl Clone for SelectorId {
-    fn clone(&self) -> SelectorId {
-        SelectorId {
-            id: AtomicUsize::new(self.id.load(Ordering::SeqCst)),
-        }
-    }
-}
+pub(crate) const MAX_REFCOUNT: usize = (::std::isize::MAX) as usize;
