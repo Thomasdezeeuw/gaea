@@ -1,5 +1,8 @@
-use mio::*;
 use std::time::Duration;
+
+use mio::event::Events;
+use mio::poll::{Poll, PollOpt, Ready, Token};
+use mio::registration::Registration;
 
 #[test]
 fn test_poll_closes_fd() {
@@ -15,4 +18,12 @@ fn test_poll_closes_fd() {
         drop(set_readiness);
         drop(registration);
     }
+}
+
+#[test]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
+pub fn test_poll_as_raw_fd() {
+    use std::os::unix::io::AsRawFd;
+    let poll = Poll::new().unwrap();
+    assert!(poll.as_raw_fd() > 0);
 }

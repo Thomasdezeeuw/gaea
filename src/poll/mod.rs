@@ -890,11 +890,3 @@ impl AsRawFd for Poll {
         self.selector.as_raw_fd()
     }
 }
-
-// TODO: move to the test directory.
-#[test]
-#[cfg(all(unix, not(target_os = "fuchsia")))]
-pub fn as_raw_fd() {
-    let poll = Poll::new().unwrap();
-    assert!(poll.as_raw_fd() > 0);
-}
