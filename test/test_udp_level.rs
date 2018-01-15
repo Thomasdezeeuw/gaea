@@ -1,7 +1,10 @@
+use std::thread;
+use std::time::Duration;
+
 use mio::{Events, Poll, PollOpt, Ready, Token};
 use mio::event::Event;
 use mio::net::UdpSocket;
-use {expect_events, sleep_ms};
+use expect_events;
 
 #[test]
 pub fn test_udp_level_triggered() {
@@ -25,7 +28,7 @@ pub fn test_udp_level_triggered() {
 
     tx.send_to(b"hello world!", rx.local_addr().unwrap()).unwrap();
 
-    sleep_ms(250);
+    thread::sleep(Duration::from_millis(200));
 
     for _ in 0..2 {
         expect_events(&mut poll, &mut events, 2, vec![
@@ -41,7 +44,7 @@ pub fn test_udp_level_triggered() {
     }
 
     tx.send_to(b"hello world!", rx.local_addr().unwrap()).unwrap();
-    sleep_ms(250);
+    thread::sleep(Duration::from_millis(200));
 
     expect_events(&mut poll, &mut events, 10,
                   vec![Event::new(Ready::READABLE | Ready::WRITABLE, Token(1))]);

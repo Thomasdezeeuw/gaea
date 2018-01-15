@@ -1,9 +1,8 @@
-use {sleep_ms};
-use mio::*;
-use mio::net::{TcpListener, TcpStream};
+use std::thread;
 use std::time::Duration;
 
-const MS: u64 = 1_000;
+use mio::*;
+use mio::net::{TcpListener, TcpStream};
 
 #[test]
 pub fn test_reregister_different_without_poll() {
@@ -19,10 +18,10 @@ pub fn test_reregister_different_without_poll() {
     let mut s1 = TcpStream::connect(l.local_addr().unwrap()).unwrap();
     poll.register(&mut s1, Token(2), Ready::READABLE, PollOpt::EDGE).unwrap();
 
-    sleep_ms(MS);
+    thread::sleep(Duration::from_millis(200));
 
     poll.reregister(&mut l, Token(0), Ready::WRITABLE, PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
 
-    poll.poll(&mut events, Some(Duration::from_millis(MS))).unwrap();
+    poll.poll(&mut events, Some(Duration::from_millis(200))).unwrap();
     assert_eq!(events.into_iter().len(), 0);
 }

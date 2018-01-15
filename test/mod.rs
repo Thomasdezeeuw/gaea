@@ -148,12 +148,6 @@ mod ports {
     }
 }
 
-pub fn sleep_ms(ms: u64) {
-    use std::thread;
-    use std::time::Duration;
-    thread::sleep(Duration::from_millis(ms));
-}
-
 pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize, mut expected: Vec<Event>)
 {
     const MS: u64 = 1_000;
@@ -178,4 +172,3 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
 
     assert!(expected.len() == 0, "The following expected events were not found: {:?}", expected);
 }
-

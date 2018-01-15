@@ -1,9 +1,11 @@
-use {expect_events, sleep_ms, TryRead};
+use std::thread;
+use std::time::Duration;
+use std::io::Write;
+
+use {expect_events, TryRead};
 use mio::{Events, Poll, PollOpt, Ready, Token};
 use mio::event::Event;
 use mio::net::{TcpListener, TcpStream};
-use std::io::Write;
-use std::time::Duration;
 
 const MS: u64 = 1_000;
 
@@ -75,7 +77,7 @@ pub fn test_tcp_stream_level_triggered() {
     poll.register(&mut s1, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
 
     // Sleep a bit to ensure it arrives at dest
-    sleep_ms(250);
+    thread::sleep(Duration::from_millis(50));
 
     expect_events(&mut poll, &mut pevents, 2, vec![
         Event::new(Ready::READABLE, Token(0)),
@@ -86,7 +88,7 @@ pub fn test_tcp_stream_level_triggered() {
     let (mut s1_tx, _) = l.accept().unwrap();
 
     // Sleep a bit to ensure it arrives at dest
-    sleep_ms(250);
+    thread::sleep(Duration::from_millis(50));
 
     expect_events(&mut poll, &mut pevents, 2, vec![
         Event::new(Ready::WRITABLE, Token(1))
@@ -102,7 +104,7 @@ pub fn test_tcp_stream_level_triggered() {
     assert!(res.unwrap() > 0);
 
     // Sleep a bit to ensure it arrives at dest
-    sleep_ms(250);
+    thread::sleep(Duration::from_millis(50));
 
     debug!("looking at rx end ----------");
 
