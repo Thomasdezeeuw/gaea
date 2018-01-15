@@ -26,21 +26,25 @@ bitflags! {
     /// ```
     pub struct Ready: u8 {
         /// Readable readiness
-        const READABLE = 0b000_0001;
+        const READABLE = 0b0000_0001;
         /// Writable readiness.
-        const WRITABLE = 0b000_0010;
+        const WRITABLE = 0b0000_0010;
         /// Error readiness.
-        const ERROR    = 0b000_0100;
+        const ERROR    = 0b0000_0100;
+        /// Timed out, see [`Timer`].
+        ///
+        /// [`Timer`]: ../timer/struct.Timer.html
+        const TIMEOUT  = 0b0000_1000;
         /// Hup readiness, this signal is Unix specific.
         #[cfg(all(unix, not(target_os = "fuchsia")))]
-        const HUP      = 0b001_0000;
+        const HUP      = 0b0001_0000;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))]
         /// AIO completion readiness, this signal is specific to the BSD family.
-        const AIO      = 0b010_0000;
+        const AIO      = 0b0010_0000;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
         /// LIO completion readiness, this signal is specific to DragonFly and
         /// FreeBSD.
-        const LIO      = 0b100_0000;
+        const LIO      = 0b0100_0000;
     }
 }
 
@@ -61,6 +65,12 @@ impl Ready {
     #[inline]
     pub fn is_error(&self) -> bool {
         self.contains(Ready::ERROR)
+    }
+
+    /// Returns true if the value includes an timeout.
+    #[inline]
+    pub fn is_timeout(&self) -> bool {
+        self.contains(Ready::TIMEOUT)
     }
 
     /// Returns true if the value includes HUP readiness.
