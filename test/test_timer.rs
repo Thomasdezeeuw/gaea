@@ -21,12 +21,12 @@ pub fn test_timer() {
 
     let mut timer = Timer::timeout(Duration::from_millis(20));
 
-    poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::EDGE).unwrap();
+    poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
     poll.deregister(&mut timer).unwrap();
-    poll.reregister(&mut timer, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
+    poll.reregister(&mut timer, Token(1), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(30), vec![
-        Event::new(Ready::READABLE | Ready::WRITABLE, Token(1)),
+        Event::new(Ready::TIMEOUT, Token(1)),
     ]);
 
     poll.deregister(&mut timer).unwrap();
@@ -70,15 +70,15 @@ pub fn test_multiple_timers() {
             let first_token = Token(token.0 * 100);
 
             let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
-            poll.register(&mut timer, first_token, Ready::READABLE, PollOpt::EDGE).unwrap();
+            poll.register(&mut timer, first_token, Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
             poll.deregister(&mut timer).unwrap();
-            poll.reregister(&mut timer, token, Ready::READABLE, PollOpt::EDGE).unwrap();
+            poll.reregister(&mut timer, token, Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
         }
 
         const MAX_ELAPSED: u64 = T1 + 10;
         for token in 1..4 {
             expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(MAX_ELAPSED), vec![
-                Event::new(Ready::READABLE | Ready::WRITABLE, Token(token)),
+                Event::new(Ready::TIMEOUT, Token(token)),
             ]);
         }
     }
@@ -94,13 +94,13 @@ pub fn test_multiple_timers_same_deadline() {
     const TIMERS: [u64; 3] = [50, 50, 50];
     for (token, timeout_ms) in TIMERS.iter().enumerate() {
         let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
-        poll.register(&mut timer, Token(token), Ready::READABLE, PollOpt::EDGE).unwrap();
+        poll.register(&mut timer, Token(token), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
     }
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(210), vec![
-        Event::new(Ready::READABLE | Ready::WRITABLE, Token(0)),
-        Event::new(Ready::READABLE | Ready::WRITABLE, Token(1)),
-        Event::new(Ready::READABLE | Ready::WRITABLE, Token(2)),
+        Event::new(Ready::TIMEOUT, Token(0)),
+        Event::new(Ready::TIMEOUT, Token(1)),
+        Event::new(Ready::TIMEOUT, Token(2)),
     ]);
 }
 

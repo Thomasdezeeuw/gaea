@@ -9,10 +9,12 @@ use poll::{Poll, PollOpt, Ready, Token, INVALID_TOKEN};
 /// # Registering
 ///
 /// When registering a `Timer` the `Ready` and `PollOpt` arguments are ignored;
-/// it only fires once and `Ready` will always be both readable and writable.
+/// it only fires once and `Ready` will always be [timeout].
 ///
 /// Deregistering is not needed if the deadline has been passed, like stated
 /// above it's only fired once and forgotten after that.
+///
+/// [timeout]: ../poll/struct.Ready.html#associatedconstant.TIMEOUT
 ///
 /// # Reuse
 ///
@@ -37,12 +39,12 @@ use poll::{Poll, PollOpt, Ready, Token, INVALID_TOKEN};
 ///
 /// // Create and register our timer.
 /// let mut timer = Timer::timeout(Duration::from_millis(10));
-/// poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::ONESHOT)?;
+/// poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT)?;
 ///
 /// poll.poll(&mut events, None)?;
 ///
 /// for event in &mut events {
-///     assert_eq!(event, Event::new(Ready::READABLE | Ready::WRITABLE, Token(0)));
+///     assert_eq!(event, Event::new(Ready::TIMEOUT, Token(0)));
 /// }
 /// #   Ok(())
 /// # }

@@ -862,7 +862,7 @@ impl Poll {
                 let polled_deadlines = mem::replace(&mut self.deadlines, deadlines_left);
 
                 for (token, _) in polled_deadlines {
-                    events.push(Event::new(Ready::READABLE | Ready::WRITABLE, token));
+                    events.push(Event::new(Ready::TIMEOUT, token));
                 }
             },
         }
