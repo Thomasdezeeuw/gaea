@@ -6,26 +6,26 @@ bitflags! {
     ///
     /// For high level documentation on polling and poll options, see [`Poll`].
     ///
+    /// [`Poll`]: struct.Poll.html
+    ///
     /// # Examples
     ///
     /// ```
-    /// use mio::PollOpt;
+    /// use mio::poll::PollOpt;
     ///
-    /// let opts = PollOpt::EDGE | PollOpt::ONESHOT;
+    /// let opt = PollOpt::EDGE | PollOpt::ONESHOT;
     ///
-    /// assert!(opts.is_edge());
-    /// assert!(opts.is_oneshot());
-    /// assert!(!opts.is_level());
+    /// assert!(opt.is_edge());
+    /// assert!(opt.is_oneshot());
+    /// assert!(!opt.is_level());
     /// ```
-    ///
-    /// [`Poll`]: struct.Poll.html
     pub struct PollOpt: u8 {
         /// Edge-triggered notifications.
-        const EDGE    = 0b0000001;
+        const EDGE    = 0b001;
         /// Level-triggered notifications.
-        const LEVEL   = 0b0000010;
+        const LEVEL   = 0b010;
         /// Oneshot notifications.
-        const ONESHOT = 0b0000100;
+        const ONESHOT = 0b100;
     }
 }
 
@@ -42,7 +42,7 @@ impl PollOpt {
         self.contains(PollOpt::LEVEL)
     }
 
-    /// Returns true if the options includes oneshot.
+    /// Returns true if the options includes oneshot notifications.
     #[inline]
     pub fn is_oneshot(&self) -> bool {
         self.contains(PollOpt::ONESHOT)
