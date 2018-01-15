@@ -7,8 +7,9 @@ use std::time::Duration;
 use iovec::IoVec;
 use net2::TcpBuilder;
 
-use {sys, Ready, Poll, PollOpt, Token};
+use sys;
 use event::Evented;
+use poll::{Poll, PollOpt, Ready, Token};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -17,18 +18,17 @@ use event::Evented;
 /// # Examples
 ///
 /// ```
-/// # use std::net::TcpListener;
 /// # use std::error::Error;
 /// #
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::{Events, Ready, Poll, PollOpt, Token};
+/// use mio::event::Events;
 /// use mio::net::TcpStream;
+/// use mio::poll::{Poll, PollOpt, Ready, Token};
 ///
 /// let address = "127.0.0.1:8888".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
-/// # let _listener = TcpListener::bind(address)?;
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(128);
@@ -36,9 +36,9 @@ use event::Evented;
 /// // Register the socket with `Poll`.
 /// poll.register(&mut stream, Token(0), Ready::WRITABLE, PollOpt::EDGE)?;
 ///
-/// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
+/// poll.poll(&mut events, None)?;
 ///
-/// // The socket might be ready at this point
+/// // The socket might be ready at this point.
 /// #     Ok(())
 /// # }
 /// #
@@ -429,8 +429,9 @@ impl FromRawFd for TcpStream {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::{Events, Ready, Poll, PollOpt, Token};
+/// use mio::event::Events;
 /// use mio::net::TcpListener;
+/// use mio::poll::{Poll, PollOpt, Ready, Token};
 ///
 /// let address = "127.0.0.1:7777".parse()?;
 /// let mut listener = TcpListener::bind(address)?;

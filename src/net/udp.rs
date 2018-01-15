@@ -3,8 +3,9 @@ use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
-use {sys, Ready, Poll, PollOpt, Token};
+use sys;
 use event::Evented;
+use poll::{Poll, PollOpt, Ready, Token};
 
 /// A User Datagram Protocol socket.
 ///
@@ -14,64 +15,67 @@ use event::Evented;
 ///
 /// # Examples
 ///
+/// An simple echo program, the `sender` sends a message and the `echoer`
+/// listens for messages and prints them to standard out.
+///
 /// ```
 /// # use std::error::Error;
 /// #
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// // An Echo program:
-/// // SENDER -> sends a message.
-/// // ECHOER -> listens and prints the message received.
-///
-/// use mio::net::UdpSocket;
-/// use mio::{Events, Ready, Poll, PollOpt, Token};
 /// use std::time::Duration;
 ///
+/// use mio::event::Events;
+/// use mio::net::UdpSocket;
+/// use mio::poll::{Poll, PollOpt, Ready, Token};
+///
+/// // Unique tokens and address for both the sender and echoer.
 /// const SENDER: Token = Token(0);
 /// const ECHOER: Token = Token(1);
 ///
 /// let sender_address = "127.0.0.1:7777".parse()?;
 /// let echoer_address = "127.0.0.1:8888".parse()?;
 ///
-/// // This operation will fail if the address is in use, so we select different
-/// // ports for each socket.
+/// // Create our sockets.
 /// let mut sender_socket = UdpSocket::bind(sender_address)?;
 /// let mut echoer_socket = UdpSocket::bind(echoer_address)?;
 ///
-/// // If we do not use connect here, SENDER and ECHOER would need to call
-/// // send_to and recv_from respectively.
+/// // Connect the sender so we can use `send` and `recv`, rather then `send_to`
+/// // and `recv_from`.
 /// sender_socket.connect(echoer_address)?;
 ///
-/// // We need a Poll to check if SENDER is ready to be written into, and if
-/// // ECHOER is ready to be read from.
+/// // As always create our poll and events.
 /// let mut poll = Poll::new()?;
+/// let mut events = Events::with_capacity(128);
 ///
-/// // We register our sockets here so that we can check if they are ready to be
-/// // written/read.
+/// // Register our sockets
 /// poll.register(&mut sender_socket, SENDER, Ready::WRITABLE, PollOpt::EDGE)?;
 /// poll.register(&mut echoer_socket, ECHOER, Ready::READABLE, PollOpt::EDGE)?;
 ///
-/// let msg_to_send = [9; 9];
-/// let mut buffer = [0; 9];
+/// // The message we'll send.
+/// const MSG_TO_SEND: &[u8; 11] = b"Hello world";
+/// // A buffer for our echoer to receive the message in.
+/// let mut buf = [0; 11];
 ///
-/// let mut events = Events::with_capacity(128);
+/// // Our event loop.
 /// loop {
-///     poll.poll(&mut events, Some(Duration::from_millis(100)))?;
+///     poll.poll(&mut events, None)?;
 ///     for event in &mut events {
 ///         match event.token() {
-///             // Our SENDER is ready to be written into.
+///             // Our sender is ready to send.
 ///             SENDER => {
-///                 let bytes_sent = sender_socket.send(&msg_to_send)?;
-///                 assert_eq!(bytes_sent, 9);
-///                 println!("sent {:?} -> {:?} bytes", msg_to_send, bytes_sent);
+///                 let bytes_sent = sender_socket.send(MSG_TO_SEND)?;
+///                 assert_eq!(bytes_sent, MSG_TO_SEND.len());
+///                 println!("sent {:?} ({} bytes)", MSG_TO_SEND, bytes_sent);
 ///             },
-///             // Our ECHOER is ready to be read from.
+///             // Our echoer is ready to read.
 ///             ECHOER => {
-///                 let num_recv = echoer_socket.recv(&mut buffer)?;
-///                 println!("echo {:?} -> {:?}", buffer, num_recv);
-///                 buffer = [0; 9];
+///                 let bytes_recv = echoer_socket.recv(&mut buf)?;
+///                 println!("{:?} ({} bytes)", &buf[0..bytes_recv], bytes_recv);
 ///                 # return Ok(());
 ///             }
-///             _ => unreachable!()
+///             // We shouldn't receive any event with another token then the
+///             // two defined above.
+///             _ => unreachable!("received an unexpected event")
 ///         }
 ///     }
 /// }

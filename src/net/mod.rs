@@ -1,4 +1,4 @@
-//! Networking primitives
+//! Networking primitives.
 //!
 //! The types provided in this module are non-blocking by default and are
 //! designed to be portable across all supported Mio platforms. As long as the
