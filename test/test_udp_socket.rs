@@ -65,7 +65,7 @@ fn test_send_recv_udp(mut tx: UdpSocket, mut rx: UdpSocket, connected: bool) {
     while !handler.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             if event.readiness().is_readable() {
                 match event.token() {
                     LISTENER => {
@@ -162,7 +162,7 @@ pub fn test_udp_socket_discard() {
 
     poll.poll(&mut events, Some(time::Duration::from_secs(5))).unwrap();
 
-    for event in &events {
+    for event in &mut events {
         if event.readiness().is_readable() {
             match event.token() {
                 LISTENER => {

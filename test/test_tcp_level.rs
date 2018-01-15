@@ -23,16 +23,16 @@ pub fn test_tcp_listener_level_triggered() {
     let mut s1 = TcpStream::connect(l.local_addr().unwrap()).unwrap();
     poll.register(&mut s1, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
 
-    while filter(&pevents, Token(0)).len() == 0 {
+    let mut events = Vec::new();
+    while events.len() == 0 {
         poll.poll(&mut pevents, Some(Duration::from_millis(MS))).unwrap();
+        events = filter(&mut pevents, Token(0));
     }
-    let events = filter(&pevents, Token(0));
-
     assert_eq!(events.len(), 1);
     assert_eq!(events[0], Event::new(Ready::READABLE, Token(0)));
 
     poll.poll(&mut pevents, Some(Duration::from_millis(MS))).unwrap();
-    let events = filter(&pevents, Token(0));
+    let events = filter(&mut pevents, Token(0));
     assert_eq!(events.len(), 1);
     assert_eq!(events[0], Event::new(Ready::READABLE, Token(0)));
 
@@ -40,16 +40,17 @@ pub fn test_tcp_listener_level_triggered() {
     let _ = l.accept().unwrap();
 
     poll.poll(&mut pevents, Some(Duration::from_millis(MS))).unwrap();
-    let events = filter(&pevents, Token(0));
+    let events = filter(&mut pevents, Token(0));
     assert!(events.is_empty(), "actual={:?}", events);
 
     let mut s3 = TcpStream::connect(l.local_addr().unwrap()).unwrap();
     poll.register(&mut s3, Token(2), Ready::READABLE, PollOpt::EDGE).unwrap();
 
-    while filter(&pevents, Token(0)).len() == 0 {
+    let mut events = Vec::new();
+    while events.len() == 0 {
         poll.poll(&mut pevents, Some(Duration::from_millis(MS))).unwrap();
+        events = filter(&mut pevents, Token(0));
     }
-    let events = filter(&pevents, Token(0));
 
     assert_eq!(events.len(), 1);
     assert_eq!(events[0], Event::new(Ready::READABLE, Token(0)));
@@ -57,7 +58,7 @@ pub fn test_tcp_listener_level_triggered() {
     drop(l);
 
     poll.poll(&mut pevents, Some(Duration::from_millis(MS))).unwrap();
-    let events = filter(&pevents, Token(0));
+    let events = filter(&mut pevents, Token(0));
     assert!(events.is_empty());
 }
 
@@ -133,10 +134,10 @@ pub fn test_tcp_stream_level_triggered() {
     debug!("checking everything is gone ----------");
 
     poll.poll(&mut pevents, Some(Duration::from_millis(MS))).unwrap();
-    let events = filter(&pevents, Token(1));
+    let events = filter(&mut pevents, Token(1));
     assert!(events.is_empty());
 }
 
-fn filter(events: &Events, token: Token) -> Vec<Event> {
+fn filter(events: &mut Events, token: Token) -> Vec<Event> {
     events.into_iter().filter(|e| e.token() == token).collect()
 }

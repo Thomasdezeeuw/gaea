@@ -284,7 +284,7 @@ pub fn test_echo_server() {
     while !handler.client.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             debug!("ready {:?} {:?}", event.token(), event.readiness());
             if event.readiness().is_readable() {
                 match event.token() {

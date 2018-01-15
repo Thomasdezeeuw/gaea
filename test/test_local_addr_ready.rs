@@ -39,7 +39,7 @@ fn local_addr_ready() {
     while !handler.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             match event.token() {
                 LISTEN => {
                     let mut sock = handler.listener.accept().unwrap().0;

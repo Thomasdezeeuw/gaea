@@ -100,7 +100,7 @@ pub fn test_multicast() {
     while !handler.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             if event.readiness().is_readable() {
                 handler.handle_read(&mut poll, event.token(), event.readiness());
             }

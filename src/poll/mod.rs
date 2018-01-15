@@ -117,7 +117,7 @@ pub use self::opt::PollOpt;
 /// loop {
 ///     poll.poll(&mut events, None)?;
 ///
-///     for event in &events {
+///     for event in &mut events {
 ///         if event.token() == Token(0) && event.readiness().is_writable() {
 ///             // The socket connected (probably, it could still be a spurious
 ///             // wakeup)
@@ -499,7 +499,7 @@ impl Poll {
     ///     let remaining = timeout - elapsed;
     ///     poll.poll(&mut events, Some(remaining))?;
     ///
-    ///     for event in &events {
+    ///     for event in &mut events {
     ///         if event.token() == Token(0) {
     ///             // Something (probably) happened on the socket.
     ///             return Ok(());
@@ -708,7 +708,7 @@ impl Poll {
     /// loop {
     ///     poll.poll(&mut events, None)?;
     ///
-    ///     for event in &events {
+    ///     for event in &mut events {
     ///         if event.token() == Token(0) && event.readiness().is_writable() {
     ///             // The socket connected (probably, it could still be a spurious
     ///             // wakeup)

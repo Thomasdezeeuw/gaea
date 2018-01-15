@@ -141,7 +141,7 @@ impl Registration {
     /// loop {
     ///     poll.poll(&mut events, None);
     ///
-    ///     for event in &events {
+    ///     for event in &mut events {
     ///         if event.token() == Token(0) && event.readiness().is_readable() {
     ///             return Ok(());
     ///         }

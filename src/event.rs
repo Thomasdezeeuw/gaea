@@ -177,7 +177,7 @@ pub trait Evented {
 ///
 /// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
-/// for event in &events {
+/// for event in &mut events {
 ///     println!("event={:?}", event);
 /// }
 /// #     Ok(())
@@ -193,6 +193,7 @@ pub trait Evented {
 #[derive(Debug)]
 pub struct Events {
     inner: sys::Events,
+    pos: usize,
 }
 
 impl Events {
@@ -200,12 +201,14 @@ impl Events {
     pub fn with_capacity(capacity: usize) -> Events {
         Events {
             inner: sys::Events::with_capacity(capacity),
+            pos: 0,
         }
     }
 
     /// Reset the events to allow it to be filled again.
     pub(crate) fn reset(&mut self) {
         self.inner.clear();
+        self.pos = 0;
     }
 
     /// Gain access to the sys::Events.
@@ -219,28 +222,7 @@ impl Events {
     }
 }
 
-impl<'a> IntoIterator for &'a Events {
-    type Item = Event;
-    type IntoIter = EventsIter<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        EventsIter {
-            inner: &self.inner,
-            pos: 0,
-        }
-    }
-}
-
-/// Iterator implementation for [`Events`].
-///
-/// [`Events`]: struct.Events.html
-#[derive(Debug)]
-pub struct EventsIter<'a> {
-    inner: &'a sys::Events,
-    pos: usize,
-}
-
-impl<'a> Iterator for EventsIter<'a> {
+impl<'a> Iterator for &'a mut Events {
     type Item = Event;
     fn next(&mut self) -> Option<Event> {
         let ret = self.inner.get(self.pos);
@@ -253,7 +235,7 @@ impl<'a> Iterator for EventsIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for EventsIter<'a> {
+impl<'a> ExactSizeIterator for &'a mut Events {
     fn len(&self) -> usize {
         self.inner.len()
     }

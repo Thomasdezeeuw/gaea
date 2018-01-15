@@ -54,7 +54,7 @@
 //! loop {
 //!     poll.poll(&mut events, None).unwrap();
 //!
-//!     for event in &events {
+//!     for event in &mut events {
 //!         match event.token() {
 //!             SERVER => {
 //!                 // Accept and drop the socket immediately, this will close

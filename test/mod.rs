@@ -154,7 +154,7 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
 
     for _ in 0..poll_try_count {
         poll.poll(events, Some(Duration::from_millis(MS))).unwrap();
-        for event in &*events {
+        for event in &mut *events {
             let pos_opt = match expected.iter().position(|exp_event| {
                 (event.token() == exp_event.token()) &&
                 event.readiness().contains(exp_event.readiness())

@@ -65,7 +65,7 @@
 ///     // Wait for events
 ///     poll.poll(&mut events, None)?;
 ///
-///     for event in &events {
+///     for event in &mut events {
 ///         match event.token() {
 ///             LISTENER => {
 ///                 // Perform operations in a loop until `WouldBlock` is

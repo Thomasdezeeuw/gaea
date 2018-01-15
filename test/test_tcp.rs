@@ -34,7 +34,7 @@ fn accept() {
     while !h.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             h.hit = true;
             assert_eq!(event.token(), Token(1));
             assert!(event.readiness().is_readable());
@@ -74,7 +74,7 @@ fn connect() {
     while !h.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             assert_eq!(event.token(), Token(1));
             match h.hit {
                 0 => assert!(event.readiness().is_writable()),
@@ -92,7 +92,7 @@ fn connect() {
     while !h.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             assert_eq!(event.token(), Token(1));
             match h.hit {
                 0 => assert!(event.readiness().is_writable()),
@@ -135,7 +135,7 @@ fn read() {
     while !h.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             assert_eq!(event.token(), Token(1));
             let mut b = [0; 1024];
             loop {
@@ -182,7 +182,7 @@ fn peek() {
     while !h.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             assert_eq!(event.token(), Token(1));
             let mut b = [0; 1024];
             match h.socket.peek(&mut b) {
@@ -309,7 +309,7 @@ fn write() {
     while !h.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             assert_eq!(event.token(), Token(1));
             let b = [0; 1024];
             loop {
@@ -399,7 +399,7 @@ fn connect_then_close() {
     while !h.shutdown {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             if event.token() == Token(1) {
                 let mut s = h.listener.accept().unwrap().0;
                 poll.register(&mut s, Token(3), Ready::READABLE | Ready::WRITABLE,
@@ -424,7 +424,7 @@ fn listen_then_close() {
 
     poll.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
-    for event in &events {
+    for event in &mut events {
         if event.token() == Token(1) {
             panic!("recieved ready() on a closed TcpListener")
         }
@@ -482,7 +482,7 @@ fn multiple_writes_immediate_success() {
     // Wait for our TCP stream to connect
     'outer: loop {
         poll.poll(&mut events, None).unwrap();
-        for event in &events {
+        for event in &mut events {
             if event.token() == Token(1) && event.readiness().is_writable() {
                 break 'outer
             }
@@ -528,7 +528,7 @@ fn connection_reset_by_peer() {
     loop {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             if event.token() == Token(0) {
                 match l.accept() {
                     Ok((sock, _)) => {
@@ -555,7 +555,7 @@ fn connection_reset_by_peer() {
     loop {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             if event.token() == Token(3) {
                 assert!(event.readiness().is_readable());
 
@@ -586,7 +586,7 @@ fn connect_error() {
     loop {
         poll.poll(&mut events, None).unwrap();
 
-        for event in &events {
+        for event in &mut events {
             if event.token() == Token(0) {
                 assert!(event.readiness().is_writable());
                 break 'outer
@@ -622,7 +622,7 @@ fn write_error() {
         loop {
             poll.poll(&mut events, None).unwrap();
 
-            for event in &events {
+            for event in &mut events {
                 if event.token() == Token(0) && event.readiness().is_writable() {
                     break 'outer
                 }

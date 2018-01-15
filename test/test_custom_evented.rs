@@ -130,7 +130,7 @@ mod stress {
 
                 poll.poll(&mut events, Some(Duration::from_millis(0))).unwrap();
 
-                for event in &events {
+                for event in &mut events {
                     ready[event.token().0] = event.readiness();
                 }
 
@@ -149,7 +149,7 @@ mod stress {
                     // no more events in readiness queue pending
                     break;
                 }
-                for event in &events {
+                for event in &mut events {
                     ready[event.token().0] = event.readiness();
                 }
             }
@@ -214,7 +214,7 @@ mod stress {
         for _ in 0..5 {
             poll.poll(&mut events, None).unwrap();
 
-            for event in &events {
+            for event in &mut events {
                 final_ready[event.token().0] = true;
             }
 

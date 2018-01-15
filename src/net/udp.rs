@@ -56,7 +56,7 @@ use event::Evented;
 /// let mut events = Events::with_capacity(128);
 /// loop {
 ///     poll.poll(&mut events, Some(Duration::from_millis(100)))?;
-///     for event in &events {
+///     for event in &mut events {
 ///         match event.token() {
 ///             // Our SENDER is ready to be written into.
 ///             SENDER => {
