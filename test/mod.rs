@@ -32,6 +32,7 @@ mod test_tcp_level;
 mod test_udp_level;
 mod test_udp_socket;
 mod test_write_then_drop;
+mod test_timer;
 
 #[cfg(any(target_os = "fuchsia"))]
 mod test_fuchsia_handles;
@@ -148,8 +149,7 @@ mod ports {
     }
 }
 
-pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize, mut expected: Vec<Event>)
-{
+pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize, mut expected: Vec<Event>) {
     const MS: u64 = 1_000;
 
     for _ in 0..poll_try_count {

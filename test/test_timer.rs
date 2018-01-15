@@ -1,0 +1,115 @@
+use std::time::{Duration, Instant};
+
+use mio::*;
+use mio::timer::Timer;
+
+use expect_events;
+
+// TODO: add tests with other Evented items, using different subsystems.
+// Poll:
+// - prepare_time extension:
+//   - Deadline already elapsed -> elapsed as short as possible.
+//   - Deadline first before timeout.
+//   - Deadline after provided timeout.
+
+#[test]
+pub fn test_timer() {
+    let _ = ::env_logger::init();
+
+    let mut poll = Poll::new().unwrap();
+    let mut events = Events::with_capacity(16);
+
+    let mut timer = Timer::timeout(Duration::from_millis(20));
+
+    poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::EDGE).unwrap();
+    poll.deregister(&mut timer).unwrap();
+    poll.reregister(&mut timer, Token(1), Ready::READABLE, PollOpt::EDGE).unwrap();
+
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(30), vec![
+        Event::new(Ready::READABLE | Ready::WRITABLE, Token(1)),
+    ]);
+
+    poll.deregister(&mut timer).unwrap();
+}
+
+#[test]
+pub fn test_multiple_timers() {
+    let _ = ::env_logger::init();
+
+    let mut poll = Poll::new().unwrap();
+    let mut events = Events::with_capacity(16);
+
+    const T1: u64 = 20;
+    const T2: u64 = 40;
+    const T3: u64 = 60;
+
+    const TIMEOUTS: [[u64; 3]; 6] = [
+        [T1, T2, T3],
+        [T1, T3, T2],
+        [T2, T1, T3],
+        [T2, T3, T1],
+        [T3, T1, T2],
+        [T3, T2, T1],
+    ];
+
+    fn timeout_to_token(timeout: u64) -> Token {
+        if timeout == T1 {
+            Token(1)
+        } else if timeout == T2 {
+            Token(2)
+        } else if timeout == T3 {
+            Token(3)
+        } else {
+            unreachable!()
+        }
+    }
+
+    for timers in TIMEOUTS.iter() {
+        for timeout_ms in timers.iter() {
+            let token = timeout_to_token(*timeout_ms);
+            let first_token = Token(token.0 * 100);
+
+            let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
+            poll.register(&mut timer, first_token, Ready::READABLE, PollOpt::EDGE).unwrap();
+            poll.deregister(&mut timer).unwrap();
+            poll.reregister(&mut timer, token, Ready::READABLE, PollOpt::EDGE).unwrap();
+        }
+
+        const MAX_ELAPSED: u64 = T1 + 10;
+        for token in 1..4 {
+            expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(MAX_ELAPSED), vec![
+                Event::new(Ready::READABLE | Ready::WRITABLE, Token(token)),
+            ]);
+        }
+    }
+}
+
+#[test]
+pub fn test_multiple_timers_same_deadline() {
+    let _ = ::env_logger::init();
+
+    let mut poll = Poll::new().unwrap();
+    let mut events = Events::with_capacity(16);
+
+    const TIMERS: [u64; 3] = [50, 50, 50];
+    for (token, timeout_ms) in TIMERS.iter().enumerate() {
+        let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
+        poll.register(&mut timer, Token(token), Ready::READABLE, PollOpt::EDGE).unwrap();
+    }
+
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(210), vec![
+        Event::new(Ready::READABLE | Ready::WRITABLE, Token(0)),
+        Event::new(Ready::READABLE | Ready::WRITABLE, Token(1)),
+        Event::new(Ready::READABLE | Ready::WRITABLE, Token(2)),
+    ]);
+}
+
+/// A wrapper function around `expect_events` to check that elapsed time doesn't
+/// exceed `max_elapsed`, runs a single poll.
+fn expect_events_elapsed(poll: &mut Poll, events: &mut Events, max_elapsed: Duration, expected: Vec<Event>) {
+    let start = Instant::now();
+    expect_events(poll, events, 1, expected);
+    let elapsed = start.elapsed();
+    assert!(elapsed < max_elapsed, "expected poll to return within {:?}, \
+            it returned after: {:?}", max_elapsed, elapsed);
+}

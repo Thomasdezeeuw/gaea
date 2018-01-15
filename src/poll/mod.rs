@@ -1,17 +1,20 @@
-use std::{fmt, io};
+use std::{fmt, mem, io};
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{RawFd, AsRawFd};
 use std::time::{Duration, Instant};
 use std::sync::Arc;
+use std::collections::LinkedList;
 
 use {sys, Ready};
-use event::{Events, Evented};
+use event::{Event, Events, Evented};
 use super::poll2::*;
 
 mod opt;
 
 pub use token::Token;
 pub use self::opt::PollOpt;
+
+// TODO: update below to document that `deadlines` queue system.
 
 // Poll is backed by two readiness queues. The first is a system readiness queue
 // represented by `sys::Selector`. The system readiness queue handles events
@@ -331,9 +334,20 @@ pub struct Poll {
 
     // Custom readiness queue
     pub(crate) readiness_queue: ReadinessQueue,
+
+    /// An ordered list of deadlines, first must always be the next deadline to
+    /// expire.
+    // TODO: replace this with a "Timer wheel", see "Hashed and Hierarchical
+    // Timing Wheels: Efficient Data Structures for Implementing a Timer
+    // Facility" by George Varghese and Anthony Lauck (1997).
+    deadlines: LinkedList<(Token, Instant)>,
 }
 
 const AWAKEN: Token = Token(::std::usize::MAX);
+
+/// The only invalid token for used defined `Token`s, this can be used as null
+/// value.
+pub(crate) const INVALID_TOKEN: Token = AWAKEN;
 
 impl Poll {
     /// Return a new `Poll` handle.
@@ -373,12 +387,14 @@ impl Poll {
         let mut poll = Poll {
             selector: sys::Selector::new()?,
             readiness_queue: ReadinessQueue::new()?,
+            deadlines: LinkedList::new(),
         };
 
         {
             let  Poll {
                 ref mut selector,
                 ref mut readiness_queue,
+                ..
             } = poll;
 
             Arc::get_mut(&mut readiness_queue.inner).unwrap()
@@ -742,6 +758,7 @@ impl Poll {
 
         // Poll custom event queue.
         self.readiness_queue.poll(events.inner_mut());
+        self.poll_deadlines(events);
         Ok(())
     }
 
@@ -762,6 +779,26 @@ impl Poll {
             // The readiness queue is not empty, so do not block the thread.
             return Some(Duration::from_millis(0));
         }
+
+        let now = Instant::now();
+        if let Some(&(_, deadline)) = self.deadlines.front() {
+            // Deadline has already expired, no waiting.
+            if deadline < now {
+                // TODO: maybe we shouldn't even poll if this happens.
+                return Some(Duration::from_millis(0));
+            }
+
+            // Determine the timeout for the next deadline.
+            let deadline_timeout = deadline.duration_since(now);
+            match timeout {
+                // The provided timeout is before the deadline timeout, so we'll
+                // keep the original timeout.
+                Some(timeout) if timeout < deadline_timeout => {},
+                // Deadline timeout is sooner, use that.
+                _ => return Some(deadline_timeout),
+            }
+        }
+
         timeout
     }
 
@@ -769,10 +806,68 @@ impl Poll {
     pub(crate) fn selector(&self) -> &sys::Selector {
         &self.selector
     }
+
+    /// Add a new deadline to Poll.
+    pub(crate) fn add_deadline(&mut self, token: Token, deadline: Instant) {
+        let index = self.deadlines.iter()
+            .rposition(|&(_, got_deadline)| got_deadline < deadline);
+
+        let elem = (token, deadline);
+        match index {
+            None => self.deadlines.push_front(elem),
+            Some(index) if index == self.deadlines.len() - 1 => self.deadlines.push_back(elem),
+            Some(index) => {
+                let mut next_list = self.deadlines.split_off(index + 1);
+                self.deadlines.push_back(elem);
+                self.deadlines.append(&mut next_list);
+            },
+        }
+    }
+
+    /// Remove a previously added deadline.
+    pub(crate) fn remove_deadline(&mut self, token: Token) {
+        // TODO: optimize this to not walk the entire linked list, but take into
+        // account that this is ordered.
+        let index = self.deadlines.iter()
+            .position(|&(got_token, _)| got_token == token);
+
+        match index {
+            Some(0) => { self.deadlines.pop_front(); },
+            Some(index) if index == self.deadlines.len() - 1 => { self.deadlines.pop_back(); },
+            Some(index) => {
+                let mut next_list = self.deadlines.split_off(index + 1);
+                self.deadlines.pop_back();
+                self.deadlines.append(&mut next_list);
+            },
+            // Deadline is already expired.
+            None => {},
+        }
+    }
+
+    /// Add expired deadlines to the the provided `events`.
+    fn poll_deadlines(&mut self, events: &mut Events) {
+        let now = Instant::now();
+        // Determine the first deadline that is not passed yet.
+        let index = self.deadlines.iter()
+            .position(|&(_, deadline)| deadline > now)
+            .unwrap_or_else(|| self.deadlines.len());
+
+        match index {
+            0 => {},
+            index => {
+                let deadlines_left = self.deadlines.split_off(index);
+                let polled_deadlines = mem::replace(&mut self.deadlines, deadlines_left);
+
+                for (token, _) in polled_deadlines {
+                    events.push(Event::new(Ready::READABLE | Ready::WRITABLE, token));
+                }
+            },
+        }
+    }
 }
 
 fn validate_args(token: Token) -> io::Result<()> {
-    if token == AWAKEN {
+    if token == INVALID_TOKEN {
         Err(io::Error::new(io::ErrorKind::Other, "invalid token"))
     } else {
         Ok(())

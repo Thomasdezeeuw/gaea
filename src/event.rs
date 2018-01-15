@@ -212,6 +212,11 @@ impl Events {
     pub(crate) fn inner_mut(&mut self) -> &mut sys::Events {
         &mut self.inner
     }
+
+    /// Add an event.
+    pub(crate) fn push(&mut self, event: Event) {
+        self.inner.push_event(event);
+    }
 }
 
 impl<'a> IntoIterator for &'a Events {
