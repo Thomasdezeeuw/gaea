@@ -322,13 +322,9 @@ impl Event {
     pub fn token(&self) -> Token {
         self.token
     }
-}
 
-// Used internally to mutate an `Event` in place
-// Not used on all platforms
-#[allow(dead_code)]
-// TODO: move this to Event itself.
-#[doc(hidden)]
-pub(crate) fn kind_mut(event: &mut Event) -> &mut Ready {
-    &mut event.kind
+    /// Gain access to kind of event.
+    pub(crate) fn kind_mut(&mut self) -> &mut Ready {
+        &mut self.kind
+    }
 }

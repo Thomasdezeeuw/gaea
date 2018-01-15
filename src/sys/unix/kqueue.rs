@@ -267,35 +267,35 @@ impl Events {
             }
 
             if e.flags & libc::EV_ERROR != 0 {
-                event::kind_mut(&mut self.events[idx]).insert(Ready::ERROR);
+                self.events[idx].kind_mut().insert(Ready::ERROR);
             }
 
             if e.filter == libc::EVFILT_READ as Filter {
-                event::kind_mut(&mut self.events[idx]).insert(Ready::READABLE);
+                self.events[idx].kind_mut().insert(Ready::READABLE);
             } else if e.filter == libc::EVFILT_WRITE as Filter {
-                event::kind_mut(&mut self.events[idx]).insert(Ready::WRITABLE);
+                self.events[idx].kind_mut().insert(Ready::WRITABLE);
             }
 #[cfg(any(target_os = "dragonfly",
     target_os = "freebsd", target_os = "ios", target_os = "macos"))]
             {
                 if e.filter == libc::EVFILT_AIO {
-                    event::kind_mut(&mut self.events[idx]).insert(Ready::AIO);
+                    self.events[idx].kind_mut().insert(Ready::AIO);
                 }
             }
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
             {
                 if e.filter == libc::EVFILT_LIO {
-                    event::kind_mut(&mut self.events[idx]).insert(Ready::LIO);
+                    self.events[idx].kind_mut().insert(Ready::LIO);
                 }
             }
 
             if e.flags & libc::EV_EOF != 0 {
-                event::kind_mut(&mut self.events[idx]).insert(Ready::HUP);
+                self.events[idx].kind_mut().insert(Ready::HUP);
 
                 // When the read end of the socket is closed, EV_EOF is set on
                 // flags, and fflags contains the error if there is one.
                 if e.fflags != 0 {
-                    event::kind_mut(&mut self.events[idx]).insert(Ready::ERROR);
+                    self.events[idx].kind_mut().insert(Ready::ERROR);
                 }
             }
         }
