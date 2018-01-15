@@ -1,9 +1,8 @@
 use std::io;
 use std::time::{Duration, Instant};
 
-use {Ready, Token};
 use event::Evented;
-use poll::{Poll, PollOpt, INVALID_TOKEN};
+use poll::{Poll, PollOpt, Ready, Token, INVALID_TOKEN};
 
 /// Timer provides a way to creates events based on time.
 ///
@@ -17,9 +16,41 @@ use poll::{Poll, PollOpt, INVALID_TOKEN};
 ///
 /// # Reuse
 ///
-/// A `Timer` can be reused, although it has very little value. Note that
-/// calling `deregister` after a second call to `register` or `reregister`, will
-/// not deregister the first timer.
+/// A `Timer` can be reused, although it has very little value.
+///
+/// Note that calling `deregister` after a second call to `register` or
+/// `reregister`, will not deregister the first registration of the timer.
+///
+/// # Examples
+///
+/// ```
+/// # use std::error::Error;
+/// # fn try_main() -> Result<(), Box<Error>> {
+/// use std::time::Duration;
+///
+/// use mio::poll::{Poll, Token, Ready, PollOpt};
+/// use mio::event::{Event, Events};
+/// use mio::timer::Timer;
+///
+/// let mut poll = Poll::new()?;
+/// let mut events = Events::with_capacity(1024);
+///
+/// // Create and register our timer.
+/// let mut timer = Timer::timeout(Duration::from_millis(10));
+/// poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::ONESHOT)?;
+///
+/// poll.poll(&mut events, None)?;
+///
+/// for event in &mut events {
+///     assert_eq!(event, Event::new(Ready::READABLE | Ready::WRITABLE, Token(0)));
+/// }
+/// #   Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
+/// ```
 #[derive(Debug)]
 pub struct Timer {
     deadline: Instant,
