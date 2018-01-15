@@ -5,14 +5,17 @@ use std::time::{Duration, Instant};
 use std::sync::Arc;
 use std::collections::LinkedList;
 
-use {sys, Ready};
+use sys;
 use event::{Event, Events, Evented};
 use super::poll2::*;
 
 mod opt;
+mod ready;
+mod token;
 
-pub use token::Token;
 pub use self::opt::PollOpt;
+pub use self::ready::Ready;
+pub use self::token::Token;
 
 // TODO: update below to document that `deadlines` queue system.
 

@@ -104,11 +104,6 @@ extern crate kernel32;
 
 mod poll2;
 mod sys;
-mod token;
-mod ready;
-
-pub use token::Token;
-pub use ready::Ready;
 
 // TODO: move event as submodule of poll, rexport `Events` and `Event` in poll.
 pub mod event;
@@ -118,7 +113,7 @@ pub mod registration;
 pub mod timer;
 
 // TODO: fix the imports in other files.
-pub use poll::{Poll, PollOpt};
+pub use poll::{Poll, PollOpt, Ready, Token};
 pub use registration::{Registration, SetReadiness};
 pub use event::{Event, Events};
 
