@@ -1,7 +1,7 @@
 bitflags! {
     /// A set of readiness event kinds.
     ///
-    /// `Ready` is a set of operation descriptors indicating which kind of an
+    /// `Ready` is a set of operation descriptors indicating which kind of
     /// operation is ready to be performed. For example, `Ready::READABLE`
     /// indicates that the associated `Evented` handle is ready to perform a
     /// `read` operation.
@@ -10,6 +10,8 @@ bitflags! {
     /// operators.
     ///
     /// For high level documentation on polling and readiness, see [`Poll`].
+    ///
+    /// [`Poll`]: struct.Poll.html
     ///
     /// # Examples
     ///
@@ -20,26 +22,25 @@ bitflags! {
     ///
     /// assert!(ready.is_readable());
     /// assert!(ready.is_writable());
+    /// assert!(!ready.is_error());
     /// ```
-    ///
-    /// [`Poll`]: struct.Poll.html
     pub struct Ready: u8 {
         /// Readable readiness
-        const READABLE = 0b0000001;
+        const READABLE = 0b000_0001;
         /// Writable readiness.
-        const WRITABLE = 0b0000010;
+        const WRITABLE = 0b000_0010;
         /// Error readiness.
-        const ERROR    = 0b0000100;
+        const ERROR    = 0b000_0100;
         /// Hup readiness, this signal is Unix specific.
         #[cfg(all(unix, not(target_os = "fuchsia")))]
-        const HUP      = 0b0010000;
+        const HUP      = 0b001_0000;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))]
         /// AIO completion readiness, this signal is specific to the BSD family.
-        const AIO      = 0b0100000;
+        const AIO      = 0b010_0000;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
         /// LIO completion readiness, this signal is specific to DragonFly and
         /// FreeBSD.
-        const LIO      = 0b1000000;
+        const LIO      = 0b100_0000;
     }
 }
 
