@@ -2,35 +2,42 @@
 
 use std::io;
 
-use {sys, Poll, Token, Ready, PollOpt};
+use sys;
+use poll::{Poll, Token, Ready, PollOpt};
 
-/// A value that may be registered with `Poll`
+/// A value that may be registered with `Poll`.
 ///
-/// Values that implement `Evented` can be registered with `Poll`. Users of Mio
-/// should not use the `Evented` trait functions directly. Instead, the
-/// equivalent functions on `Poll` should be used.
+/// Values that implement `Evented` can be registered with [`Poll`]. Users of
+/// Mio should not use the `Evented` trait functions directly. Instead, the
+/// equivalent functions on [`Poll`] should be used.
 ///
 /// See [`Poll`] for more details.
 ///
 /// # Implementing `Evented`
 ///
-/// There are two types of `Evented` values.
+/// There are three types of `Evented` values.
 ///
 /// * **System** handles, which are backed by sockets or other system handles.
 /// These `Evented` handles will be monitored by the system selector. In this
-/// case, an implementation of `Evented` delegates to a lower level handle.
+/// case, an implementation of `Evented` delegates to a lower level handle, e.g.
+/// unix's [`EventedFd`].
 ///
 /// * **User** handles, which are driven entirely in user space using
 /// [`Registration`] and [`SetReadiness`]. In this case, the implementer takes
 /// responsibility for driving the readiness state changes.
 ///
+/// * **Deadline** handles, these are internal handles and can only be used
+/// using a [`Timer`].
+///
 /// [`Poll`]: ../struct.Poll.html
 /// [`Registration`]: ../struct.Registration.html
 /// [`SetReadiness`]: ../struct.SetReadiness.html
+/// [`EventedFd`]: ../unix/struct.EventedFd.html
+/// [`Timer`]: ../timer/struct.Timer.html
 ///
 /// # Examples
 ///
-/// Implementing `Evented` on a struct containing a socket:
+/// Implementing `Evented` on a struct containing a socket (a system handle).
 ///
 /// ```
 /// use mio::{Ready, Poll, PollOpt, Token};
@@ -44,14 +51,12 @@ use {sys, Poll, Token, Ready, PollOpt};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
-///     {
+///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`
 ///         self.socket.register(poll, token, interest, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
-///     {
+///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`
 ///         self.socket.reregister(poll, token, interest, opts)
 ///     }
@@ -63,7 +68,8 @@ use {sys, Poll, Token, Ready, PollOpt};
 /// }
 /// ```
 ///
-/// Implement `Evented` using [`Registration`] and [`SetReadiness`].
+/// Implement `Evented` using [`Registration`] and [`SetReadiness`][] (user
+/// handle). Note that this would better implemented using a [`Timer`].
 ///
 /// ```
 /// use mio::{Ready, Registration, Poll, PollOpt, Token};
@@ -104,13 +110,11 @@ use {sys, Poll, Token, Ready, PollOpt};
 /// }
 ///
 /// impl Evented for Deadline {
-///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
-///     {
+///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         self.registration.register(poll, token, interest, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
-///     {
+///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         self.registration.reregister(poll, token, interest, opts)
 ///     }
 ///
@@ -122,74 +126,74 @@ use {sys, Poll, Token, Ready, PollOpt};
 pub trait Evented {
     /// Register `self` with the given `Poll` instance.
     ///
-    /// This function should not be called directly. Use [`Poll::register`]
-    /// instead. Implementors should handle registration by either delegating
-    /// the call to another `Evented` type or creating a [`Registration`].
+    /// This function should not be called directly, use [`Poll.register`]
+    /// instead.
     ///
-    /// [`Poll::register`]: ../struct.Poll.html#method.register
-    /// [`Registration`]: ../struct.Registration.html
-    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>;
+    /// [`Poll.register`]: ../struct.Poll.html#method.register
+    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opt: PollOpt) -> io::Result<()>;
 
-    /// Re-register `self` with the given `Poll` instance.
+    /// Reregister `self` with the given `Poll` instance.
     ///
-    /// This function should not be called directly. Use [`Poll::reregister`]
-    /// instead. Implementors should handle re-registration by either delegating
-    /// the call to another `Evented` type or calling
-    /// [`SetReadiness::set_readiness`].
+    /// This function should not be called directly, use [`Poll.reregister`]
+    /// instead.
     ///
-    /// [`Poll::reregister`]: ../struct.Poll.html#method.reregister
-    /// [`SetReadiness::set_readiness`]: ../struct.SetReadiness.html#method.set_readiness
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>;
+    /// [`Poll.reregister`]: ../struct.Poll.html#method.reregister
+    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opt: PollOpt) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poll` instance
     ///
-    /// This function should not be called directly. Use [`Poll::deregister`]
-    /// instead. Implementors should handle deregistration by either delegating
-    /// the call to another `Evented` type or by dropping the [`Registration`]
-    /// associated with `self`.
+    /// This function should not be called directly, use [`Poll.deregister`]
+    /// instead.
     ///
-    /// [`Poll::deregister`]: ../struct.Poll.html#method.deregister
-    /// [`Registration`]: ../struct.Registration.html
+    /// [`Poll.deregister`]: ../struct.Poll.html#method.deregister
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()>;
 }
 
 /// An iterator over a collection of readiness events.
 ///
-/// `Events` is passed as an argument to [`Poll::poll`] and will be used to
+/// `Events` is passed as an argument to [`Poll.poll`] and will be used to
 /// receive any new readiness events received since the last poll. Usually, a
 /// single `Events` instance is created at the same time as a [`Poll`] and
-/// reused on each call to [`Poll::poll`].
+/// reused on each call to [`Poll.poll`].
 ///
 /// See [`Poll`] for more documentation on polling.
+///
+/// [`Poll.poll`]: ../struct.Poll.html#method.poll
+/// [`Poll`]: ../struct.Poll.html
 ///
 /// # Examples
 ///
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio::{Events, Poll};
 /// use std::time::Duration;
+///
+/// use mio::poll::{Poll, Token, Ready, PollOpt};
+/// use mio::event::Events;
+/// use mio::timer::Timer;
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
 ///
-/// // Register `Evented` handles with `poll`
+/// // Register `Evented` handles with `poll`.
+/// let mut timer = Timer::timeout(Duration::from_millis(10));
+/// poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::EDGE)?;
 ///
-/// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
+/// // Run the event loop.
+/// loop {
+///     poll.poll(&mut events, None)?;
 ///
-/// for event in &mut events {
-///     println!("event={:?}", event);
+///     for event in &mut events {
+///         println!("event={:?}", event);
+///     }
+/// #   return Ok(());
 /// }
-/// #     Ok(())
 /// # }
 /// #
 /// # fn main() {
 /// #     try_main().unwrap();
 /// # }
 /// ```
-///
-/// [`Poll::poll`]: struct.Poll.html#method.poll
-/// [`Poll`]: struct.Poll.html
 #[derive(Debug)]
 pub struct Events {
     inner: sys::Events,
@@ -197,7 +201,7 @@ pub struct Events {
 }
 
 impl Events {
-    /// Create a new Events collection with the provided `capacity`.
+    /// Create a new `Events` collection with the provided `capacity`.
     pub fn with_capacity(capacity: usize) -> Events {
         Events {
             inner: sys::Events::with_capacity(capacity),
@@ -211,7 +215,7 @@ impl Events {
         self.pos = 0;
     }
 
-    /// Gain access to the sys::Events.
+    /// Gain access to the internal `sys::Events`.
     pub(crate) fn inner_mut(&mut self) -> &mut sys::Events {
         &mut self.inner
     }
@@ -241,10 +245,10 @@ impl<'a> ExactSizeIterator for &'a mut Events {
     }
 }
 
-/// An readiness event returned by [`Poll::poll`].
+/// An readiness event.
 ///
 /// `Event` is a [readiness state] paired with a [`Token`]. It is returned by
-/// [`Poll::poll`].
+/// [`Poll.poll`].
 ///
 /// For more documentation on polling and events, see [`Poll`].
 ///
@@ -260,30 +264,18 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 /// assert_eq!(event.token(), Token(0));
 /// ```
 ///
-/// [`Poll::poll`]: ../struct.Poll.html#method.poll
-/// [`Poll`]: ../struct.Poll.html
 /// [readiness state]: ../struct.Ready.html
 /// [`Token`]: ../struct.Token.html
+/// [`Poll.poll`]: ../struct.Poll.html#method.poll
+/// [`Poll`]: ../struct.Poll.html
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Event {
     kind: Ready,
-    token: Token
+    token: Token,
 }
 
 impl Event {
-    /// Creates a new `Event` containing `readiness` and `token`
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::{Ready, Token};
-    /// use mio::event::Event;
-    ///
-    /// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
-    ///
-    /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
-    /// assert_eq!(event.token(), Token(0));
-    /// ```
+    /// Creates a new `Event` containing `readiness` and `token`.
     pub fn new(readiness: Ready, token: Token) -> Event {
         Event {
             kind: readiness,
@@ -292,33 +284,11 @@ impl Event {
     }
 
     /// Returns the event's readiness.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::{Ready, Token};
-    /// use mio::event::Event;
-    ///
-    /// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
-    ///
-    /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
-    /// ```
     pub fn readiness(&self) -> Ready {
         self.kind
     }
 
     /// Returns the event's token.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mio::{Ready, Token};
-    /// use mio::event::Event;
-    ///
-    /// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
-    ///
-    /// assert_eq!(event.token(), Token(0));
-    /// ```
     pub fn token(&self) -> Token {
         self.token
     }
