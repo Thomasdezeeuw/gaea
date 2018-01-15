@@ -3,7 +3,7 @@
 use std::io;
 
 use sys;
-use poll::{Poll, Token, Ready, PollOpt};
+use poll::{Poll, PollOpt, Ready, Token};
 
 /// A value that may be registered with `Poll`.
 ///
@@ -177,7 +177,7 @@ pub trait Evented {
 ///
 /// // Register `Evented` handles with `poll`.
 /// let mut timer = Timer::timeout(Duration::from_millis(10));
-/// poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::EDGE)?;
+/// poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::ONESHOT)?;
 ///
 /// // Run the event loop.
 /// loop {
