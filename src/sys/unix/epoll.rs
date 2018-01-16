@@ -31,9 +31,7 @@ impl Selector {
                     cvt(epoll_create1_fn(libc::EPOLL_CLOEXEC))?
                 }
                 None => {
-                    let fd = cvt(libc::epoll_create(1024))?;
-                    drop(set_cloexec(fd));
-                    fd
+                    cvt(libc::epoll_create(1024))
                 }
             }
         };

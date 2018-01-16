@@ -47,7 +47,6 @@ pub struct Selector {
 impl Selector {
     pub fn new() -> io::Result<Selector> {
         let kq = unsafe { cvt(libc::kqueue())? };
-        drop(set_cloexec(kq));
 
         Ok(Selector {
             kq: kq,
