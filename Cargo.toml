@@ -1,13 +1,13 @@
 [package]
 
 name          = "mio"
-version       = "0.6.12" # remember to update html_root_url
+version       = "0.1.0"
 license       = "MIT"
-authors       = ["Carl Lerche <me@carllerche.com>"]
-description   = "Lightweight non-blocking IO"
-documentation = "https://docs.rs/mio"
-homepage      = "https://github.com/carllerche/mio"
-repository    = "https://github.com/carllerche/mio"
+authors       = ["Carl Lerche <me@carllerche.com>", "Thomas de Zeeuw <thomasdezeeuw@gmail.com>"]
+description   = "Single threaded, lightweight non-blocking IO"
+documentation = "https://docs.rs/mio-st"
+homepage      = "https://github.com/Thomasdezeeuw/mio-st"
+repository    = "https://github.com/Thomasdezeeuw/mio-st"
 readme        = "README.md"
 keywords      = ["io", "async", "non-blocking"]
 categories    = ["asynchronous"]
@@ -22,7 +22,6 @@ lazycell = "0.6.0"
 log      = "0.3.1"
 slab     = "0.3.0"
 net2     = "0.2.29"
-iovec    = "0.1.1"
 bitflags = "1.0.1"
 
 [target.'cfg(target_os = "fuchsia")'.dependencies]
@@ -34,9 +33,10 @@ libc = "0.2.19"
 nix  = "0.9.0"
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.2.1"
-miow   = "0.2.1"
+iovec    = "0.1.1"
 kernel32-sys = "0.2"
+miow   = "0.2.1"
+winapi = "0.2.1"
 
 [dev-dependencies]
 env_logger = { version = "0.4.0", default-features = false }
