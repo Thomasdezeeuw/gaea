@@ -1,45 +1,17 @@
 #[cfg(all(unix, not(target_os = "fuchsia")))]
-pub use self::unix::{
-    Awakener,
-    EventedFd,
-    Events,
-    Io,
-    Selector,
-    TcpStream,
-    TcpListener,
-    UdpSocket,
-    set_nonblock,
-};
+mod unix;
 
 #[cfg(all(unix, not(target_os = "fuchsia")))]
-pub mod unix;
+pub use self::unix::*;
 
-#[cfg(windows)]
-pub use self::windows::{
-    Awakener,
-    Events,
-    Selector,
-    TcpStream,
-    TcpListener,
-    UdpSocket,
-    Overlapped,
-    Binding,
-};
+#[cfg(target_os = "fuchsia")]
+mod fuchsia;
+
+#[cfg(target_os = "fuchsia")]
+pub use self::fuchsia::*;
 
 #[cfg(windows)]
 mod windows;
 
-#[cfg(target_os = "fuchsia")]
-pub use self::fuchsia::{
-    Awakener,
-    Events,
-    EventedHandle,
-    Selector,
-    TcpStream,
-    TcpListener,
-    UdpSocket,
-    set_nonblock,
-};
-
-#[cfg(target_os = "fuchsia")]
-pub mod fuchsia;
+#[cfg(windows)]
+pub use self::windows::*;
