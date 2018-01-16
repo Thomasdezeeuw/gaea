@@ -79,7 +79,6 @@
 
 #[macro_use]
 extern crate bitflags;
-extern crate iovec;
 extern crate lazycell;
 #[macro_use]
 extern crate log;
@@ -104,6 +103,9 @@ extern crate winapi;
 
 #[cfg(windows)]
 extern crate kernel32;
+
+#[cfg(windows)]
+extern crate iovec;
 
 mod poll2;
 mod sys;

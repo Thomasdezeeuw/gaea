@@ -28,8 +28,6 @@ pub use self::io::{Io, set_nonblock};
 pub use self::tcp::{TcpStream, TcpListener};
 pub use self::udp::UdpSocket;
 
-pub use iovec::IoVec;
-
 /// Helper function to convert an `nix::Error` into an `io::Error`, use with
 /// `Result`'s `map_err`, e.g. `nix_fn().map_err(nix_to_io_error)?`.
 fn nix_to_io_error(err: nix::Error) -> ::std::io::Error {

@@ -1,6 +1,4 @@
 use {io, Evented, Ready, Poll, PollOpt, Token};
-use iovec::IoVec;
-use iovec::unix as iovec;
 use libc;
 use net2::TcpStreamExt;
 #[allow(unused_imports)] // only here for Rust 1.8
@@ -120,36 +118,6 @@ impl TcpStream {
 
     pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.io.peek(buf)
-    }
-
-    pub fn readv(&self, bufs: &mut [&mut IoVec]) -> io::Result<usize> {
-        unsafe {
-            let slice = iovec::as_os_slice_mut(bufs);
-            let len = cmp::min(<libc::c_int>::max_value() as usize, slice.len());
-            let rc = libc::readv(self.io.as_raw_fd(),
-                                 slice.as_ptr(),
-                                 len as libc::c_int);
-            if rc < 0 {
-                Err(io::Error::last_os_error())
-            } else {
-                Ok(rc as usize)
-            }
-        }
-    }
-
-    pub fn writev(&self, bufs: &[&IoVec]) -> io::Result<usize> {
-        unsafe {
-            let slice = iovec::as_os_slice(bufs);
-            let len = cmp::min(<libc::c_int>::max_value() as usize, slice.len());
-            let rc = libc::writev(self.io.as_raw_fd(),
-                                  slice.as_ptr(),
-                                  len as libc::c_int);
-            if rc < 0 {
-                Err(io::Error::last_os_error())
-            } else {
-                Ok(rc as usize)
-            }
-        }
     }
 }
 

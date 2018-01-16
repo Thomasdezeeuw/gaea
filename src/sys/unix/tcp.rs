@@ -1,4 +1,3 @@
-use std::cmp;
 use std::io::{self, Read, Write};
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{RawFd, FromRawFd, IntoRawFd, AsRawFd};
@@ -6,8 +5,6 @@ use std::time::Duration;
 
 use libc;
 use net2::TcpStreamExt;
-use iovec::IoVec;
-use iovec::unix as iovec;
 
 use {Ready, Poll, PollOpt, Token};
 use event::Evented;
@@ -120,36 +117,6 @@ impl TcpStream {
 
     pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.peek(buf)
-    }
-
-    pub fn readv(&self, bufs: &mut [&mut IoVec]) -> io::Result<usize> {
-        unsafe {
-            let slice = iovec::as_os_slice_mut(bufs);
-            let len = cmp::min(<libc::c_int>::max_value() as usize, slice.len());
-            let rc = libc::readv(self.inner.as_raw_fd(),
-                                 slice.as_ptr(),
-                                 len as libc::c_int);
-            if rc < 0 {
-                Err(io::Error::last_os_error())
-            } else {
-                Ok(rc as usize)
-            }
-        }
-    }
-
-    pub fn writev(&self, bufs: &[&IoVec]) -> io::Result<usize> {
-        unsafe {
-            let slice = iovec::as_os_slice(bufs);
-            let len = cmp::min(<libc::c_int>::max_value() as usize, slice.len());
-            let rc = libc::writev(self.inner.as_raw_fd(),
-                                  slice.as_ptr(),
-                                  len as libc::c_int);
-            if rc < 0 {
-                Err(io::Error::last_os_error())
-            } else {
-                Ok(rc as usize)
-            }
-        }
     }
 }
 
