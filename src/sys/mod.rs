@@ -8,7 +8,6 @@ pub use self::unix::{
     TcpStream,
     TcpListener,
     UdpSocket,
-    pipe,
     set_nonblock,
 };
 
