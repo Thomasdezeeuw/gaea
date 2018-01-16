@@ -1,7 +1,10 @@
-use libc::{self, c_int};
+use nix;
 
-#[macro_use]
-pub mod dlsym;
+mod awakener;
+mod eventedfd;
+mod io;
+mod tcp;
+mod udp;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod epoll;
@@ -19,12 +22,6 @@ mod kqueue;
           target_os = "netbsd", target_os = "openbsd"))]
 pub use self::kqueue::{Events, Selector};
 
-mod awakener;
-mod eventedfd;
-mod io;
-mod tcp;
-mod udp;
-
 pub use self::awakener::Awakener;
 pub use self::eventedfd::EventedFd;
 pub use self::io::{Io, set_nonblock};
@@ -33,30 +30,15 @@ pub use self::udp::UdpSocket;
 
 pub use iovec::IoVec;
 
-use std::os::unix::io::FromRawFd;
-
-pub fn pipe() -> ::std::io::Result<(Io, Io)> {
-    // Use pipe2 for atomically setting O_CLOEXEC if we can, but otherwise
-    // just fall back to using `pipe`.
-    dlsym!(fn pipe2(*mut c_int, c_int) -> c_int);
-
-    let mut pipes = [0; 2];
-    let flags = libc::O_NONBLOCK | libc::O_CLOEXEC;
-    unsafe {
-        match pipe2.get() {
-            Some(pipe2_fn) => {
-                cvt(pipe2_fn(pipes.as_mut_ptr(), flags))?;
-            }
-            None => {
-                cvt(libc::pipe(pipes.as_mut_ptr()))?;
-                libc::fcntl(pipes[0], libc::F_SETFL, flags);
-                libc::fcntl(pipes[1], libc::F_SETFL, flags);
-            }
-        }
-    }
-
-    unsafe {
-        Ok((Io::from_raw_fd(pipes[0]), Io::from_raw_fd(pipes[1])))
+/// Helper function to convert an `nix::Error` into an `io::Error`, use with
+/// `Result`'s `map_err`, e.g. `nix_fn().map_err(nix_to_io_error)?`.
+fn nix_to_io_error(err: nix::Error) -> ::std::io::Error {
+    use ::std::io;
+    match err {
+        nix::Error::Sys(errno) => io::Error::from_raw_os_error(errno as i32),
+        nix::Error::InvalidPath => io::Error::new(io::ErrorKind::Other, "invalid path"),
+        nix::Error::InvalidUtf8 => io::Error::new(io::ErrorKind::InvalidData, "invalid UTF-8 string"),
+        nix::Error::UnsupportedOperation => io::Error::new(io::ErrorKind::Other, "unsupported operation"),
     }
 }
 
