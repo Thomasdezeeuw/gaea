@@ -1,21 +1,10 @@
 use std::fs::File;
 use std::io::{self, Read, Write};
-use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
-
-use nix::fcntl::{fcntl, FcntlArg, OFlag, O_NONBLOCK};
+use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
 
 use event::Evented;
 use poll::{Poll, PollOpt, Ready, Token};
-use sys::unix::{EventedFd, nix_to_io_error};
-
-/// Set the provided file descriptor to non-blocking mode.
-pub fn set_nonblock(fd: RawFd) -> io::Result<()> {
-    fcntl(fd, FcntlArg::F_GETFL)
-        .map(|flags| OFlag::from_bits_truncate(flags))
-        .and_then(|flags| fcntl(fd, FcntlArg::F_SETFL(flags | O_NONBLOCK)))
-        .map(|_| ())
-        .map_err(nix_to_io_error)
-}
+use sys::unix::EventedFd;
 
 /// Manages a file decriptor.
 #[derive(Debug)]
