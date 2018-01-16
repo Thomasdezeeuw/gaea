@@ -131,10 +131,6 @@ impl TcpStream {
         self.imp.inner.socket.local_addr()
     }
 
-    pub fn try_clone(&self) -> io::Result<TcpStream> {
-        self.imp.inner.socket.try_clone().map(|s| TcpStream::new(s, None))
-    }
-
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         self.imp.inner.socket.shutdown(how)
     }
@@ -692,12 +688,6 @@ impl TcpListener {
 
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.imp.inner.socket.local_addr()
-    }
-
-    pub fn try_clone(&self) -> io::Result<TcpListener> {
-        self.imp.inner.socket.try_clone().map(|s| {
-            TcpListener::new_family(s, self.imp.inner.family)
-        })
     }
 
     #[allow(deprecated)]

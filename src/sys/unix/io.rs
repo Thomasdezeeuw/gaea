@@ -35,13 +35,6 @@ pub struct Io {
     fd: File,
 }
 
-impl Io {
-    /// Try to clone the FD
-    pub fn try_clone(&self) -> io::Result<Io> {
-        Ok(Io { fd: self.fd.try_clone()? })
-    }
-}
-
 impl FromRawFd for Io {
     unsafe fn from_raw_fd(fd: RawFd) -> Io {
         Io { fd: File::from_raw_fd(fd) }

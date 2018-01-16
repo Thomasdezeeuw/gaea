@@ -54,14 +54,6 @@ impl TcpStream {
         self.inner.local_addr()
     }
 
-    pub fn try_clone(&self) -> io::Result<TcpStream> {
-        self.inner.try_clone().map(|s| {
-            TcpStream {
-                inner: s,
-            }
-        })
-    }
-
     pub fn shutdown(&self, how: net::Shutdown) -> io::Result<()> {
         self.inner.shutdown(how)
     }
@@ -223,14 +215,6 @@ impl TcpListener {
 
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.inner.local_addr()
-    }
-
-    pub fn try_clone(&self) -> io::Result<TcpListener> {
-        self.inner.try_clone().map(|s| {
-            TcpListener {
-                inner: s,
-            }
-        })
     }
 
     pub fn accept(&self) -> io::Result<(net::TcpStream, SocketAddr)> {

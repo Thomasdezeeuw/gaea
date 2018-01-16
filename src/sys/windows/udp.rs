@@ -77,10 +77,6 @@ impl UdpSocket {
         self.imp.inner.socket.local_addr()
     }
 
-    pub fn try_clone(&self) -> io::Result<UdpSocket> {
-        self.imp.inner.socket.try_clone().and_then(UdpSocket::new)
-    }
-
     /// Note that unlike `TcpStream::write` this function will not attempt to
     /// continue writing `buf` until its entirely written.
     ///

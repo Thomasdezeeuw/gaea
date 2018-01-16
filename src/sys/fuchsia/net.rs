@@ -54,16 +54,6 @@ impl TcpStream {
         self.io.local_addr()
     }
 
-    pub fn try_clone(&self) -> io::Result<TcpStream> {
-        self.io.try_clone().map(|s| {
-            let evented_fd = unsafe { EventedFd::new(s.as_raw_fd()) };
-            TcpStream {
-                io: DontDrop::new(s),
-                evented_fd: evented_fd,
-            }
-        })
-    }
-
     pub fn shutdown(&self, how: net::Shutdown) -> io::Result<()> {
         self.io.shutdown(how)
     }
@@ -214,16 +204,6 @@ impl TcpListener {
         self.io.local_addr()
     }
 
-    pub fn try_clone(&self) -> io::Result<TcpListener> {
-        self.io.try_clone().map(|io| {
-            let evented_fd = unsafe { EventedFd::new(io.as_raw_fd()) };
-            TcpListener {
-                io: DontDrop::new(io),
-                evented_fd: evented_fd,
-            }
-        })
-    }
-
     pub fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
         self.io.accept().and_then(|(s, a)| {
             set_nonblock(s.as_raw_fd())?;
@@ -292,12 +272,6 @@ impl UdpSocket {
 
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io.local_addr()
-    }
-
-    pub fn try_clone(&self) -> io::Result<UdpSocket> {
-        self.io.try_clone().and_then(|io| {
-            UdpSocket::new(io)
-        })
     }
 
     pub fn send_to(&self, buf: &[u8], target: &SocketAddr) -> io::Result<usize> {

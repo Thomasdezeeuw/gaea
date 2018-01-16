@@ -125,18 +125,6 @@ impl TcpStream {
         self.inner.local_addr()
     }
 
-    /// Creates a new independently owned handle to the underlying socket.
-    ///
-    /// The returned `TcpStream` is a reference to the same stream that this
-    /// object references. Both handles will read and write the same stream of
-    /// data, and options set on one stream will be propagated to the other
-    /// stream.
-    pub fn try_clone(&self) -> io::Result<TcpStream> {
-        self.inner.try_clone().map(|s| TcpStream {
-            inner: s,
-        })
-    }
-
     /// Shuts down the read, write, or both halves of this connection.
     ///
     /// This function will cause all pending and future I/O on the specified
@@ -530,17 +518,6 @@ impl TcpListener {
     /// Returns the local socket address of this listener.
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.inner.local_addr()
-    }
-
-    /// Creates a new independently owned handle to the underlying socket.
-    ///
-    /// The returned `TcpListener` is a reference to the same socket that this
-    /// object references. Both handles can be used to accept incoming
-    /// connections and options set on one listener will affect the other.
-    pub fn try_clone(&self) -> io::Result<TcpListener> {
-        self.inner.try_clone().map(|s| TcpListener {
-            inner: s,
-        })
     }
 
     /// Sets the value for the `IP_TTL` option on this socket.

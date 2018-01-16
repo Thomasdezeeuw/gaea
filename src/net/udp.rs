@@ -159,17 +159,6 @@ impl UdpSocket {
         self.socket.local_addr()
     }
 
-    /// Creates a new independently owned handle to the underlying socket.
-    ///
-    /// The returned `UdpSocket` is a reference to the same socket that this
-    /// object references. Both handles will read and write the same port, and
-    /// options set on one socket will be propagated to the other.
-    pub fn try_clone(&self) -> io::Result<UdpSocket> {
-        self.socket.try_clone().map(|s| UdpSocket {
-            socket: s,
-        })
-    }
-
     /// Sends data on the socket to the given address. On success, returns the
     /// number of bytes written.
     ///
