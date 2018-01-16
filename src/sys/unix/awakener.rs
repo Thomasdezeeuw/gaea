@@ -4,10 +4,11 @@ use std::os::unix::io::{AsRawFd, FromRawFd};
 use nix;
 use nix::fcntl::{fcntl, FcntlArg, O_CLOEXEC, O_NONBLOCK};
 
-use sys::unix::{nix_to_io_error, Selector, Io};
 use event::Evented;
 use poll::{Poll, PollOpt, Ready, Token};
+use sys::unix::{nix_to_io_error, Selector, Io};
 
+#[derive(Debug)]
 pub struct Awakener {
     reader: Io,
     writer: Io,
@@ -34,13 +35,10 @@ impl Awakener {
     pub fn wakeup(&self) -> io::Result<()> {
         match (&self.writer).write(&[1]) {
             Ok(_) => Ok(()),
-            Err(e) => {
-                if e.kind() == io::ErrorKind::WouldBlock {
-                    Ok(())
-                } else {
-                    Err(e)
-                }
-            }
+            Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
+                Ok(())
+            },
+            Err(err) => Err(err),
         }
     }
 
