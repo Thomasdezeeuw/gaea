@@ -2,34 +2,22 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
-use libc;
+use nix::fcntl::{fcntl, FcntlArg, OFlag, O_NONBLOCK};
 
-use {Ready, Poll, PollOpt, Token};
 use event::Evented;
-use unix::EventedFd;
-use sys::unix::cvt;
+use poll::{Poll, PollOpt, Ready, Token};
+use sys::unix::{EventedFd, nix_to_io_error};
 
-pub fn set_nonblock(fd: libc::c_int) -> io::Result<()> {
-    unsafe {
-        let flags = libc::fcntl(fd, libc::F_GETFL);
-        cvt(libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK)).map(|_|())
-    }
+/// Set the provided file descriptor to non-blocking mode.
+pub fn set_nonblock(fd: RawFd) -> io::Result<()> {
+    fcntl(fd, FcntlArg::F_GETFL)
+        .map(|flags| OFlag::from_bits_truncate(flags))
+        .and_then(|flags| fcntl(fd, FcntlArg::F_SETFL(flags | O_NONBLOCK)))
+        .map(|_| ())
+        .map_err(nix_to_io_error)
 }
 
-pub fn set_cloexec(fd: libc::c_int) -> io::Result<()> {
-    unsafe {
-        let flags = libc::fcntl(fd, libc::F_GETFD);
-        cvt(libc::fcntl(fd, libc::F_SETFD, flags | libc::FD_CLOEXEC)).map(|_| ())
-    }
-}
-
-/*
- *
- * ===== Basic IO type =====
- *
- */
-
-/// Manages a FD
+/// Manages a file decriptor.
 #[derive(Debug)]
 pub struct Io {
     fd: File,
