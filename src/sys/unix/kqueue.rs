@@ -306,6 +306,10 @@ impl Events {
         self.events.push(event);
     }
 
+    pub fn extend_events(&mut self, extra: &[Event]) {
+        self.events.extend_from_slice(extra);
+    }
+
     pub fn clear(&mut self) {
         self.sys_events.0.truncate(0);
         self.events.truncate(0);

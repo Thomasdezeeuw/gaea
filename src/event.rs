@@ -29,9 +29,9 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// * **Deadline** handles, these are internal handles and can only be used
 /// using a [`Timer`].
 ///
-/// [`Poll`]: ../struct.Poll.html
-/// [`Registration`]: ../struct.Registration.html
-/// [`SetReadiness`]: ../struct.SetReadiness.html
+/// [`Poll`]: ../poll/struct.Poll.html
+/// [`Registration`]: ../registration/struct.Registration.html
+/// [`Notifier`]: ../registration/struct.Notifier.html
 /// [`EventedFd`]: ../unix/struct.EventedFd.html
 /// [`Timer`]: ../timer/struct.Timer.html
 ///
@@ -68,60 +68,11 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// }
 /// ```
 ///
-/// Implement `Evented` using [`Registration`] and [`SetReadiness`][] (user
-/// handle). Note that this would better implemented using a [`Timer`].
+/// Implement `Evented` using [`Registration`] and [`Notifier`][] (userspace
+/// handle).
 ///
-/// ```
-/// use mio::{Ready, Registration, Poll, PollOpt, Token};
-/// use mio::event::Evented;
-///
-/// use std::io;
-/// use std::time::Instant;
-/// use std::thread;
-///
-/// pub struct Deadline {
-///     when: Instant,
-///     registration: Registration,
-/// }
-///
-/// impl Deadline {
-///     pub fn new(when: Instant) -> Deadline {
-///         let (registration, set_readiness) = Registration::new2();
-///
-///         thread::spawn(move || {
-///             let now = Instant::now();
-///
-///             if now < when {
-///                 thread::sleep(when - now);
-///             }
-///
-///             set_readiness.set_readiness(Ready::READABLE);
-///         });
-///
-///         Deadline {
-///             when: when,
-///             registration: registration,
-///         }
-///     }
-///
-///     pub fn is_elapsed(&self) -> bool {
-///         Instant::now() >= self.when
-///     }
-/// }
-///
-/// impl Evented for Deadline {
-///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.register(poll, token, interest, opts)
-///     }
-///
-///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.reregister(poll, token, interest, opts)
-///     }
-///
-///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
-///         self.registration.deregister(poll)
-///     }
-/// }
+/// ```ignore
+/// // TODO: add example
 /// ```
 pub trait Evented {
     /// Register `self` with the given `Poll` instance.
@@ -223,6 +174,11 @@ impl Events {
     /// Add an event.
     pub(crate) fn push(&mut self, event: Event) {
         self.inner.push_event(event);
+    }
+
+    /// Extend the events with the provided `extra` events.
+    pub(crate) fn extend_events(&mut self, extra: &[Event]) {
+        self.inner.extend_events(extra);
     }
 }
 

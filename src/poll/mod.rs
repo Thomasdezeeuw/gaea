@@ -344,6 +344,9 @@ pub struct Poll {
     // Timing Wheels: Efficient Data Structures for Implementing a Timer
     // Facility" by George Varghese and Anthony Lauck (1997).
     deadlines: LinkedList<(Token, Instant)>,
+
+    /// Userspace events.
+    userspace_events: Vec<Event>,
 }
 
 const AWAKEN: Token = Token(::std::usize::MAX);
@@ -391,6 +394,7 @@ impl Poll {
             selector: sys::Selector::new()?,
             readiness_queue: ReadinessQueue::new()?,
             deadlines: LinkedList::new(),
+            userspace_events: Vec::new(),
         };
 
         {
@@ -761,6 +765,7 @@ impl Poll {
 
         // Poll custom event queue.
         self.readiness_queue.poll(events.inner_mut());
+        self.poll_userspace(events);
         self.poll_deadlines(events);
         Ok(())
     }
@@ -773,6 +778,9 @@ impl Poll {
         if timeout == Some(Duration::from_millis(0)) {
             // If blocking is not requested, then there is no need to prepare
             // the queue for sleep.
+        } else if self.userspace_events.len() > 0 {
+            // Userspace queue has events, so no blocking.
+            return Some(Duration::from_millis(0));
         } else if self.readiness_queue.prepare_for_sleep() {
             // The readiness queue is empty. The call to `prepare_for_sleep`
             // inserts `sleep_marker` into the queue. This signals to any
@@ -803,6 +811,17 @@ impl Poll {
         }
 
         timeout
+    }
+
+    /// Add a new userspace event to the queue.
+    pub(crate) fn userspace_add_event(&mut self, event: Event) {
+        self.userspace_events.push(event)
+    }
+
+    /// Poll userspace events.
+    fn poll_userspace(&mut self, events: &mut Events) {
+        events.extend_events(&self.userspace_events);
+        self.userspace_events.clear();
     }
 
     /// Get access to the system selector.

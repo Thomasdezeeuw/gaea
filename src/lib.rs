@@ -119,7 +119,7 @@ pub mod timer;
 
 // TODO: fix the imports in other files.
 pub use poll::{Poll, PollOpt, Ready, Token};
-pub use registration::{Registration, SetReadiness};
+pub use registration::{Registration, Notifier};
 pub use event::{Event, Events};
 
 #[cfg(all(unix, not(target_os = "fuchsia")))]

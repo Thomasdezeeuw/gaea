@@ -221,6 +221,12 @@ impl Events {
         });
     }
 
+    pub fn extend_events(&mut self, extra: &[Event]) {
+        for event in extra.into_iter() {
+            self.push_event(event);
+        }
+    }
+
     pub fn clear(&mut self) {
         unsafe { self.events.set_len(0); }
     }
