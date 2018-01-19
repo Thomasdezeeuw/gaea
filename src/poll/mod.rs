@@ -816,10 +816,13 @@ impl Poll {
     }
 }
 
+/// A deadline in `Poll`.
+///
+/// This must be ordered by `deadline`, then `token`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct Deadline {
-    token: Token,
     deadline: Instant,
+    token: Token,
 }
 
 /// Reverses the order of the comparing arguments.
