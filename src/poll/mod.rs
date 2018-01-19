@@ -328,6 +328,7 @@ pub(crate) use self::token::INVALID_TOKEN;
 /// [`EventedFd`]: unix/struct.EventedFd.html
 /// [`SetReadiness`]: struct.SetReadiness.html
 /// [`Poll::poll`]: struct.Poll.html#method.poll
+#[derive(Debug)]
 pub struct Poll {
     /// Platform specific IO selector.
     selector: sys::Selector,
@@ -851,11 +852,4 @@ impl Poll {
     }
 }
 
-
-impl fmt::Debug for Poll {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Poll")
-            .finish()
-    }
-}
 
