@@ -114,13 +114,13 @@ pub fn test_multiple_timers_same_deadline() {
     let mut poll = Poll::new().unwrap();
     let mut events = Events::with_capacity(16);
 
-    const TIMERS: [u64; 3] = [50, 50, 50];
-    for (token, timeout_ms) in TIMERS.iter().enumerate() {
-        let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
+    let deadline = Instant::now() + Duration::from_millis(20);
+    for token in 0..3 {
+        let mut timer = Timer::new(deadline);
         poll.register(&mut timer, Token(token), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
     }
 
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(210), vec![
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(30), vec![
         Event::new(Ready::TIMEOUT, Token(0)),
         Event::new(Ready::TIMEOUT, Token(1)),
         Event::new(Ready::TIMEOUT, Token(2)),
