@@ -775,12 +775,67 @@ impl Poll {
     }
 
     /// Add a new deadline to Poll.
-    pub(crate) fn add_deadline(&mut self, token: Token, deadline: Instant) {
+    ///
+    /// This will create a new timer that will trigger an [`Event`] after the
+    /// `deadline` has passed, which gets returned when [polling]. The `Event` will always have
+    /// [`TIMEOUT`] as `Ready` value and the same `token` as provided.
+    ///
+    /// [`Event`]: ../event/struct.Event.html
+    /// [polling]: #method.poll
+    /// [`TIMEOUT`]: struct.Ready.html#associatedconstant.TIMEOUT
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// use std::time::Duration;
+    ///
+    /// use mio::poll::{Poll, Token, Ready, PollOpt};
+    /// use mio::event::{Event, Events};
+    ///
+    /// let mut poll = Poll::new()?;
+    /// let mut events = Events::with_capacity(128);
+    ///
+    /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
+    /// poll.add_timeout(Token(0), Duration::from_millis(10));
+    ///
+    /// // Eventhough we don't provide a timeout to poll this will return in
+    /// // roughly 10 milliseconds and return an event with our deadline.
+    /// poll.poll(&mut events, None)?;
+    ///
+    /// for event in &mut events {
+    ///     assert_eq!(event, Event::new(Ready::TIMEOUT, Token(0)));
+    /// }
+    /// #   Ok(())
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     try_main().unwrap();
+    /// # }
+    /// ```
+    pub fn add_deadline(&mut self, token: Token, deadline: Instant) {
         self.deadlines.push(ReverseOrder(Deadline { token, deadline }));
     }
 
+    /// Add a new timeout to Poll.
+    ///
+    /// This is a shorthand for `poll.add_deadline(token, Instant::now() +
+    /// timeout)`, see [`add_deadline`].
+    ///
+    /// [`add_deadline`]: #method.add_deadline
+    pub fn add_timeout(&mut self, token: Token, timeout: Duration) {
+        self.add_deadline(token, Instant::now() + timeout)
+    }
+
     /// Remove a previously added deadline.
-    pub(crate) fn remove_deadline(&mut self, token: Token) {
+    ///
+    /// # Note
+    ///
+    /// This function is not at all good for performance. If your code can deal
+    /// with timeouts firing after they're no longer needed, then you shouldn't
+    /// use this function at let the timeout be fired and ignored.
+    pub fn remove_deadline(&mut self, token: Token) {
         // TODO: optimize this.
         let index = self.deadlines.iter()
             .position(|deadline| deadline.token == token);
