@@ -2,12 +2,10 @@ use std::{fmt, mem, io};
 #[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{RawFd, AsRawFd};
 use std::time::{Duration, Instant};
-use std::sync::Arc;
 use std::collections::LinkedList;
 
 use sys;
 use event::{Event, Events, Evented};
-use super::poll2::*;
 
 mod opt;
 mod ready;
@@ -332,11 +330,8 @@ pub use self::token::Token;
 /// [`SetReadiness`]: struct.SetReadiness.html
 /// [`Poll::poll`]: struct.Poll.html#method.poll
 pub struct Poll {
-    // Platform specific IO selector
-    pub(crate) selector: sys::Selector,
-
-    // Custom readiness queue
-    pub(crate) readiness_queue: ReadinessQueue,
+    /// Platform specific IO selector.
+    selector: sys::Selector,
 
     /// An ordered list of deadlines, first must always be the next deadline to
     /// expire.
@@ -392,21 +387,9 @@ impl Poll {
     pub fn new() -> io::Result<Poll> {
         let mut poll = Poll {
             selector: sys::Selector::new()?,
-            readiness_queue: ReadinessQueue::new()?,
             deadlines: LinkedList::new(),
             userspace_events: Vec::new(),
         };
-
-        {
-            let  Poll {
-                ref mut selector,
-                ref mut readiness_queue,
-                ..
-            } = poll;
-
-            Arc::get_mut(&mut readiness_queue.inner).unwrap()
-                .awakener.init(selector, AWAKEN, Ready::READABLE, PollOpt::EDGE)?;
-        }
 
         Ok(poll)
     }
@@ -734,24 +717,19 @@ impl Poll {
     /// [struct]: #
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
         let mut timeout = self.prepare_timeout(timeout);
-        events.reset();
 
+        // Clear any previously set events.
+        events.reset();
         loop {
-            let now = Instant::now();
-            // First get selector events.
-            let res = self.selector.select(events.inner_mut(), AWAKEN, timeout);
-            match res {
-                Ok(true) => {
-                    // Some awakeners require reading from a FD.
-                    self.readiness_queue.inner.awakener.cleanup();
-                    break;
-                },
-                Ok(false) => break,
+            let start = Instant::now();
+            // Get the selector events
+            match self.selector.select(events.inner_mut(), timeout) {
+                Ok(()) => break,
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
                     // Interrupted by a signal; update timeout if necessary and
                     // retry.
                     if let Some(to) = timeout {
-                        let elapsed = now.elapsed();
+                        let elapsed = start.elapsed();
                         if elapsed >= to {
                             break;
                         } else {
@@ -763,9 +741,9 @@ impl Poll {
             }
         }
 
-        // Poll custom event queue.
-        self.readiness_queue.poll(events.inner_mut());
+        // Poll userspace events.
         self.poll_userspace(events);
+        // Then poll deadlines.
         self.poll_deadlines(events);
         Ok(())
     }
@@ -780,14 +758,6 @@ impl Poll {
             // the queue for sleep.
         } else if self.userspace_events.len() > 0 {
             // Userspace queue has events, so no blocking.
-            return Some(Duration::from_millis(0));
-        } else if self.readiness_queue.prepare_for_sleep() {
-            // The readiness queue is empty. The call to `prepare_for_sleep`
-            // inserts `sleep_marker` into the queue. This signals to any
-            // threads setting readiness that the `Poll::poll` is going to
-            // sleep, so the awakener should be used.
-        } else {
-            // The readiness queue is not empty, so do not block the thread.
             return Some(Duration::from_millis(0));
         }
 

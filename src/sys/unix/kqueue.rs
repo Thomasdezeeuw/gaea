@@ -53,25 +53,24 @@ impl Selector {
         })
     }
 
-    pub fn select(&self, evts: &mut Events, awakener: Token, timeout: Option<Duration>) -> io::Result<bool> {
+    pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
         let timeout = timeout.map(|to| {
             libc::timespec {
                 tv_sec: cmp::min(to.as_secs(), time_t::max_value() as u64) as time_t,
-                tv_nsec: to.subsec_nanos() as libc::c_long,
+                tv_nsec: libc::c_long::from(to.subsec_nanos()),
             }
         });
         let timeout = timeout.as_ref().map(|s| s as *const _).unwrap_or(ptr::null_mut());
 
-        evts.clear();
         unsafe {
             let cnt = cvt(libc::kevent(self.kq,
                                             ptr::null(),
                                             0,
-                                            evts.sys_events.0.as_mut_ptr(),
-                                            evts.sys_events.0.capacity() as Count,
+                                            events.sys_events.0.as_mut_ptr(),
+                                            events.sys_events.0.capacity() as Count,
                                             timeout))?;
-            evts.sys_events.0.set_len(cnt as usize);
-            Ok(evts.coalesce(awakener))
+            events.sys_events.0.set_len(cnt as usize);
+            Ok(events.coalesce())
         }
     }
 
@@ -240,21 +239,13 @@ impl Events {
         self.events.get(idx).map(|e| *e)
     }
 
-    fn coalesce(&mut self, awakener: Token) -> bool {
-        let mut ret = false;
+    fn coalesce(&mut self) {
         self.events.clear();
         self.event_map.clear();
 
         for e in self.sys_events.0.iter() {
             let token = Token(e.udata as usize);
             let len = self.events.len();
-
-            if token == awakener {
-                // TODO: Should this return an error if event is an error. It
-                // is not critical as spurious wakeups are permitted.
-                ret = true;
-                continue;
-            }
 
             let idx = *self.event_map.entry(token)
                 .or_insert(len);
@@ -298,8 +289,6 @@ impl Events {
                 }
             }
         }
-
-        ret
     }
 
     pub fn push_event(&mut self, event: Event) {
@@ -346,7 +335,7 @@ fn does_not_register_rw() {
 fn test_coalesce_aio() {
     let mut events = Events::with_capacity(1);
     events.sys_events.0.push(kevent!(0x1234, libc::EVFILT_AIO, 0, 42));
-    events.coalesce(Token(0));
+    events.coalesce();
     assert!(events.events[0].readiness() == Ready::AIO);
     assert!(events.events[0].token() == Token(42));
 }

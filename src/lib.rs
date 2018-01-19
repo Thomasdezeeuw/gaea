@@ -107,7 +107,6 @@ extern crate kernel32;
 #[cfg(windows)]
 extern crate iovec;
 
-mod poll2;
 mod sys;
 
 // TODO: move event as submodule of poll, rexport `Events` and `Event` in poll.
