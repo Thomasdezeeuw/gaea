@@ -501,7 +501,7 @@ impl Poll {
     pub fn register<E>(&mut self, handle: &mut E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
-        validate_args(token)?;
+        token.validate()?;
         trace!("registering with poller, token: {:?}, interest: {:?}, opts: {:?}", token, interest, opts);
         handle.register(self, token, interest, opts)
     }
@@ -562,7 +562,7 @@ impl Poll {
     pub fn reregister<E>(&mut self, handle: &mut E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
-        validate_args(token)?;
+        token.validate()?;
         trace!("reregistering with poller, token: {:?}, interest: {:?}, opts: {:?}", token, interest, opts);
         handle.reregister(self, token, interest, opts)
     }
@@ -853,13 +853,6 @@ impl Poll {
     }
 }
 
-fn validate_args(token: Token) -> io::Result<()> {
-    if token == INVALID_TOKEN {
-        Err(io::Error::new(io::ErrorKind::Other, "invalid token"))
-    } else {
-        Ok(())
-    }
-}
 
 impl fmt::Debug for Poll {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {

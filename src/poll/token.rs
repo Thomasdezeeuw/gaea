@@ -1,3 +1,5 @@
+use std::io;
+
 /// Associates readiness notifications with [`Evented`] handles.
 ///
 /// `Token` is used as an argument to [`Poll.register`] and [`Poll.reregister`]
@@ -10,7 +12,7 @@
 /// [`Poll.reregister`]: struct.Poll.html#method.reregister
 /// [`Event`]: ../event/struct.Event.html
 /// [`Poll`]: struct.Poll.html
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Token(pub usize);
 
 /// The only invalid token.
@@ -22,6 +24,14 @@ impl Token {
     /// Wether or not the `Token` is valid.
     pub fn is_valid(&self) -> bool {
         *self != INVALID_TOKEN
+    }
+
+    pub(crate) fn validate(&self) -> io::Result<()> {
+        if !self.is_valid() {
+            Err(io::Error::new(io::ErrorKind::Other, "invalid token"))
+        } else {
+            Ok(())
+        }
     }
 }
 
