@@ -13,23 +13,46 @@ use expect_events;
 //   - Deadline after provided timeout.
 
 #[test]
-pub fn test_timer() {
+pub fn register_timer() {
     let _ = ::env_logger::init();
 
     let mut poll = Poll::new().unwrap();
     let mut events = Events::with_capacity(16);
 
-    let mut timer = Timer::timeout(Duration::from_millis(20));
+    let mut timer = Timer::timeout(Duration::from_millis(10));
+    poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
+        Event::new(Ready::TIMEOUT, Token(0)),
+    ]);
+}
 
+#[test]
+pub fn deregister_timer() {
+    let _ = ::env_logger::init();
+
+    let mut poll = Poll::new().unwrap();
+    let mut events = Events::with_capacity(16);
+
+    let mut timer = Timer::timeout(Duration::from_millis(10));
+    poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
+    poll.deregister(&mut timer).unwrap();
+    expect_events(&mut poll, &mut events, 1, vec![]);
+}
+
+#[test]
+pub fn reregister_timer() {
+    let _ = ::env_logger::init();
+
+    let mut poll = Poll::new().unwrap();
+    let mut events = Events::with_capacity(16);
+
+    let mut timer = Timer::timeout(Duration::from_millis(30));
     poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
     poll.deregister(&mut timer).unwrap();
     poll.reregister(&mut timer, Token(1), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
-
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(30), vec![
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(40), vec![
         Event::new(Ready::TIMEOUT, Token(1)),
     ]);
-
-    poll.deregister(&mut timer).unwrap();
 }
 
 #[test]
