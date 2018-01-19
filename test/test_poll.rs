@@ -19,11 +19,3 @@ fn test_poll_closes_fd() {
         drop(registration);
     }
 }
-
-#[test]
-#[cfg(all(unix, not(target_os = "fuchsia")))]
-pub fn test_poll_as_raw_fd() {
-    use std::os::unix::io::AsRawFd;
-    let poll = Poll::new().unwrap();
-    assert!(poll.as_raw_fd() > 0);
-}
