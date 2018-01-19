@@ -63,8 +63,9 @@ pub fn multiple_timers() {
     let mut events = Events::with_capacity(16);
 
     const T1: u64 = 20;
-    const T2: u64 = 40;
-    const T3: u64 = 60;
+    const T2: u64 = T1 * 2;
+    const T3: u64 = T1 * 3;
+    const MAX_ELAPSED: u64 = T1 + 10;
 
     const TIMEOUTS: [[u64; 3]; 6] = [
         [T1, T2, T3],
@@ -98,7 +99,6 @@ pub fn multiple_timers() {
             poll.reregister(&mut timer, token, Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
         }
 
-        const MAX_ELAPSED: u64 = T1 + 10;
         for token in 1..4 {
             expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(MAX_ELAPSED), vec![
                 Event::new(Ready::TIMEOUT, Token(token)),
