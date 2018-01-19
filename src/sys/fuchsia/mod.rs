@@ -6,7 +6,6 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::ops::{Deref, DerefMut};
 use std::os::unix::io::RawFd;
 
-mod awakener;
 mod handles;
 mod eventedfd;
 mod net;
@@ -16,7 +15,6 @@ mod selector;
 use self::eventedfd::{EventedFd, EventedFdInner};
 use self::ready::assert_fuchsia_ready_repr;
 
-pub use self::awakener::Awakener;
 pub use self::handles::EventedHandle;
 pub use self::net::{TcpListener, TcpStream, UdpSocket};
 pub use self::selector::{Events, Selector};

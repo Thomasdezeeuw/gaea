@@ -1,6 +1,5 @@
 use nix;
 
-mod awakener;
 mod eventedfd;
 mod io;
 mod tcp;
@@ -22,7 +21,6 @@ mod kqueue;
           target_os = "netbsd", target_os = "openbsd"))]
 pub use self::kqueue::{Events, Selector};
 
-pub use self::awakener::Awakener;
 pub use self::eventedfd::EventedFd;
 pub use self::io::Io;
 pub use self::tcp::{TcpStream, TcpListener};

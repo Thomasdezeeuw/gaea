@@ -142,7 +142,6 @@ use std::os::windows::prelude::*;
 use kernel32;
 use winapi;
 
-mod awakener;
 #[macro_use]
 mod selector;
 mod tcp;
@@ -150,7 +149,6 @@ mod udp;
 mod from_raw_arc;
 mod buffer_pool;
 
-pub use self::awakener::Awakener;
 pub use self::selector::{Events, Selector, Overlapped, Binding};
 pub use self::tcp::{TcpStream, TcpListener};
 pub use self::udp::UdpSocket;
