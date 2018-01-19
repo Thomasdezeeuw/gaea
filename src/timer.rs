@@ -60,17 +60,17 @@ pub struct Timer {
 }
 
 impl Timer {
-    /// Create a new Timer with the provided `deadline`.
+    /// Create a new `Timer` with the provided `deadline`.
     pub fn new(deadline: Instant) -> Timer {
         Timer { deadline, token: INVALID_TOKEN }
     }
 
-    /// Create a new Timer with the deadline set to `now + timeout`.
+    /// Create a new `Timer` with the deadline set to `now + timeout`.
     pub fn timeout(timeout: Duration) -> Timer {
         Timer { deadline: Instant::now() + timeout, token: INVALID_TOKEN }
     }
 
-    /// Returns the deadline of this Timer.
+    /// Returns the deadline of this `Timer`.
     pub fn deadline(&self) -> Instant {
         self.deadline
     }
@@ -82,9 +82,11 @@ impl Evented for Timer {
         poll.add_deadline(token, self.deadline);
         Ok(())
     }
+
     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
         self.register(poll, token, interest, opts)
     }
+
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
         if self.token != INVALID_TOKEN {
             poll.remove_deadline(self.token);
