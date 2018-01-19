@@ -56,7 +56,7 @@ pub fn reregister_timer() {
 }
 
 #[test]
-pub fn test_multiple_timers() {
+pub fn multiple_timers() {
     let _ = ::env_logger::init();
 
     let mut poll = Poll::new().unwrap();
@@ -108,7 +108,7 @@ pub fn test_multiple_timers() {
 }
 
 #[test]
-pub fn test_multiple_timers_same_deadline() {
+pub fn multiple_timers_same_deadline() {
     let _ = ::env_logger::init();
 
     let mut poll = Poll::new().unwrap();
