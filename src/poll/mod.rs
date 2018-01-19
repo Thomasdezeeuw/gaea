@@ -14,6 +14,7 @@ mod token;
 pub use self::opt::PollOpt;
 pub use self::ready::Ready;
 pub use self::token::Token;
+pub(crate) use self::token::INVALID_TOKEN;
 
 // TODO: update below to document that `deadlines` queue system.
 
@@ -343,12 +344,6 @@ pub struct Poll {
     /// Userspace events.
     userspace_events: Vec<Event>,
 }
-
-const AWAKEN: Token = Token(::std::usize::MAX);
-
-/// The only invalid token for used defined `Token`s, this can be used as null
-/// value.
-pub(crate) const INVALID_TOKEN: Token = AWAKEN;
 
 impl Poll {
     /// Return a new `Poll` handle.

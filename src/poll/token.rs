@@ -13,6 +13,18 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Token(pub usize);
 
+/// The only invalid token.
+///
+/// [`Token.is_valid`] can be used to determine if the token valid.
+pub(crate) const INVALID_TOKEN: Token = Token(::std::usize::MAX);
+
+impl Token {
+    /// Wether or not the `Token` is valid.
+    pub fn is_valid(&self) -> bool {
+        *self != INVALID_TOKEN
+    }
+}
+
 impl From<usize> for Token {
     fn from(val: usize) -> Token {
         Token(val)
