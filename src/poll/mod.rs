@@ -1,6 +1,4 @@
 use std::{fmt, mem, io};
-#[cfg(all(unix, not(target_os = "fuchsia")))]
-use std::os::unix::io::{RawFd, AsRawFd};
 use std::time::{Duration, Instant};
 use std::collections::LinkedList;
 
@@ -861,9 +859,3 @@ impl fmt::Debug for Poll {
     }
 }
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
-impl AsRawFd for Poll {
-    fn as_raw_fd(&self) -> RawFd {
-        self.selector.as_raw_fd()
-    }
-}
