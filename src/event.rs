@@ -117,18 +117,15 @@ pub trait Evented {
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use std::time::Duration;
 ///
 /// use mio::poll::{Poll, Token, Ready, PollOpt};
 /// use mio::event::Events;
-/// use mio::timer::Timer;
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
 ///
 /// // Register `Evented` handles with `poll`.
-/// let mut timer = Timer::timeout(Duration::from_millis(10));
-/// poll.register(&mut timer, Token(0), Ready::READABLE, PollOpt::ONESHOT)?;
+/// # poll.add_deadline(Token(0), ::std::time::Instant::now());
 ///
 /// // Run the event loop.
 /// loop {
