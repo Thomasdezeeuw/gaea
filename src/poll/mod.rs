@@ -830,12 +830,15 @@ impl Poll {
 
     /// Remove a previously added deadline.
     ///
+    /// It tries removes the deadline from Poll and returns it, if it hasn't
+    /// fired yet.
+    ///
     /// # Note
     ///
     /// This function is not at all good for performance. If your code can deal
-    /// with timeouts firing after they're no longer needed, then you shouldn't
-    /// use this function at let the timeout be fired and ignored.
-    pub fn remove_deadline(&mut self, token: Token) {
+    /// with timeouts firing after they're no longer needed, then you should not
+    /// use this function and let the timeout be fired and ignored.
+    pub fn remove_deadline(&mut self, token: Token) -> Option<Instant> {
         // TODO: optimize this.
         let index = self.deadlines.iter()
             .position(|deadline| deadline.token == token);
@@ -845,8 +848,11 @@ impl Poll {
             let mut deadlines_vec = deadlines.into_vec();
             debug_assert_eq!(deadlines_vec[index].token, token,
                              "remove_deadline: removing an incorrect deadline");
-            deadlines_vec.remove(index);
+            let deadline = deadlines_vec.remove(index);
             drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
+            Some(deadline.deadline)
+        } else {
+            None
         }
     }
 
