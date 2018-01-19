@@ -379,13 +379,11 @@ impl Poll {
     /// # }
     /// ```
     pub fn new() -> io::Result<Poll> {
-        let mut poll = Poll {
+        Ok(Poll {
             selector: sys::Selector::new()?,
             deadlines: LinkedList::new(),
             userspace_events: Vec::new(),
-        };
-
-        Ok(poll)
+        })
     }
 
     /// Register an `Evented` handle with the `Poll` instance.
