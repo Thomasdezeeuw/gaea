@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
-use mio::*;
-use mio::timer::Timer;
+use mio::event::{Event, Events};
+use mio::poll::{Poll, Ready, Token};
 
 use expect_events;
 
@@ -12,55 +12,48 @@ use expect_events;
 //   - Deadline first before timeout.
 //   - Deadline after provided timeout.
 
-#[test]
-pub fn register_timer() {
+fn setup() -> (Poll, Events) {
     let _ = ::env_logger::init();
+    let poll = Poll::new().unwrap();
+    let events = Events::with_capacity(16);
+    (poll, events)
+}
 
-    let mut poll = Poll::new().unwrap();
-    let mut events = Events::with_capacity(16);
+#[test]
+pub fn add_deadline() {
+    let (mut poll, mut events) = setup();
 
-    let mut timer = Timer::timeout(Duration::from_millis(10));
-    poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
+    poll.add_deadline(Token(0), Instant::now());
+
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10), vec![
+        Event::new(Ready::TIMEOUT, Token(0)),
+    ]);
+}
+
+#[test]
+pub fn add_timeout() {
+    let (mut poll, mut events) = setup();
+
+    poll.add_timeout(Token(0), Duration::from_millis(10));
+
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
         Event::new(Ready::TIMEOUT, Token(0)),
     ]);
 }
 
 #[test]
-pub fn deregister_timer() {
-    let _ = ::env_logger::init();
+pub fn remove_deadline() {
+    let (mut poll, mut events) = setup();
 
-    let mut poll = Poll::new().unwrap();
-    let mut events = Events::with_capacity(16);
+    poll.add_timeout(Token(0), Duration::from_millis(10));
+    poll.remove_deadline(Token(0));
 
-    let mut timer = Timer::timeout(Duration::from_millis(10));
-    poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
-    poll.deregister(&mut timer).unwrap();
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
 
 #[test]
-pub fn reregister_timer() {
-    let _ = ::env_logger::init();
-
-    let mut poll = Poll::new().unwrap();
-    let mut events = Events::with_capacity(16);
-
-    let mut timer = Timer::timeout(Duration::from_millis(30));
-    poll.register(&mut timer, Token(0), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
-    poll.deregister(&mut timer).unwrap();
-    poll.reregister(&mut timer, Token(1), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(40), vec![
-        Event::new(Ready::TIMEOUT, Token(1)),
-    ]);
-}
-
-#[test]
-pub fn multiple_timers() {
-    let _ = ::env_logger::init();
-
-    let mut poll = Poll::new().unwrap();
-    let mut events = Events::with_capacity(16);
+pub fn multiple_deadlines() {
+    let (mut poll, mut events) = setup();
 
     const T1: u64 = 20;
     const T2: u64 = T1 * 2;
@@ -93,10 +86,10 @@ pub fn multiple_timers() {
             let token = timeout_to_token(*timeout_ms);
             let first_token = Token(token.0 * 100);
 
-            let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
-            poll.register(&mut timer, first_token, Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
-            poll.deregister(&mut timer).unwrap();
-            poll.reregister(&mut timer, token, Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
+            let timeout = Duration::from_millis(*timeout_ms);
+            poll.add_timeout(first_token, timeout);
+            poll.remove_deadline(first_token);
+            poll.add_timeout(token, timeout);
         }
 
         for token in 1..4 {
@@ -108,16 +101,12 @@ pub fn multiple_timers() {
 }
 
 #[test]
-pub fn multiple_timers_same_deadline() {
-    let _ = ::env_logger::init();
-
-    let mut poll = Poll::new().unwrap();
-    let mut events = Events::with_capacity(16);
+pub fn multiple_deadlines_same_deadline() {
+    let (mut poll, mut events) = setup();
 
     let deadline = Instant::now() + Duration::from_millis(20);
     for token in 0..3 {
-        let mut timer = Timer::new(deadline);
-        poll.register(&mut timer, Token(token), Ready::TIMEOUT, PollOpt::ONESHOT).unwrap();
+        poll.add_deadline(Token(token), deadline);
     }
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(30), vec![
