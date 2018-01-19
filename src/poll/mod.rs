@@ -1,6 +1,7 @@
-use std::{fmt, mem, io};
+use std::{io, mem, ops};
+use std::cmp::Ordering;
 use std::time::{Duration, Instant};
-use std::collections::LinkedList;
+use std::collections::BinaryHeap;
 
 use sys;
 use event::{Event, Events, Evented};
@@ -330,18 +331,9 @@ pub(crate) use self::token::INVALID_TOKEN;
 /// [`Poll::poll`]: struct.Poll.html#method.poll
 #[derive(Debug)]
 pub struct Poll {
-    /// Platform specific IO selector.
     selector: sys::Selector,
-
-    /// An ordered list of deadlines, first must always be the next deadline to
-    /// expire.
-    // TODO: replace this with a "Timer wheel", see "Hashed and Hierarchical
-    // Timing Wheels: Efficient Data Structures for Implementing a Timer
-    // Facility" by George Varghese and Anthony Lauck (1997).
-    deadlines: LinkedList<(Token, Instant)>,
-
-    /// Userspace events.
     userspace_events: Vec<Event>,
+    deadlines: BinaryHeap<ReverseOrder<Deadline>>,
 }
 
 impl Poll {
@@ -381,7 +373,7 @@ impl Poll {
     pub fn new() -> io::Result<Poll> {
         Ok(Poll {
             selector: sys::Selector::new()?,
-            deadlines: LinkedList::new(),
+            deadlines: BinaryHeap::new(),
             userspace_events: Vec::new(),
         })
     }
@@ -708,13 +700,13 @@ impl Poll {
     ///
     /// [struct]: #
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
-        let mut timeout = self.prepare_timeout(timeout);
+        let mut timeout = self.determine_timeout(timeout);
 
         // Clear any previously set events.
         events.reset();
         loop {
             let start = Instant::now();
-            // Get the selector events
+            // Get the selector events.
             match self.selector.select(events.inner_mut(), timeout) {
                 Ok(()) => break,
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
@@ -741,28 +733,24 @@ impl Poll {
     }
 
     /// Compute the timeout value passed to the system selector. If the
-    /// readiness queue has pending nodes, we still want to poll the system
+    /// userspace queue has pending events, we still want to poll the system
     /// selector for new events, but we don't want to block the thread to wait
     /// for new events.
-    fn prepare_timeout(&mut self, timeout: Option<Duration>) -> Option<Duration> {
-        if timeout == Some(Duration::from_millis(0)) {
-            // If blocking is not requested, then there is no need to prepare
-            // the queue for sleep.
-        } else if self.userspace_events.len() > 0 {
+    ///
+    /// If we have any deadlines the first one will also cap the timeout.
+    fn determine_timeout(&mut self, timeout: Option<Duration>) -> Option<Duration> {
+        if self.userspace_events.len() > 0 {
             // Userspace queue has events, so no blocking.
             return Some(Duration::from_millis(0));
-        }
-
-        let now = Instant::now();
-        if let Some(&(_, deadline)) = self.deadlines.front() {
-            // Deadline has already expired, no waiting.
-            if deadline < now {
-                // TODO: maybe we shouldn't even poll if this happens.
+        } else if let Some(deadline) = self.deadlines.peek() {
+            let now = Instant::now();
+            if deadline.deadline < now {
+                // Deadline has already expired, so no blocking.
                 return Some(Duration::from_millis(0));
             }
 
             // Determine the timeout for the next deadline.
-            let deadline_timeout = deadline.duration_since(now);
+            let deadline_timeout = deadline.deadline.duration_since(now);
             match timeout {
                 // The provided timeout is before the deadline timeout, so we'll
                 // keep the original timeout.
@@ -786,68 +774,78 @@ impl Poll {
         self.userspace_events.clear();
     }
 
-    /// Get access to the system selector.
-    pub(crate) fn selector(&self) -> &sys::Selector {
-        &self.selector
-    }
-
     /// Add a new deadline to Poll.
     pub(crate) fn add_deadline(&mut self, token: Token, deadline: Instant) {
-        let index = self.deadlines.iter()
-            .rposition(|&(_, got_deadline)| got_deadline < deadline);
-
-        let elem = (token, deadline);
-        match index {
-            None => self.deadlines.push_front(elem),
-            Some(index) if index == self.deadlines.len() - 1 => self.deadlines.push_back(elem),
-            Some(index) => {
-                let mut next_list = self.deadlines.split_off(index + 1);
-                self.deadlines.push_back(elem);
-                self.deadlines.append(&mut next_list);
-            },
-        }
+        self.deadlines.push(ReverseOrder(Deadline { token, deadline }));
     }
 
     /// Remove a previously added deadline.
     pub(crate) fn remove_deadline(&mut self, token: Token) {
-        // TODO: optimize this to not walk the entire linked list, but take into
-        // account that this is ordered.
+        // TODO: optimize this.
         let index = self.deadlines.iter()
-            .position(|&(got_token, _)| got_token == token);
+            .position(|deadline| deadline.token == token);
 
-        match index {
-            Some(0) => { self.deadlines.pop_front(); },
-            Some(index) if index == self.deadlines.len() - 1 => { self.deadlines.pop_back(); },
-            Some(index) => {
-                let mut next_list = self.deadlines.split_off(index + 1);
-                self.deadlines.pop_back();
-                self.deadlines.append(&mut next_list);
-            },
-            // Deadline is already expired.
-            None => {},
+        if let Some(index) = index {
+            let deadlines = mem::replace(&mut self.deadlines, BinaryHeap::new());
+            let mut deadlines_vec = deadlines.into_vec();
+            debug_assert_eq!(deadlines_vec[index].token, token,
+                             "remove_deadline: removing an incorrect deadline");
+            deadlines_vec.remove(index);
+            drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
         }
     }
 
     /// Add expired deadlines to the the provided `events`.
     fn poll_deadlines(&mut self, events: &mut Events) {
         let now = Instant::now();
-        // Determine the first deadline that is not passed yet.
-        let index = self.deadlines.iter()
-            .position(|&(_, deadline)| deadline > now)
-            .unwrap_or_else(|| self.deadlines.len());
-
-        match index {
-            0 => {},
-            index => {
-                let deadlines_left = self.deadlines.split_off(index);
-                let polled_deadlines = mem::replace(&mut self.deadlines, deadlines_left);
-
-                for (token, _) in polled_deadlines {
-                    events.push(Event::new(Ready::TIMEOUT, token));
-                }
-            },
+        loop {
+            match self.deadlines.peek().cloned() {
+                Some(deadline) if deadline.deadline <= now => {
+                    let deadline = self.deadlines.pop().unwrap();
+                    events.push(Event::new(Ready::TIMEOUT, deadline.token));
+                },
+                _ => return,
+            }
         }
+    }
+
+    /// Get access to the system selector. Used by platform specific code, e.g.
+    /// `EventedFd`.
+    pub(crate) fn selector(&self) -> &sys::Selector {
+        &self.selector
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+struct Deadline {
+    token: Token,
+    deadline: Instant,
+}
 
+/// Reverses the order of the comparing arguments.
+///
+/// ```ignore
+/// assert!(ReverseOrder(10) > ReverseOrder(100));
+/// assert!(ReverseOrder(10) < ReverseOrder(1));
+/// ```
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+struct ReverseOrder<T>(T);
+
+impl<T: Ord> Ord for ReverseOrder<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.0.cmp(&self.0)
+    }
+}
+
+impl<T: PartialOrd> PartialOrd for ReverseOrder<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        other.0.partial_cmp(&self.0)
+    }
+}
+
+impl<T> ops::Deref for ReverseOrder<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
