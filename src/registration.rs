@@ -107,13 +107,14 @@ impl Registration {
 }
 
 impl Evented for Registration {
-    fn register(&mut self, _: &mut Poll, token: Token, interest: Ready, _: PollOpt) -> io::Result<()> {
+    fn register(&mut self, _poll: &mut Poll, token: Token, interest: Ready, _: PollOpt) -> io::Result<()> {
         self.inner.register(token, interest);
         Ok(())
     }
 
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.register(poll, token, interest, opts)
+    fn reregister(&mut self, _poll: &mut Poll, token: Token, interest: Ready, _: PollOpt) -> io::Result<()> {
+        self.inner.reregister(token, interest);
+        Ok(())
     }
 
     fn deregister(&mut self, _: &mut Poll) -> io::Result<()> {
@@ -212,6 +213,10 @@ impl RegistrationInner {
     fn register(&self, token: Token, interest: Ready) {
         assert_eq!(self.token.get(), INVALID_TOKEN, "cannot reregistering \
                    `Registration` without deregistering first");
+        self.reregister(token, interest);
+    }
+
+    fn reregister(&self, token: Token, interest: Ready) {
         self.token.set(token);
         self.interest.set(interest);
     }
