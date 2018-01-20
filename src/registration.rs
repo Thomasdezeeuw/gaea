@@ -73,10 +73,10 @@ use std::rc::{Rc, Weak};
 use event::{Event, Evented};
 use poll::{Poll, PollOpt, Ready, Token, INVALID_TOKEN};
 
-/// Handle to a userspace registration.
+/// Handle to a user space registration.
 ///
 ///
-/// This is a handle to an userspace registration and can be used to implement
+/// This is a handle to an user space registration and can be used to implement
 /// [`Evented`] for types that cannot work with the [system selector]. A
 /// `Registration` is always paired with a [`Notifier`], which allows notifying
 /// the registration of events.
@@ -98,7 +98,7 @@ pub struct Registration {
 }
 
 impl Registration {
-    /// Create a new userspace registration and accompanying notify handle.
+    /// Create a new user space registration and accompanying notify handle.
     pub fn new() -> (Registration, Notifier) {
         let inner = Rc::new(RegistrationInner::new());
         let set_readiness = Notifier { inner: Rc::downgrade(&inner) };
@@ -139,7 +139,7 @@ pub struct Notifier {
 }
 
 impl Notifier {
-    /// Creates a new userspace event with the provided `ready` and the `token`
+    /// Creates a new user space event with the provided `ready` and the `token`
     /// set when registering the accompanying `Registration`.
     ///
     /// This will return `false` if no event is created, this can happen in the

@@ -68,7 +68,7 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// }
 /// ```
 ///
-/// Implement `Evented` using [`Registration`] and [`Notifier`][] (userspace
+/// Implement `Evented` using [`Registration`] and [`Notifier`][] (user space
 /// handle).
 ///
 /// ```ignore
@@ -117,6 +117,7 @@ pub trait Evented {
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
+/// use std::time::Duration;
 ///
 /// use mio::poll::{Poll, Token, Ready, PollOpt};
 /// use mio::event::Events;
@@ -124,12 +125,11 @@ pub trait Evented {
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
 ///
-/// // Register `Evented` handles with `poll`.
-/// # poll.add_deadline(Token(0), ::std::time::Instant::now());
+/// // Register `Evented` handles with `poll` here.
 ///
 /// // Run the event loop.
 /// loop {
-///     poll.poll(&mut events, None)?;
+///     poll.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
 ///     for event in &mut events {
 ///         println!("event={:?}", event);

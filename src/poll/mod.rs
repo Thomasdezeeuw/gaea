@@ -650,7 +650,7 @@ impl Poll {
             }
         }
 
-        // Poll userspace events.
+        // Poll user space events.
         self.poll_userspace(events);
         // Then poll deadlines.
         self.poll_deadlines(events);
@@ -658,7 +658,7 @@ impl Poll {
     }
 
     /// Compute the timeout value passed to the system selector. If the
-    /// userspace queue has pending events, we still want to poll the system
+    /// user space queue has pending events, we still want to poll the system
     /// selector for new events, but we don't want to block the thread to wait
     /// for new events.
     ///
@@ -688,12 +688,12 @@ impl Poll {
         timeout
     }
 
-    /// Add a new userspace event to the queue.
+    /// Add a new user space event to the queue.
     pub(crate) fn userspace_add_event(&mut self, event: Event) {
         self.userspace_events.push(event)
     }
 
-    /// Poll userspace events.
+    /// Poll user space events.
     fn poll_userspace(&mut self, events: &mut Events) {
         events.extend_events(&self.userspace_events);
         self.userspace_events.clear();
