@@ -128,8 +128,6 @@ impl Selector {
                   _awakener: Token,
                   timeout: Option<Duration>) -> io::Result<bool>
     {
-        evts.clear();
-
         self.reregister_handles()?;
 
         let deadline = match timeout {

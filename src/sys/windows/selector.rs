@@ -57,9 +57,6 @@ impl Selector {
                   timeout: Option<Duration>) -> io::Result<bool> {
         trace!("select; timeout={:?}", timeout);
 
-        // Clear out the previous list of I/O events and get some more!
-        events.clear();
-
         trace!("polling IOCP");
         let n = match self.inner.port.get_many(&mut events.statuses, timeout) {
             Ok(statuses) => statuses.len(),
