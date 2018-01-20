@@ -20,9 +20,3 @@ mod fuchsia;
 
 #[cfg(target_os = "fuchsia")]
 pub use self::fuchsia::*;
-
-#[cfg(windows)]
-mod windows;
-
-#[cfg(windows)]
-pub use self::windows::*;
