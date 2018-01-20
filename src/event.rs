@@ -3,7 +3,7 @@
 use std::io;
 
 use sys;
-use poll::{Poll, PollOpt, Ready, Token};
+use poll::{Poll, PollOpt, Ready};
 
 /// A value that may be registered with `Poll`.
 ///
@@ -50,14 +50,14 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`
-///         self.socket.register(poll, token, interest, opts)
+///         self.socket.register(poll, id, interest, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`
-///         self.socket.reregister(poll, token, interest, opts)
+///         self.socket.reregister(poll, id, interest, opts)
 ///     }
 ///
 ///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -108,12 +108,12 @@ use poll::{Poll, PollOpt, Ready, Token};
 ///
 /// // Deligate the Evented registration to the user space registration.
 /// impl<T> Evented for Receiver<T> {
-///     fn register(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.register(poll, token, interest, opts)
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///         self.registration.register(poll, id, interest, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.reregister(poll, token, interest, opts)
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///         self.registration.reregister(poll, id, interest, opts)
 ///     }
 ///
 ///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -145,7 +145,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poll.register`]: ../struct.Poll.html#method.register
-    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opt: PollOpt) -> io::Result<()>;
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opt: PollOpt) -> io::Result<()>;
 
     /// Reregister `self` with the given `Poll` instance.
     ///
@@ -153,7 +153,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poll.reregister`]: ../struct.Poll.html#method.reregister
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opt: PollOpt) -> io::Result<()>;
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opt: PollOpt) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poll` instance
     ///
@@ -183,8 +183,8 @@ pub trait Evented {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::poll::{Poll, Token, Ready, PollOpt};
-/// use mio::event::Events;
+/// use mio::poll::{Poll, Ready, PollOpt};
+/// use mio::event::{Events, EventedId};
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
@@ -264,7 +264,7 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 
 /// An readiness event.
 ///
-/// `Event` is a [readiness state] paired with a [`Token`]. It is returned by
+/// `Event` is a [readiness state] paired with a [`EventedId`]. It is returned by
 /// [`Poll.poll`].
 ///
 /// For more documentation on polling and events, see [`Poll`].
@@ -272,29 +272,29 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 /// # Examples
 ///
 /// ```
-/// use mio::{Ready, Token};
-/// use mio::event::Event;
+/// use mio::Ready;
+/// use mio::event::{Event, EventedId};
 ///
-/// let event = Event::new(Token(0), Ready::READABLE | Ready::WRITABLE);
+/// let event = Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE);
 ///
 /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
-/// assert_eq!(event.token(), Token(0));
+/// assert_eq!(event.id(), EventedId(0));
 /// ```
 ///
 /// [readiness state]: ../struct.Ready.html
-/// [`Token`]: ../struct.Token.html
+/// [`EventedId`]: struct.EventedId.html
 /// [`Poll.poll`]: ../struct.Poll.html#method.poll
 /// [`Poll`]: ../struct.Poll.html
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Event {
-    token: Token,
+    id: EventedId,
     readiness: Ready,
 }
 
 impl Event {
-    /// Creates a new `Event` containing `token` and `readiness`.
-    pub fn new(token: Token, readiness: Ready) -> Event {
-        Event { token, readiness }
+    /// Creates a new `Event` containing `id` and `readiness`.
+    pub fn new(id: EventedId, readiness: Ready) -> Event {
+        Event { id, readiness }
     }
 
     /// Returns the event's readiness.
@@ -302,14 +302,15 @@ impl Event {
         self.readiness
     }
 
-    /// Returns the event's token.
-    pub fn token(&self) -> Token {
-        self.token
+    /// Returns the event's id.
+    pub fn id(&self) -> EventedId {
+        self.id
     }
 
-    /// Gain access to kind of event.
-    pub(crate) fn kind_mut(&mut self) -> &mut Ready {
-        &mut self.readiness
+    // TODO: REMOVE
+    /// Returns the event's token.
+    pub fn token(&self) -> EventedId {
+        self.id()
     }
 }
 
@@ -329,9 +330,9 @@ impl Event {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct EventedId(pub usize);
 
-/// The only invalid token.
+/// The only invalid evented id.
 ///
-/// [`EventedId.is_valid`] can be used to determine if the token valid.
+/// [`EventedId.is_valid`] can be used to determine if the id is valid.
 pub(crate) const INVALID_EVENTED_ID: EventedId = EventedId(::std::usize::MAX);
 
 impl EventedId {
