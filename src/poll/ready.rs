@@ -41,10 +41,6 @@ bitflags! {
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))]
         /// AIO completion readiness, this signal is specific to the BSD family.
         const AIO      = 0b0010_0000;
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        /// LIO completion readiness, this signal is specific to DragonFly and
-        /// FreeBSD.
-        const LIO      = 0b0100_0000;
     }
 }
 
@@ -85,12 +81,5 @@ impl Ready {
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))]
     pub fn is_aio(&self) -> bool {
         self.contains(Ready::AIO)
-    }
-
-    /// Returns true if the value includes LIO completion readiness.
-    #[inline]
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-    pub fn is_lio(&self) -> bool {
-        self.contains(Ready::LIO)
     }
 }
