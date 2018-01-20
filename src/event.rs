@@ -224,18 +224,18 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Event {
     token: Token,
-    kind: Ready,
+    readiness: Ready,
 }
 
 impl Event {
     /// Creates a new `Event` containing `token` and `readiness`.
     pub fn new(token: Token, readiness: Ready) -> Event {
-        Event { token, kind: readiness }
+        Event { token, readiness }
     }
 
     /// Returns the event's readiness.
     pub fn readiness(&self) -> Ready {
-        self.kind
+        self.readiness
     }
 
     /// Returns the event's token.
@@ -245,7 +245,7 @@ impl Event {
 
     /// Gain access to kind of event.
     pub(crate) fn kind_mut(&mut self) -> &mut Ready {
-        &mut self.kind
+        &mut self.readiness
     }
 }
 
