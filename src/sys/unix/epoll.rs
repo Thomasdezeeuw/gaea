@@ -169,22 +169,14 @@ impl Events {
         }
     }
 
-    #[inline]
     pub fn len(&self) -> usize {
         self.events.len()
     }
 
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        self.events.capacity()
+    pub fn clear(&mut self) {
+        self.events.clear();
     }
 
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.events.is_empty()
-    }
-
-    #[inline]
     pub fn get(&self, idx: usize) -> Option<Event> {
         self.events.get(idx).map(|event| {
             let epoll = event.events as c_int;
@@ -211,23 +203,6 @@ impl Events {
 
             Event::new(Token(token as usize), kind)
         })
-    }
-
-    pub fn push_event(&mut self, event: Event) {
-        self.events.push(libc::epoll_event {
-            events: ioevent_to_epoll(event.readiness(), PollOpt::empty()),
-            u64: usize::from(event.token()) as u64
-        });
-    }
-
-    pub fn extend_events(&mut self, extra: &[Event]) {
-        for event in extra.into_iter() {
-            self.push_event(event);
-        }
-    }
-
-    pub fn clear(&mut self) {
-        unsafe { self.events.set_len(0); }
     }
 }
 

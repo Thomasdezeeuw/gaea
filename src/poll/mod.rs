@@ -575,7 +575,7 @@ impl Poll {
         loop {
             let start = Instant::now();
             // Get the selector events.
-            match self.selector.select(events.inner_mut(), timeout) {
+            match self.selector.select(events.system_events_mut(), timeout) {
                 Ok(()) => break,
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
                     // Interrupted by a signal; update timeout if necessary and

@@ -208,7 +208,13 @@ pub trait Evented {
 /// ```
 #[derive(Debug)]
 pub struct Events {
-    inner: sys::Events,
+    /// System events created by the system selector.
+    sys_events: sys::Events,
+    /// User space events created by `Poll` internally, this including timers.
+    user_events: Vec<Event>,
+    /// The position is used for both the system and user events. If `pos` >=
+    /// `sys_events.len()`, then `pos - sys_events.len()` is used to index
+    /// `user_events`.
     pos: usize,
 }
 
@@ -216,49 +222,61 @@ impl Events {
     /// Create a new `Events` collection with the provided `capacity`.
     pub fn with_capacity(capacity: usize) -> Events {
         Events {
-            inner: sys::Events::with_capacity(capacity),
+            // TODO: add two capacities to the method; one for system events one
+            // for user space events and timers.
+            sys_events: sys::Events::with_capacity(capacity),
+            user_events: Vec::with_capacity(capacity / 2),
             pos: 0,
         }
     }
 
     /// Reset the events to allow it to be filled again.
     pub(crate) fn reset(&mut self) {
-        self.inner.clear();
+        self.sys_events.clear();
+        self.user_events.clear();
         self.pos = 0;
     }
 
-    /// Gain access to the internal `sys::Events`.
-    pub(crate) fn inner_mut(&mut self) -> &mut sys::Events {
-        &mut self.inner
+    /// Get a mutable reference to the internal system events.
+    pub(crate) fn system_events_mut(&mut self) -> &mut sys::Events {
+        &mut self.sys_events
     }
 
-    /// Add an event.
+    /// Add an user space event.
     pub(crate) fn push(&mut self, event: Event) {
-        self.inner.push_event(event);
+        self.user_events.push(event);
     }
 
-    /// Extend the events with the provided `extra` events.
-    pub(crate) fn extend_events(&mut self, extra: &[Event]) {
-        self.inner.extend_events(extra);
+    /// Extend the user space events.
+    pub(crate) fn extend_events(&mut self, events: &[Event]) {
+        self.user_events.extend_from_slice(events);
+    }
+
+    fn user_pos(&self) -> usize {
+        self.pos - self.sys_events.len()
     }
 }
 
 impl<'a> Iterator for &'a mut Events {
     type Item = Event;
     fn next(&mut self) -> Option<Event> {
-        let ret = self.inner.get(self.pos);
+        // First try the system events, the user space events.
+        let ret = match self.sys_events.get(self.pos) {
+            Some(event) => Some(event),
+            None => self.user_events.get(self.user_pos()).cloned(),
+        };
         self.pos += 1;
         ret
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.inner.len();
+        let len = self.sys_events.len() + self.user_events.len();
         (len, Some(len))
     }
 }
 
 impl<'a> ExactSizeIterator for &'a mut Events {
     fn len(&self) -> usize {
-        self.inner.len()
+        self.sys_events.len() + self.user_events.len()
     }
 }
 
