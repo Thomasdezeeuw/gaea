@@ -18,11 +18,10 @@ pub fn test_udp_level_triggered() {
     poll.register(&mut tx, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
     poll.register(&mut rx, Token(1), Ready::READABLE | Ready::WRITABLE, PollOpt::LEVEL).unwrap();
 
-
     for _ in 0..2 {
         expect_events(&mut poll, &mut events, 2, vec![
-            Event::new(Ready::WRITABLE, Token(0)),
-            Event::new(Ready::WRITABLE, Token(1)),
+            Event::new(Token(0), Ready::WRITABLE),
+            Event::new(Token(1), Ready::WRITABLE),
         ]);
     }
 
@@ -32,7 +31,7 @@ pub fn test_udp_level_triggered() {
 
     for _ in 0..2 {
         expect_events(&mut poll, &mut events, 2, vec![
-            Event::new(Ready::READABLE | Ready::WRITABLE, Token(1))
+            Event::new(Token(1), Ready::READABLE | Ready::WRITABLE),
         ]);
     }
 
@@ -40,14 +39,17 @@ pub fn test_udp_level_triggered() {
     while rx.recv_from(&mut buf).is_ok() {}
 
     for _ in 0..2 {
-        expect_events(&mut poll, &mut events, 4, vec![Event::new(Ready::WRITABLE, Token(1))]);
+        expect_events(&mut poll, &mut events, 4, vec![
+            Event::new(Token(1), Ready::WRITABLE),
+        ]);
     }
 
     tx.send_to(b"hello world!", rx.local_addr().unwrap()).unwrap();
     thread::sleep(Duration::from_millis(200));
 
-    expect_events(&mut poll, &mut events, 10,
-                  vec![Event::new(Ready::READABLE | Ready::WRITABLE, Token(1))]);
+    expect_events(&mut poll, &mut events, 10, vec![
+        Event::new(Token(1), Ready::READABLE | Ready::WRITABLE),
+    ]);
 
     drop(rx);
 }

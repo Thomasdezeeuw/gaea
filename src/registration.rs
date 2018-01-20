@@ -228,7 +228,7 @@ impl RegistrationInner {
         if interest.is_empty() || ready.is_empty() {
             false
         } else {
-            poll.userspace_add_event(Event::new(ready, self.token.get()));
+            poll.userspace_add_event(Event::new(self.token.get(), ready));
             true
         }
     }

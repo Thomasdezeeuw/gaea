@@ -252,8 +252,7 @@ impl Events {
 
             if idx == len {
                 // New entry, insert the default
-                self.events.push(Event::new(Ready::empty(), token));
-
+                self.events.push(Event::new(token, Ready::empty()));
             }
 
             if e.flags & libc::EV_ERROR != 0 {

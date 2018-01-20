@@ -119,7 +119,7 @@ pub fn test_register_empty_interest() {
     // now sock is reregistered with readable, we should receive the pending event
     poll.reregister(&mut sock, Token(0), Ready::READABLE, PollOpt::EDGE).unwrap();
     expect_events(&mut poll, &mut events, 2, vec![
-        Event::new(Ready::READABLE, Token(0))
+        Event::new(Token(0), Ready::READABLE)
     ]);
 
     poll.reregister(&mut sock, Token(0), Ready::empty(), PollOpt::EDGE).unwrap();

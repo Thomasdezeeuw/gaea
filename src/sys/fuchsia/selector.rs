@@ -165,7 +165,7 @@ impl Selector {
         match reg_type {
             RegType::Handle => {
                 // We can return immediately-- no lookup or registration necessary.
-                evts.events.push(Event::new(Ready::from(observed_signals), token));
+                evts.events.push(Event::new(token, Ready::from(observed_signals)));
                 Ok(false)
             },
             RegType::Fd => {
@@ -209,7 +209,7 @@ impl Selector {
                     }
                 }
 
-                evts.events.push(Event::new(epoll_event_to_ready(events), token));
+                evts.events.push(Event::new(token, epoll_event_to_ready(events)));
                 Ok(false)
             },
         }

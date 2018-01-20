@@ -731,7 +731,7 @@ impl Poll {
     /// poll.poll(&mut events, None)?;
     ///
     /// for event in &mut events {
-    ///     assert_eq!(event, Event::new(Ready::TIMER, Token(0)));
+    ///     assert_eq!(event, Event::new(Token(0), Ready::TIMER));
     /// }
     /// #   Ok(())
     /// # }
@@ -789,7 +789,7 @@ impl Poll {
             match self.deadlines.peek().cloned() {
                 Some(deadline) if deadline.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap();
-                    events.push(Event::new(Ready::TIMER, deadline.token));
+                    events.push(Event::new(deadline.token, Ready::TIMER));
                 },
                 _ => return,
             }

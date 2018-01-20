@@ -211,7 +211,7 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 /// use mio::{Ready, Token};
 /// use mio::event::Event;
 ///
-/// let event = Event::new(Ready::READABLE | Ready::WRITABLE, Token(0));
+/// let event = Event::new(Token(0), Ready::READABLE | Ready::WRITABLE);
 ///
 /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// assert_eq!(event.token(), Token(0));
@@ -223,17 +223,14 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 /// [`Poll`]: ../struct.Poll.html
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Event {
-    kind: Ready,
     token: Token,
+    kind: Ready,
 }
 
 impl Event {
-    /// Creates a new `Event` containing `readiness` and `token`.
-    pub fn new(readiness: Ready, token: Token) -> Event {
-        Event {
-            kind: readiness,
-            token: token,
-        }
+    /// Creates a new `Event` containing `token` and `readiness`.
+    pub fn new(token: Token, readiness: Ready) -> Event {
+        Event { token, kind: readiness }
     }
 
     /// Returns the event's readiness.

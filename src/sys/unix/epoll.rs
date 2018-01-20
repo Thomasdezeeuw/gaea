@@ -209,7 +209,7 @@ impl Events {
 
             let token = self.events[idx].u64;
 
-            Event::new(kind, Token(token as usize))
+            Event::new(Token(token as usize), kind)
         })
     }
 

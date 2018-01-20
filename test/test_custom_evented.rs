@@ -22,8 +22,8 @@ fn simple() {
     assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Ok(false));
 
     expect_events(&mut poll, &mut events, 1, vec![
-        Event::new(Ready::READABLE, Token(0)),
-        Event::new(Ready::READABLE, Token(0)),
+        Event::new(Token(0), Ready::READABLE),
+        Event::new(Token(0), Ready::READABLE),
     ]);
 }
 
