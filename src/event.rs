@@ -248,3 +248,51 @@ impl Event {
         &mut self.kind
     }
 }
+
+/// Associates readiness notifications with [`Evented`] handles.
+///
+/// `EventedId` is used as an argument to [`Poll.register`] and
+/// [`Poll.reregister`] and is used to associate an [`Event`] with an
+/// [`Evented`] handle.
+///
+/// See [`Poll`] for more documentation on polling.
+///
+/// [`Evented`]: ../event/trait.Evented.html
+/// [`Poll.register`]: struct.Poll.html#method.register
+/// [`Poll.reregister`]: struct.Poll.html#method.reregister
+/// [`Event`]: ../event/struct.Event.html
+/// [`Poll`]: struct.Poll.html
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct EventedId(pub usize);
+
+/// The only invalid token.
+///
+/// [`EventedId.is_valid`] can be used to determine if the token valid.
+pub(crate) const INVALID_EVENTED_ID: EventedId = EventedId(::std::usize::MAX);
+
+impl EventedId {
+    /// Wether or not the `EventedId` is valid.
+    pub fn is_valid(&self) -> bool {
+        *self != INVALID_EVENTED_ID
+    }
+
+    pub(crate) fn validate(&self) -> io::Result<()> {
+        if !self.is_valid() {
+            Err(io::Error::new(io::ErrorKind::Other, "invalid evented id"))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl From<usize> for EventedId {
+    fn from(val: usize) -> EventedId {
+        EventedId(val)
+    }
+}
+
+impl From<EventedId> for usize {
+    fn from(val: EventedId) -> usize {
+        val.0
+    }
+}

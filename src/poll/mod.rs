@@ -8,12 +8,12 @@ use event::{Event, Events, Evented};
 
 mod opt;
 mod ready;
-mod token;
 
 pub use self::opt::PollOpt;
 pub use self::ready::Ready;
-pub use self::token::Token;
-pub(crate) use self::token::INVALID_TOKEN;
+
+pub use event::EventedId as Token;
+pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 
 // TODO: update below to document that `deadlines` queue system.
 
