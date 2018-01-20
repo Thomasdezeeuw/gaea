@@ -31,10 +31,10 @@ bitflags! {
         const WRITABLE = 0b0000_0010;
         /// Error readiness.
         const ERROR    = 0b0000_0100;
-        /// Timed out, see [`Timer`].
+        /// Timer was triggered, see [`Poll.add_deadline`].
         ///
-        /// [`Timer`]: ../timer/struct.Timer.html
-        const TIMEOUT  = 0b0000_1000;
+        /// [`Poll.add_deadline`]: struct.Poll.html#method.add_deadline
+        const TIMER  = 0b0000_1000;
         /// Hup readiness, this signal is Unix specific.
         #[cfg(all(unix, not(target_os = "fuchsia")))]
         const HUP      = 0b0001_0000;
@@ -67,10 +67,10 @@ impl Ready {
         self.contains(Ready::ERROR)
     }
 
-    /// Returns true if the value includes an timeout.
+    /// Returns true if the value includes an timer.
     #[inline]
     pub fn is_timeout(&self) -> bool {
-        self.contains(Ready::TIMEOUT)
+        self.contains(Ready::TIMER)
     }
 
     /// Returns true if the value includes HUP readiness.

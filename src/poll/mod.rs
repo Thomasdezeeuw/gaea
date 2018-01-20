@@ -702,12 +702,13 @@ impl Poll {
     /// Add a new deadline to Poll.
     ///
     /// This will create a new timer that will trigger an [`Event`] after the
-    /// `deadline` has passed, which gets returned when [polling]. The `Event` will always have
-    /// [`TIMEOUT`] as `Ready` value and the same `token` as provided.
+    /// `deadline` has passed, which gets returned when [polling]. The `Event`
+    /// will always have [`TIMER`] as `Ready` value and the same `token` as
+    /// provided.
     ///
     /// [`Event`]: ../event/struct.Event.html
     /// [polling]: #method.poll
-    /// [`TIMEOUT`]: struct.Ready.html#associatedconstant.TIMEOUT
+    /// [`TIMER`]: struct.Ready.html#associatedconstant.TIMER
     ///
     /// # Examples
     ///
@@ -730,7 +731,7 @@ impl Poll {
     /// poll.poll(&mut events, None)?;
     ///
     /// for event in &mut events {
-    ///     assert_eq!(event, Event::new(Ready::TIMEOUT, Token(0)));
+    ///     assert_eq!(event, Event::new(Ready::TIMER, Token(0)));
     /// }
     /// #   Ok(())
     /// # }
@@ -788,7 +789,7 @@ impl Poll {
             match self.deadlines.peek().cloned() {
                 Some(deadline) if deadline.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap();
-                    events.push(Event::new(Ready::TIMEOUT, deadline.token));
+                    events.push(Event::new(Ready::TIMER, deadline.token));
                 },
                 _ => return,
             }

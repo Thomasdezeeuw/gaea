@@ -26,7 +26,7 @@ pub fn add_deadline() {
     poll.add_deadline(Token(0), Instant::now());
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10), vec![
-        Event::new(Ready::TIMEOUT, Token(0)),
+        Event::new(Ready::TIMER, Token(0)),
     ]);
 }
 
@@ -37,7 +37,7 @@ pub fn add_timeout() {
     poll.add_timeout(Token(0), Duration::from_millis(10));
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
-        Event::new(Ready::TIMEOUT, Token(0)),
+        Event::new(Ready::TIMER, Token(0)),
     ]);
 }
 
@@ -94,7 +94,7 @@ pub fn multiple_deadlines() {
 
         for token in 1..4 {
             expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(MAX_ELAPSED), vec![
-                Event::new(Ready::TIMEOUT, Token(token)),
+                Event::new(Ready::TIMER, Token(token)),
             ]);
         }
     }
@@ -110,9 +110,9 @@ pub fn multiple_deadlines_same_deadline() {
     }
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(30), vec![
-        Event::new(Ready::TIMEOUT, Token(0)),
-        Event::new(Ready::TIMEOUT, Token(1)),
-        Event::new(Ready::TIMEOUT, Token(2)),
+        Event::new(Ready::TIMER, Token(0)),
+        Event::new(Ready::TIMER, Token(1)),
+        Event::new(Ready::TIMER, Token(2)),
     ]);
 }
 
