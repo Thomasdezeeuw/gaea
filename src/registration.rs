@@ -230,7 +230,7 @@ impl RegistrationInner {
         let interest = self.interest();
         // Only pass the ready bits we're interested in.
         let ready = ready & interest;
-        if interest.is_empty() || ready.is_empty() {
+        if self.token.get() == INVALID_TOKEN || interest.is_empty() || ready.is_empty() {
             false
         } else {
             poll.userspace_add_event(Event::new(self.token.get(), ready));
