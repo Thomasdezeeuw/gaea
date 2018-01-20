@@ -15,48 +15,47 @@ use poll::{Poll, PollOpt, Ready, Token};
 ///
 /// # Implementing `Evented`
 ///
-/// There are three types of `Evented` values.
+/// There are two types of `Evented` values.
 ///
 /// * **System** handles, which are backed by sockets or other system handles.
-/// These `Evented` handles will be monitored by the system selector. In this
-/// case, an implementation of `Evented` delegates to a lower level handle, e.g.
-/// unix's [`EventedFd`].
+///   These `Evented` handles will be monitored by the system selector. In this
+///   case, an implementation of `Evented` delegates to a lower level handle.
+///   Examples of this are [`TcpStream`]s, or the *unix only* [`EventedFd`].
 ///
 /// * **User** handles, which are driven entirely in user space using
-/// [`Registration`] and [`SetReadiness`]. In this case, the implementer takes
-/// responsibility for driving the readiness state changes.
-///
-/// * **Deadline** handles, these are internal handles and can only be used
-/// using a [`Timer`].
+///   [`Registration`] and [`Notifier`]. In this case, the implementer takes
+///   responsibility for driving the readiness state changes.
 ///
 /// [`Poll`]: ../poll/struct.Poll.html
 /// [`Registration`]: ../registration/struct.Registration.html
 /// [`Notifier`]: ../registration/struct.Notifier.html
+/// [`TcpStream`]: ../net/struct.TcpStream.html
 /// [`EventedFd`]: ../unix/struct.EventedFd.html
-/// [`Timer`]: ../timer/struct.Timer.html
 ///
 /// # Examples
 ///
-/// Implementing `Evented` on a struct containing a socket (a system handle).
+/// Implementing `Evented` on a struct containing a system handle, such as a
+/// [`TcpStream`].
 ///
 /// ```
-/// use mio::{Ready, Poll, PollOpt, Token};
-/// use mio::event::Evented;
-/// use mio::net::TcpStream;
-///
 /// use std::io;
 ///
+/// use mio::event::{Evented, EventedId};
+/// use mio::net::TcpStream;
+/// use mio::poll::{Poll, PollOpt, Ready};
+///
 /// pub struct MyEvented {
+///     /// Our system handle that implements `Evented`.
 ///     socket: TcpStream,
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`
 ///         self.socket.register(poll, token, interest, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`
 ///         self.socket.reregister(poll, token, interest, opts)
 ///     }
@@ -68,11 +67,76 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// }
 /// ```
 ///
-/// Implement `Evented` using [`Registration`] and [`Notifier`][] (user space
-/// handle).
+/// Implementing `Evented` using a user space handle, using [`Registration`] and
+/// [`Notifier`],
 ///
-/// ```ignore
-/// // TODO: add example
+/// ```
+/// use std::io;
+/// # use std::marker::PhantomData;
+///
+/// use mio::event::{Evented, EventedId};
+/// use mio::poll::{Poll, PollOpt, Ready};
+/// use mio::registration::{Registration, Notifier};
+///
+/// /// Create a new channel.
+/// fn new_channel<T>() -> (Sender<T>, Receiver<T>) {
+///     // Create a new user space registration.
+///     let (registration, notifier) = Registration::new();
+///     (Sender {
+///         notifier,
+/// #       _phantom: PhantomData,
+///     }, Receiver {
+///         registration,
+/// #       _phantom: PhantomData,
+///     })
+/// }
+///
+/// /// The receiving end of a channel.
+/// pub struct Receiver<T> {
+///     registration: Registration,
+///     # _phantom: PhantomData<T>,
+/// }
+///
+/// impl<T> Receiver<T> {
+///     /// Try to receiving a value from the channel, returning `None` if it is
+///     /// empty.
+///     fn try_receive(&mut self) -> Option<T> {
+///         // Receive value etc.
+/// #       unimplemented!();
+///     }
+/// }
+///
+/// // Deligate the Evented registration to the user space registration.
+/// impl<T> Evented for Receiver<T> {
+///     fn register(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///         self.registration.register(poll, token, interest, opts)
+///     }
+///
+///     fn reregister(&mut self, poll: &mut Poll, token: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///         self.registration.reregister(poll, token, interest, opts)
+///     }
+///
+///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
+///         self.registration.deregister(poll)
+///     }
+/// }
+///
+/// /// The sending end of a channel.
+/// pub struct Sender<T> {
+///     notifier: Notifier,
+/// #   _phantom: PhantomData<T>,
+/// }
+///
+/// impl<T> Sender<T> {
+///     /// Send a new value across the channel.
+///     fn send(&mut self, poll: &mut Poll, value: T) {
+///         // Send value etc.
+///
+///         // Notify the receiving end of a new value.
+///         self.notifier.notify(poll, Ready::READABLE);
+/// #       unimplemented!();
+///     }
+/// }
 /// ```
 pub trait Evented {
     /// Register `self` with the given `Poll` instance.
