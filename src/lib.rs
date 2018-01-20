@@ -90,10 +90,6 @@ extern crate libc;
 #[cfg(unix)]
 extern crate nix;
 
-#[cfg(target_os = "fuchsia")]
-extern crate fuchsia_zircon as zircon;
-#[cfg(target_os = "fuchsia")]
-extern crate fuchsia_zircon_sys as zircon_sys;
 mod sys;
 
 // TODO: move event as submodule of poll, rexport `Events` and `Event` in poll.
@@ -107,23 +103,9 @@ pub use poll::{Poll, PollOpt, Ready, Token};
 pub use registration::{Registration, Notifier};
 pub use event::{Event, Events};
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
+#[cfg(unix)]
 pub mod unix {
     //! Unix only extensions.
 
     pub use sys::EventedFd;
-}
-
-#[cfg(target_os = "fuchsia")]
-pub mod fuchsia {
-    //! Fuchsia-only extensions.
-    //!
-    //! # Stability
-    //!
-    //! This module depends on the [magenta-sys crate](https://crates.io/crates/magenta-sys)
-    //! and so might introduce breaking changes, even on minor releases,
-    //! so long as that crate remains unstable.
-
-    pub use sys::EventedHandle;
-    pub use sys::fuchsia::{FuchsiaReady, zx_signals_t};
 }

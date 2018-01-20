@@ -10,9 +10,6 @@ extern crate env_logger;
 extern crate slab;
 extern crate tempdir;
 
-#[cfg(target_os = "fuchsia")]
-extern crate fuchsia_zircon as zircon;
-
 pub use ports::localhost;
 
 mod test_custom_evented;
@@ -32,9 +29,6 @@ mod test_udp_level;
 mod test_udp_socket;
 mod test_write_then_drop;
 mod test_timer;
-
-#[cfg(any(target_os = "fuchsia"))]
-mod test_fuchsia_handles;
 
 use bytes::{Buf, MutBuf};
 use std::io::{self, Read, Write};

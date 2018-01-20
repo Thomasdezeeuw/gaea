@@ -36,7 +36,7 @@ bitflags! {
         /// [`Poll.add_deadline`]: struct.Poll.html#method.add_deadline
         const TIMER  = 0b0000_1000;
         /// Hup readiness, this signal is Unix specific.
-        #[cfg(all(unix, not(target_os = "fuchsia")))]
+        #[cfg(unix)]
         const HUP      = 0b0001_0000;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))]
         /// AIO completion readiness, this signal is specific to the BSD family.
@@ -75,7 +75,7 @@ impl Ready {
 
     /// Returns true if the value includes HUP readiness.
     #[inline]
-    #[cfg(all(unix, not(target_os = "fuchsia")))]
+    #[cfg(unix)]
     pub fn is_hup(&self) -> bool {
         self.contains(Ready::HUP)
     }

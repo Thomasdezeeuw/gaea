@@ -1,6 +1,6 @@
 use std::io;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
-#[cfg(all(unix, not(target_os = "fuchsia")))]
+#[cfg(unix)]
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
 use sys;
@@ -460,21 +460,21 @@ impl Evented for UdpSocket {
     }
 }
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
+#[cfg(unix)]
 impl IntoRawFd for UdpSocket {
     fn into_raw_fd(self) -> RawFd {
         self.socket.into_raw_fd()
     }
 }
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
+#[cfg(unix)]
 impl AsRawFd for UdpSocket {
     fn as_raw_fd(&self) -> RawFd {
         self.socket.as_raw_fd()
     }
 }
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
+#[cfg(unix)]
 impl FromRawFd for UdpSocket {
     unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
         UdpSocket {

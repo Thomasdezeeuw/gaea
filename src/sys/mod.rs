@@ -9,14 +9,8 @@
 //! * `TcpListener`: TCP listener, used in the net module.
 //! * `UdpSocket`: UDP socket, used in the net module.
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
+#[cfg(unix)]
 mod unix;
 
-#[cfg(all(unix, not(target_os = "fuchsia")))]
+#[cfg(unix)]
 pub use self::unix::*;
-
-#[cfg(target_os = "fuchsia")]
-mod fuchsia;
-
-#[cfg(target_os = "fuchsia")]
-pub use self::fuchsia::*;
