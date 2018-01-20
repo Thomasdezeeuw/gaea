@@ -34,12 +34,13 @@ bitflags! {
         /// Timer was triggered, see [`Poll.add_deadline`].
         ///
         /// [`Poll.add_deadline`]: struct.Poll.html#method.add_deadline
-        const TIMER  = 0b0000_1000;
+        const TIMER    = 0b0000_1000;
         /// Hup readiness, this signal is Unix specific.
         #[cfg(unix)]
         const HUP      = 0b0001_0000;
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))]
-        /// AIO completion readiness, this signal is specific to the BSD family.
+        /// AIO completion readiness, this signal really only works on FreeBSD.
+        /// The other BSDs don't support this at the time of writing this.
+        #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
         const AIO      = 0b0010_0000;
     }
 }
@@ -78,7 +79,7 @@ impl Ready {
 
     /// Returns true if the value includes AIO completion readiness.
     #[inline]
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))]
+    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
     pub fn is_aio(&self) -> bool {
         self.contains(Ready::AIO)
     }
