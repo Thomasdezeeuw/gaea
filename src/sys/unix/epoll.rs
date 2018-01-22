@@ -197,7 +197,7 @@ impl Events {
     }
 }
 
-/// Wether or not the provided `flags` contains the provided `flag`.
+/// Whether or not the provided `flags` contains the provided `flag`.
 fn contains(flags: libc::c_int, flag: libc::c_int) -> bool {
     (flags & flag) == flag
 }

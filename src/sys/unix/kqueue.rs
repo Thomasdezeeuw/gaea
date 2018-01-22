@@ -235,7 +235,7 @@ fn check_errors(events: &[libc::kevent], ignored_errors: &[kevent_data_t]) -> io
     Ok(())
 }
 
-/// Wether or not the provided `flags` contains the provided `flag`.
+/// Whether or not the provided `flags` contains the provided `flag`.
 fn contains(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
     (flags & flag) == flag
 }
