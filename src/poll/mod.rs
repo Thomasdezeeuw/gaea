@@ -1,10 +1,12 @@
+//! Types related to polling.
+
 use std::{io, mem, ops};
 use std::cmp::Ordering;
 use std::time::{Duration, Instant};
 use std::collections::BinaryHeap;
 
 use sys;
-use event::{Event, Events, EventedId, Evented};
+use event::{Event, EventedId, Events, Evented};
 
 mod opt;
 mod ready;
@@ -15,8 +17,8 @@ pub use self::ready::Ready;
 // Poll uses three subsystems to bring a complete event system to the user.
 //
 // 1. Operating System specific event queue. This is currently kqueue or epoll.
-//    All the relavent code is in `sys/*/selector.rs`. This mainly deals with
-//    file descriptor, e.g. for sockets.
+//    All the relavent code is in the `sys` module. This mainly deals with file
+//    descriptor, e.g. for sockets.
 //
 // 2. User space events. This is simply a vector in the `Poll` instance. Adding
 //    an new events is a simple a push it onto the vector. `events::Events` hold
