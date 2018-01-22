@@ -34,9 +34,9 @@ use poll::{Poll, PollOpt, Ready};
 /// use std::net::TcpListener;
 /// use std::os::unix::io::AsRawFd;
 ///
-/// use mio::event::{Evented, EventedId};
-/// use mio::poll::{Poll, PollOpt, Ready};
-/// use mio::unix::EventedFd;
+/// use mio_st::event::{Evented, EventedId};
+/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::unix::EventedFd;
 ///
 /// // Bind a listener from the standard library.
 /// let listener = TcpListener::bind("127.0.0.1:0")?;
@@ -59,9 +59,9 @@ use poll::{Poll, PollOpt, Ready};
 /// use std::io;
 /// use std::os::unix::io::RawFd;
 ///
-/// use mio::event::{Evented, EventedId};
-/// use mio::poll::{Poll, PollOpt, Ready};
-/// use mio::unix::EventedFd;
+/// use mio_st::event::{Evented, EventedId};
+/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::unix::EventedFd;
 ///
 /// pub struct MyIo {
 ///     fd: RawFd,

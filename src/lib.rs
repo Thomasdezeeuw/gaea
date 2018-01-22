@@ -22,9 +22,9 @@
 //! ```
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
-//! use mio::event::{Events, EventedId};
-//! use mio::net::{TcpListener, TcpStream};
-//! use mio::poll::{Poll, PollOpt, Ready};
+//! use mio_st::event::{Events, EventedId};
+//! use mio_st::net::{TcpListener, TcpStream};
+//! use mio_st::poll::{Poll, PollOpt, Ready};
 //!
 //! // Unique ids to associate an event with a handle, in this can a TCP
 //! // listener (server) or stream (client).

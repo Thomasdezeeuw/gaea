@@ -33,9 +33,9 @@
 //! ```
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
-//! use mio::event::{EventedId, Events};
-//! use mio::poll::{Poll, PollOpt, Ready};
-//! use mio::registration::Registration;
+//! use mio_st::event::{EventedId, Events};
+//! use mio_st::poll::{Poll, PollOpt, Ready};
+//! use mio_st::registration::Registration;
 //!
 //! // Create our poll and events.
 //! let mut poll = Poll::new()?;
@@ -140,9 +140,9 @@ impl Evented for Registration {
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio::event::{EventedId, Events};
-/// use mio::poll::{Poll, PollOpt, Ready};
-/// use mio::registration::{NotifyError, Registration};
+/// use mio_st::event::{EventedId, Events};
+/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::registration::{NotifyError, Registration};
 ///
 /// // Create our poll, events and registration.
 /// let mut poll = Poll::new()?;

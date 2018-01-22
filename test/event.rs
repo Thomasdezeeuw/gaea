@@ -1,5 +1,5 @@
-use mio::event::{Event, EventedId};
-use mio::poll::Ready;
+use mio_st::event::{Event, EventedId};
+use mio_st::poll::Ready;
 
 use init;
 

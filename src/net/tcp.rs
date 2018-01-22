@@ -22,9 +22,9 @@ use poll::{Poll, PollOpt, Ready};
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::event::{Events, EventedId};
-/// use mio::net::TcpStream;
-/// use mio::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{Events, EventedId};
+/// use mio_st::net::TcpStream;
+/// use mio_st::poll::{Poll, PollOpt, Ready};
 ///
 /// let address = "127.0.0.1:8888".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -360,9 +360,9 @@ impl FromRawFd for TcpStream {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::event::{Events, EventedId};
-/// use mio::net::TcpListener;
-/// use mio::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{Events, EventedId};
+/// use mio_st::net::TcpListener;
+/// use mio_st::poll::{Poll, PollOpt, Ready};
 ///
 /// let address = "127.0.0.1:7777".parse()?;
 /// let mut listener = TcpListener::bind(address)?;

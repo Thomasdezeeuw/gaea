@@ -59,9 +59,9 @@ pub use self::ready::Ready;
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio::event::{EventedId, Events};
-/// use mio::net::TcpStream;
-/// use mio::poll::{Poll, Ready, PollOpt};
+/// use mio_st::event::{EventedId, Events};
+/// use mio_st::net::TcpStream;
+/// use mio_st::poll::{Poll, Ready, PollOpt};
 ///
 /// use std::net::{TcpListener, SocketAddr};
 ///
@@ -164,9 +164,9 @@ pub use self::ready::Ready;
 /// use std::time::Duration;
 /// use std::thread;
 ///
-/// use mio::event::EventedId;
-/// use mio::net::TcpStream;
-/// use mio::poll::{Poll, Ready, PollOpt};
+/// use mio_st::event::EventedId;
+/// use mio_st::net::TcpStream;
+/// use mio_st::poll::{Poll, Ready, PollOpt};
 ///
 /// let mut sock = TcpStream::connect("216.58.193.100:80".parse()?)?;
 ///
@@ -238,8 +238,8 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::poll::Poll;
-    /// use mio::event::Events;
+    /// use mio_st::poll::Poll;
+    /// use mio_st::event::Events;
     /// use std::time::Duration;
     ///
     /// let mut poll = Poll::new()?;
@@ -337,9 +337,9 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use std::time::{Duration, Instant};
     ///
-    /// use mio::event::{Events, EventedId};
-    /// use mio::net::TcpStream;
-    /// use mio::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::event::{Events, EventedId};
+    /// use mio_st::net::TcpStream;
+    /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
@@ -412,9 +412,9 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::event::EventedId;
-    /// use mio::net::TcpStream;
-    /// use mio::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::event::EventedId;
+    /// use mio_st::net::TcpStream;
+    /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
@@ -467,9 +467,9 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio::event::{Events, EventedId};
-    /// use mio::net::TcpStream;
-    /// use mio::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::event::{Events, EventedId};
+    /// use mio_st::net::TcpStream;
+    /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
@@ -546,9 +546,9 @@ impl Poll {
     /// use std::net::{TcpListener, SocketAddr};
     /// use std::thread;
     ///
-    /// use mio::event::{Events, EventedId};
-    /// use mio::net::TcpStream;
-    /// use mio::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::event::{Events, EventedId};
+    /// use mio_st::net::TcpStream;
+    /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// // Bind a server socket to connect to.
     /// let addr: SocketAddr = "127.0.0.1:0".parse()?;
@@ -685,8 +685,8 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio::poll::{Poll, Ready, PollOpt};
-    /// use mio::event::{Event, Events, EventedId};
+    /// use mio_st::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::event::{Event, Events, EventedId};
     ///
     /// let mut poll = Poll::new()?;
     /// let mut events = Events::with_capacity(128, 128);

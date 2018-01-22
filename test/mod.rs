@@ -1,4 +1,4 @@
-extern crate mio;
+extern crate mio_st;
 
 #[macro_use]
 extern crate log;
@@ -6,8 +6,8 @@ extern crate env_logger;
 
 use std::time::Duration;
 
-use mio::poll::Poll;
-use mio::event::{Event, Events};
+use mio_st::poll::Poll;
+use mio_st::event::{Event, Events};
 
 /// Initializate the test setup.
 pub fn init() {

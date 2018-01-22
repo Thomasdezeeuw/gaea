@@ -1,5 +1,5 @@
 [package]
-name          = "mio"
+name          = "mio-st"
 version       = "0.1.0"
 license       = "MIT"
 authors       = ["Carl Lerche <me@carllerche.com>", "Thomas de Zeeuw <thomasdezeeuw@gmail.com>"]

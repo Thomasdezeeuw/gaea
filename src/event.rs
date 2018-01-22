@@ -40,9 +40,9 @@ use poll::{Poll, PollOpt, Ready};
 /// ```
 /// use std::io;
 ///
-/// use mio::event::{Evented, EventedId};
-/// use mio::net::TcpStream;
-/// use mio::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{Evented, EventedId};
+/// use mio_st::net::TcpStream;
+/// use mio_st::poll::{Poll, PollOpt, Ready};
 ///
 /// pub struct MyEvented {
 ///     /// Our system handle that implements `Evented`.
@@ -74,9 +74,9 @@ use poll::{Poll, PollOpt, Ready};
 /// use std::io;
 /// # use std::marker::PhantomData;
 ///
-/// use mio::event::{Evented, EventedId};
-/// use mio::poll::{Poll, PollOpt, Ready};
-/// use mio::registration::{Registration, Notifier};
+/// use mio_st::event::{Evented, EventedId};
+/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::registration::{Registration, Notifier};
 ///
 /// /// Create a new channel.
 /// fn new_channel<T>() -> (Sender<T>, Receiver<T>) {
@@ -183,8 +183,8 @@ pub trait Evented {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::event::{EventedId, Events};
-/// use mio::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{EventedId, Events};
+/// use mio_st::poll::{Poll, PollOpt, Ready};
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(128, 128);
@@ -303,8 +303,8 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 /// # Examples
 ///
 /// ```
-/// use mio::poll::Ready;
-/// use mio::event::{Event, EventedId};
+/// use mio_st::poll::Ready;
+/// use mio_st::event::{Event, EventedId};
 ///
 /// let event = Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE);
 ///

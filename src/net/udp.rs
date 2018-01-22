@@ -24,9 +24,9 @@ use poll::{Poll, PollOpt, Ready};
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::event::{Events, EventedId};
-/// use mio::net::UdpSocket;
-/// use mio::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{Events, EventedId};
+/// use mio_st::net::UdpSocket;
+/// use mio_st::poll::{Poll, PollOpt, Ready};
 ///
 /// // Unique ids and address for both the sender and echoer.
 /// const SENDER: EventedId = EventedId(0);
@@ -99,7 +99,7 @@ impl UdpSocket {
     /// # use std::error::Error;
     /// #
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::net::UdpSocket;
+    /// use mio_st::net::UdpSocket;
     ///
     /// // We must bind it to an open address.
     /// let address = "127.0.0.1:7777".parse()?;
@@ -143,7 +143,7 @@ impl UdpSocket {
     /// # use std::error::Error;
     /// #
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::net::UdpSocket;
+    /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
     /// let socket = UdpSocket::bind(addr)?;
@@ -167,7 +167,7 @@ impl UdpSocket {
     /// ```no_run
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::net::UdpSocket;
+    /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
     /// let socket = UdpSocket::bind(addr)?;
@@ -199,7 +199,7 @@ impl UdpSocket {
     /// # use std::error::Error;
     /// #
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::net::UdpSocket;
+    /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
     /// let mut socket = UdpSocket::bind(addr)?;
@@ -253,7 +253,7 @@ impl UdpSocket {
     /// # use std::error::Error;
     /// #
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::net::UdpSocket;
+    /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
     /// let socket = UdpSocket::bind(addr)?;
@@ -287,7 +287,7 @@ impl UdpSocket {
     /// # use std::error::Error;
     /// #
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::net::UdpSocket;
+    /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
     /// let socket = UdpSocket::bind(addr)?;

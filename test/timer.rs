@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
-use mio::event::{Event, Events, EventedId};
-use mio::poll::{Poll, Ready};
+use mio_st::event::{Event, Events, EventedId};
+use mio_st::poll::{Poll, Ready};
 
 use {expect_events, init_with_poll};
 
