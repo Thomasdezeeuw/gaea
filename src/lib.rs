@@ -41,13 +41,13 @@
 //!
 //! // Register our TCP listener with `Poll`, this allows us to receive
 //! // notifications about incoming connections.
-//! poll.register(&mut server, SERVER, Ready::READABLE, PollOpt::EDGE)?;
+//! poll.register(&mut server, SERVER, Ready::READABLE, PollOpt::Level)?;
 //!
 //! // Setup the client socket, connection to our server.
 //! let mut sock = TcpStream::connect(addr)?;
 //!
 //! // Register the socket with `Poll`.
-//! poll.register(&mut sock, CLIENT, Ready::READABLE, PollOpt::EDGE)?;
+//! poll.register(&mut sock, CLIENT, Ready::READABLE, PollOpt::Edge)?;
 //!
 //! // Start the event loop.
 //! loop {
@@ -65,7 +65,7 @@
 //!             CLIENT => {
 //!                 // The server just shuts down the socket, let's just exit
 //!                 // from our event loop.
-//!                 return;
+//!                 return Ok(());
 //!             }
 //!             _ => unreachable!(),
 //!         }

@@ -48,8 +48,8 @@ use poll::{Poll, PollOpt, Ready};
 /// let mut events = Events::with_capacity(128, 128);
 ///
 /// // Register our sockets
-/// poll.register(&mut sender_socket, SENDER, Ready::WRITABLE, PollOpt::EDGE)?;
-/// poll.register(&mut echoer_socket, ECHOER, Ready::READABLE, PollOpt::EDGE)?;
+/// poll.register(&mut sender_socket, SENDER, Ready::WRITABLE, PollOpt::Edge)?;
+/// poll.register(&mut echoer_socket, ECHOER, Ready::READABLE, PollOpt::Edge)?;
 ///
 /// // The message we'll send.
 /// const MSG_TO_SEND: &[u8; 11] = b"Hello world";

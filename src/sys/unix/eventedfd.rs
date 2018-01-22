@@ -44,7 +44,7 @@ use poll::{Poll, PollOpt, Ready};
 /// let mut poll = Poll::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poll.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
+/// poll.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Ready::READABLE, PollOpt::Edge)?;
 /// #     Ok(())
 /// # }
 /// #

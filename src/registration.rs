@@ -45,7 +45,7 @@
 //! let (mut registration, mut notifier) = Registration::new();
 //! // Note that `PollOpt` doesn't matter here since this is entirely user space
 //! // driven and not in our control.
-//! poll.register(&mut registration, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+//! poll.register(&mut registration, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
 //!
 //! // Notify the `registration` of a new, readable readiness event.
 //! notifier.notify(&mut poll, Ready::READABLE)?;
@@ -151,19 +151,19 @@ impl Evented for Registration {
 ///
 /// // Next we'll try to notify our registration, but it's not registered yet so
 /// // it will return an error.
-/// assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NotRegistered);
+/// assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NotRegistered));
 ///
 /// // So we'll register our registration. Take not of the readiness arguments,
 /// // they'll come back later.
-/// poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
+/// poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
 ///
 /// // Now we'll try to call notify again. But again an error is returned, this
 /// // time it indicate the accompanying `Registration` has no interest in the
 /// // `WRITABLE` readiness and so no event is created.
-/// assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NoInterest);
+/// assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NoInterest));
 ///
 /// // Trying to call notify with empty readiness will also result in an error.
-/// assert_eq!(notifier.notify(&mut poll, Ready::empty()), Err(NotifyError::EmptyReadiness);
+/// assert_eq!(notifier.notify(&mut poll, Ready::empty()), Err(NotifyError::EmptyReadiness));
 ///
 /// // We can get the registration's interests by calling `intersects`. This
 /// // will only fail if the registration is dropped.
@@ -178,7 +178,7 @@ impl Evented for Registration {
 ///
 /// // Trying to call notify now will result in an error indicating the
 /// // registration was dropped.
-/// assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::RegistrationGone);
+/// assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::RegistrationGone));
 ///
 /// // Note however that only event that we did send will still be returned by
 /// // polling.
@@ -189,7 +189,6 @@ impl Evented for Registration {
 ///     }
 /// }
 /// # unreachable!("should have received an event");
-/// #     Ok(())
 /// # }
 /// #
 /// # fn main() {

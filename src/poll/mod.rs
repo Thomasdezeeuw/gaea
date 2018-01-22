@@ -57,7 +57,7 @@ pub use self::ready::Ready;
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio::event::{Events, EventedId};
+/// use mio::event::{EventedId, Events};
 /// use mio::net::TcpStream;
 /// use mio::poll::{Poll, Ready, PollOpt};
 ///
@@ -75,7 +75,7 @@ pub use self::ready::Ready;
 /// let mut stream = TcpStream::connect(server.local_addr()?)?;
 ///
 /// // Register the stream with `Poll`
-/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
 ///
 /// // Wait for the socket to become ready. This has to happens in a loop to
 /// // handle spurious wakeups.
@@ -174,7 +174,7 @@ pub use self::ready::Ready;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point
-/// poll.register(&mut sock, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut sock, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
 /// #     Ok(())
 /// # }
 /// #
@@ -236,7 +236,8 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::{Poll, Events};
+    /// use mio::poll::Poll;
+    /// use mio::event::Events;
     /// use std::time::Duration;
     ///
     /// let mut poll = Poll::new()?;
@@ -342,7 +343,7 @@ impl Poll {
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&mut socket, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
     ///
     /// let mut events = Events::with_capacity(512, 512);
     /// let start = Instant::now();
@@ -417,12 +418,12 @@ impl Poll {
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`, requesting readable
-    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
     ///
     /// // Reregister the socket specifying a different id and write interest
     /// // instead. `PollOpt::EDGE` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOpt::Edge)?;
     /// #     Ok(())
     /// # }
     /// #
@@ -472,7 +473,7 @@ impl Poll {
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
     ///
     /// poll.deregister(&mut socket)?;
     ///
@@ -565,7 +566,7 @@ impl Poll {
     /// let mut stream = TcpStream::connect(addr)?;
     ///
     /// // Register the stream with `Poll`
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
     ///
     /// // Wait for the socket to become ready. This has to happens in a loop to
     /// // handle spurious wakeups.
@@ -790,11 +791,6 @@ struct Deadline {
 }
 
 /// Reverses the order of the comparing arguments.
-///
-/// ```ignore
-/// assert!(ReverseOrder(10) > ReverseOrder(100));
-/// assert!(ReverseOrder(10) < ReverseOrder(1));
-/// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 struct ReverseOrder<T>(T);
 

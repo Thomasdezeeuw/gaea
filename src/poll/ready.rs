@@ -16,7 +16,7 @@ bitflags! {
     /// # Examples
     ///
     /// ```
-    /// use mio::Ready;
+    /// use mio::poll::Ready;
     ///
     /// let ready = Ready::READABLE | Ready::WRITABLE;
     ///

@@ -81,18 +81,6 @@
 /// [`WouldBlock`]: https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.WouldBlock
 /// [`oneshot`]: #associatedconstant.ONESHOT
 /// [`reregister`]: struct.Poll.html#method.reregister
-///
-/// # Examples
-///
-/// ```
-/// use mio::poll::PollOpt;
-///
-/// let opt = PollOpt::Edge | PollOpt::Oneshot;
-///
-/// assert!(opt.is_edge());
-/// assert!(opt.is_oneshot());
-/// assert!(!opt.is_level());
-/// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum PollOpt {
     /// Edge-triggered notifications.

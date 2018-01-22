@@ -33,7 +33,7 @@ use poll::{Poll, PollOpt, Ready};
 /// let mut events = Events::with_capacity(128, 128);
 ///
 /// // Register the socket with `Poll`.
-/// poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOpt::Edge)?;
 ///
 /// poll.poll(&mut events, None)?;
 ///
@@ -371,7 +371,7 @@ impl FromRawFd for TcpStream {
 /// let mut events = Events::with_capacity(128, 128);
 ///
 /// // Register the socket with `Poll`
-/// poll.register(&mut listener, EventedId(0), Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut listener, EventedId(0), Ready::WRITABLE, PollOpt::Edge)?;
 ///
 /// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
@@ -410,7 +410,7 @@ impl TcpListener {
         }?;
 
         if cfg!(unix) {
-            drop(sock.reuse_address(true)?);
+            let _ = sock.reuse_address(true)?;
         }
 
         let listener = sock.bind(addr)?.listen(1024)?;
