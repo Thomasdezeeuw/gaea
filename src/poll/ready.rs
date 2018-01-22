@@ -7,11 +7,17 @@ bitflags! {
     /// `read` operation.
     ///
     /// `Ready` values can be combined together using the various bitwise
-    /// operators.
+    /// operators, see examples below.
+    ///
+    /// In [`Poll`]'s [`register`] and [`reregister`] methods this used to
+    /// describe in what kind of readiness events an `Evented` handle is
+    /// interested in.
     ///
     /// For high level documentation on polling and readiness, see [`Poll`].
     ///
     /// [`Poll`]: struct.Poll.html
+    /// [`register`]: struct.Poll.html#method.register
+    /// [`reregister`]: struct.Poll.html#method.reregister
     ///
     /// # Examples
     ///
