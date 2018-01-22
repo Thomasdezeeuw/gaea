@@ -183,10 +183,11 @@ fn kevent_register(kq: RawFd, changes: &mut [libc::kevent], ignored_errors: &[ke
 
     if ok == -1 {
         // EINTR is the only error that we can handle, but according to the man
-        // page: "When kevent() call fails with EINTR error, all changes in the
-        // changelist have been applied", so we're done.
+        // page of FreeBSD: "When kevent() call fails with EINTR error, all
+        // changes in the changelist have been applied", so we're done.
         //
-        // EACCES, EFAULT, EBADF, EINVAL and ESRCH: all have to do with invalid
+        // EOPNOTSUPP (NetBSD only),
+        // EACCES, EEBADF, FAULT, EINVAL and ESRCH: all have to do with invalid
         //                                          argument, which shouldn't
         //                                          happen or are the users
         //                                          fault, e.g. bad fd.
