@@ -39,8 +39,8 @@ pub use self::ready::Ready;
 /// [`write`].
 ///
 /// To use `Poll`, an `Evented` type must first be registered with the `Poll`
-/// instance using the [`register`] method, supplying readiness interest. The
-/// readiness interest tells `Poll` which specific operations on the handle to
+/// instance using the [`register`] method, supplying readiness interests. The
+/// readiness interests tells `Poll` which specific operations on the handle to
 /// monitor for readiness. A `EventedId` is also passed to the [`register`]
 /// function. When `Poll` returns a readiness event, it will include this id.
 /// This associates the event with the `Evented` handle that generated the
@@ -288,14 +288,14 @@ impl Poll {
     /// See documentation on [`EventedId`] for an example showing how to pick
     /// [`EventedId`] values.
     ///
-    /// `interest: Ready`: Specifies which operations `Poll` should monitor for
+    /// `interests: Ready`: Specifies which operations `Poll` should monitor for
     /// readiness. `Poll` will only return readiness events for operations
     /// specified by this argument.
     ///
-    /// If a socket is registered with [`readable`] interest and the socket
+    /// If a socket is registered with [`readable`] interests and the socket
     /// becomes writable, no event will be returned from [`poll`].
     ///
-    /// The readiness interest for an `Evented` handle can be changed at any
+    /// The readiness interests for an `Evented` handle can be changed at any
     /// time by calling [`reregister`].
     ///
     /// `opts: PollOpt`: Specifies the registration options. The most common
@@ -385,7 +385,7 @@ impl Poll {
     ///
     /// Re-registering an `Evented` handle allows changing the details of the
     /// registration. Specifically, it allows updating the associated `id`,
-    /// `interest`, and `opts` specified in previous `register` and `reregister`
+    /// `interests`, and `opts` specified in previous `register` and `reregister`
     /// calls.
     ///
     /// The `reregister` arguments fully override the previous values. In other

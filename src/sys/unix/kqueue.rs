@@ -104,19 +104,19 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
         let flags = opts_to_flags(opts) | libc::EV_ADD;
         // At most we need two changes, but maybe we only need 1.
         let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
         let mut n_changes = 0;
 
-        if interest.contains(Ready::WRITABLE) {
+        if interests.contains(Ready::WRITABLE) {
             let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, id);
             unsafe { ptr::write(&mut changes[n_changes], kevent) };
             n_changes += 1;
         }
 
-        if interest.contains(Ready::READABLE) {
+        if interests.contains(Ready::READABLE) {
             let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, id);
             unsafe { ptr::write(&mut changes[n_changes], kevent) };
             n_changes += 1;

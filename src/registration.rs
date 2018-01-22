@@ -107,12 +107,12 @@ impl Registration {
 }
 
 impl Evented for Registration {
-    fn register(&mut self, _poll: &mut Poll, id: EventedId, interest: Ready, _: PollOpt) -> io::Result<()> {
-        self.inner.register(id, interest)
+    fn register(&mut self, _poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt) -> io::Result<()> {
+        self.inner.register(id, interests)
     }
 
-    fn reregister(&mut self, _poll: &mut Poll, id: EventedId, interest: Ready, _: PollOpt) -> io::Result<()> {
-        self.inner.reregister(id, interest)
+    fn reregister(&mut self, _poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt) -> io::Result<()> {
+        self.inner.reregister(id, interests)
     }
 
     fn deregister(&mut self, _: &mut Poll) -> io::Result<()> {
@@ -212,15 +212,15 @@ impl Notifier {
             .and_then(|inner| inner.notify(poll, ready))
     }
 
-    /// Returns the interest of the accompanying `Registration`. This will be
+    /// Returns the interests of the accompanying `Registration`. This will be
     /// [empty] if the `Registration` hasn't been registered yet, or has been
     /// deregistered, but not dropped.
     ///
     /// [empty]: ../poll/struct.Ready.html#method.empty
-    pub fn interest(&mut self) -> Result<Ready, RegistrationGone> {
+    pub fn interests(&mut self) -> Result<Ready, RegistrationGone> {
         self.inner.upgrade()
             .ok_or(RegistrationGone)
-            .map(|inner| inner.interest())
+            .map(|inner| inner.interests())
     }
 }
 
@@ -263,12 +263,12 @@ impl Error for NotifyError {
     }
 }
 
-/// Error returned by [`Notifier.interest`].
+/// Error returned by [`Notifier.interests`].
 ///
 /// It means the accompanying `Registration` is gone (as in it's been dropped).
 /// This is the same error as [`NotifyError::RegistrationGone`].
 ///
-/// [`Notifier.interest`]: struct.Notifier.html#method.interest
+/// [`Notifier.interests`]: struct.Notifier.html#method.interests
 /// [`NotifyError::RegistrationGone`]: enum.NotifyError.html#variant.RegistrationGone
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct RegistrationGone;
@@ -290,56 +290,56 @@ impl Error for RegistrationGone {
 #[derive(Debug)]
 struct RegistrationInner {
     id: Cell<EventedId>,
-    interest: Cell<Ready>,
+    interests: Cell<Ready>,
 }
 
 impl RegistrationInner {
     fn new() -> RegistrationInner {
         RegistrationInner{
             id: Cell::new(INVALID_EVENTED_ID),
-            interest: Cell::new(Ready::empty()),
+            interests: Cell::new(Ready::empty()),
         }
     }
 
-    fn register(&self, id: EventedId, interest: Ready) -> io::Result<()> {
+    fn register(&self, id: EventedId, interests: Ready) -> io::Result<()> {
         if self.id.get().is_valid() {
             Err(io::Error::new(io::ErrorKind::Other, "cannot register \
                                `Registration` twice without deregistering first, \
                                or use reregister"))
         } else {
-            self.reregister(id, interest)
+            self.reregister(id, interests)
         }
     }
 
-    fn reregister(&self, id: EventedId, interest: Ready) -> io::Result<()> {
+    fn reregister(&self, id: EventedId, interests: Ready) -> io::Result<()> {
         self.id.set(id);
-        self.interest.set(interest);
+        self.interests.set(interests);
         Ok(())
     }
 
     fn deregister(&self) -> io::Result<()> {
         self.id.set(INVALID_EVENTED_ID);
-        self.interest.set(Ready::empty());
+        self.interests.set(Ready::empty());
         Ok(())
     }
 
     fn notify(&self, poll: &mut Poll, ready: Ready) -> Result<(), NotifyError> {
-        let interest = self.interest();
+        let interests = self.interests();
         let id = self.id.get();
         if !id.is_valid() {
             Err(NotifyError::NotRegistered)
         } else if ready.is_empty() {
             Err(NotifyError::EmptyReadiness)
-        } else if !interest.intersects(ready) {
+        } else if !interests.intersects(ready) {
             Err(NotifyError::NoInterest)
         } else {
             // Only pass the ready bits we're interested in.
-            poll.userspace_add_event(Event::new(id, ready & interest));
+            poll.userspace_add_event(Event::new(id, ready & interests));
             Ok(())
         }
     }
 
-    fn interest(&self) -> Ready {
-        self.interest.get()
+    fn interests(&self) -> Ready {
+        self.interests.get()
     }
 }

@@ -50,14 +50,14 @@ use poll::{Poll, PollOpt, Ready};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`
-///         self.socket.register(poll, id, interest, opts)
+///         self.socket.register(poll, id, interests, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`
-///         self.socket.reregister(poll, id, interest, opts)
+///         self.socket.reregister(poll, id, interests, opts)
 ///     }
 ///
 ///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -108,12 +108,12 @@ use poll::{Poll, PollOpt, Ready};
 ///
 /// // Deligate the Evented registration to the user space registration.
 /// impl<T> Evented for Receiver<T> {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.register(poll, id, interest, opts)
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
+///         self.registration.register(poll, id, interests, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.reregister(poll, id, interest, opts)
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
+///         self.registration.reregister(poll, id, interests, opts)
 ///     }
 ///
 ///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -145,7 +145,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poll.register`]: ../struct.Poll.html#method.register
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opt: PollOpt) -> io::Result<()>;
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()>;
 
     /// Reregister `self` with the given `Poll` instance.
     ///
@@ -153,7 +153,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poll.reregister`]: ../struct.Poll.html#method.reregister
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opt: PollOpt) -> io::Result<()>;
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poll` instance
     ///
