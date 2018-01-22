@@ -376,7 +376,7 @@ impl Poll {
     pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
-        validate_args(id, interests, opts)?;
+        validate_args(id, interests)?;
         trace!("registering with poller, id: {:?}, interests: {:?}, opts: {:?}", id, interests, opts);
         handle.register(self, id, interests, opts)
     }
@@ -438,7 +438,7 @@ impl Poll {
     pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
-        validate_args(id, interests, opts)?;
+        validate_args(id, interests)?;
         trace!("reregistering with poller, id: {:?}, interests: {:?}, opts: {:?}", id, interests, opts);
         handle.reregister(self, id, interests, opts)
     }
@@ -770,10 +770,8 @@ impl Poll {
 
 /// Validate the provided arguments making sure the `id` is valid and the other
 /// arguments aren't empty.
-fn validate_args(id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-    if opts.is_empty() {
-        Err(io::Error::new(io::ErrorKind::Other, "registering with empty poll options"))
-    } else if interests.is_empty() {
+fn validate_args(id: EventedId, interests: Ready) -> io::Result<()> {
+    if interests.is_empty() {
         Err(io::Error::new(io::ErrorKind::Other, "registering with empty interests"))
     } else if !id.is_valid() {
         Err(io::Error::new(io::ErrorKind::Other, "invalid evented id"))

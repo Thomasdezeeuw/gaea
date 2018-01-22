@@ -101,19 +101,11 @@ fn to_epoll_events(interests: Ready, opts: PollOpt) -> libc::uint32_t {
         events |= libc::EPOLLRDHUP;
     }
 
-    if opts.is_edge() {
-        events |= libc::EPOLLET;
+    events | match opts {
+        PollOpt::Edge => libc::EPOLLET,
+        PollOpt::Level => 0, // Default.
+        PollOpt::Oneshot => libc::EPOLLONESHOT,
     }
-
-    if opts.is_oneshot() {
-        events |= libc::EPOLLONESHOT;
-    }
-
-    if opts.is_level() {
-        events &= !EPOLLET;
-    }
-
-    events
 }
 
 fn epoll_ctl(epfd: RawFd, op: libc::c_int, fd: RawFd, event: *mut libc::epoll_event) -> io::Result<()>

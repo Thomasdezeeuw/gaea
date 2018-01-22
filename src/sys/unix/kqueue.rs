@@ -167,14 +167,11 @@ fn timespec_from_duration(duration: Duration) -> libc::timespec {
 
 /// Convert poll options into `kevent` flags.
 fn opts_to_flags(opts: PollOpt) -> kevent_flags_t {
-    let mut flags = libc::EV_RECEIPT;
-    if opts.contains(PollOpt::EDGE) {
-        flags |= libc::EV_CLEAR
+    libc::EV_RECEIPT | match opts {
+        PollOpt::Edge => libc::EV_CLEAR,
+        PollOpt::Level => 0, // Default.
+        PollOpt::Oneshot => libc::EV_ONESHOT,
     }
-    if opts.contains(PollOpt::ONESHOT) {
-        flags |= libc::EV_ONESHOT
-    }
-    flags
 }
 
 /// Create a new `kevent`.
