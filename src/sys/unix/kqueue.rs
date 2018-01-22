@@ -73,8 +73,8 @@ impl Selector {
     }
 
     pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
-        let events_ptr = events.events.as_mut_ptr();
-        let events_cap = events.events.capacity() as nchanges_t;
+        let events_ptr = events.inner.as_mut_ptr();
+        let events_cap = events.inner.capacity() as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
         let timespec_ptr = timespec.as_ref()
@@ -97,7 +97,7 @@ impl Selector {
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
                 // Got some events.
-                unsafe { events.events.set_len(n as usize) };
+                unsafe { events.inner.set_len(n as usize) };
                 Ok(())
             },
         }
@@ -239,24 +239,24 @@ impl Drop for Selector {
 }
 
 pub struct Events {
-    events: Vec<libc::kevent>,
+    inner: Vec<libc::kevent>,
 }
 
 impl Events {
     pub fn with_capacity(cap: usize) -> Events {
-        Events { events: Vec::with_capacity(cap) }
+        Events { inner: Vec::with_capacity(cap) }
     }
 
     pub fn len(&self) -> usize {
-        self.events.len()
+        self.inner.len()
     }
 
     pub fn clear(&mut self) {
-        self.events.clear();
+        self.inner.clear();
     }
 
     pub fn get(&self, index: usize) -> Option<Event> {
-        let kevent = match self.events.get(index) {
+        let kevent = match self.inner.get(index) {
             Some(kevent) => kevent,
             None => return None,
         };
@@ -303,7 +303,7 @@ impl Events {
 impl fmt::Debug for Events {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Events")
-            .field("len", &self.events.len())
+            .field("len", &self.inner.len())
             .finish()
     }
 }
