@@ -235,6 +235,11 @@ impl Events {
         self.sys_events.len() + self.user_events.len()
     }
 
+    /// Whether or not this iteration is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Reset the events to allow it to be filled again.
     pub(crate) fn reset(&mut self) {
         self.sys_events.clear();
