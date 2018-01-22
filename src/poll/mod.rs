@@ -616,7 +616,7 @@ impl Poll {
     ///
     /// If we have any deadlines the first one will also cap the timeout.
     fn determine_timeout(&mut self, timeout: Option<Duration>) -> Option<Duration> {
-        if self.userspace_events.len() > 0 {
+        if !self.userspace_events.is_empty() {
             // Userspace queue has events, so no blocking.
             return Some(Duration::from_millis(0));
         } else if let Some(deadline) = self.deadlines.peek() {
