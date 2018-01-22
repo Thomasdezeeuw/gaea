@@ -1,7 +1,7 @@
 //! User space registrations.
 //!
 //! `Registration` allows implementing [`Evented`] for types that cannot work
-//! with the [system selector]. A `Registration` is always paired with a
+//! with the system selector. A `Registration` is always paired with a
 //! `Notifier`, which is a handle to notify the registration of events.
 //!
 //! A `Registration` / `Notifier` pair is created by calling
@@ -15,12 +15,11 @@
 //!
 //! `Registration` implements [`Evented`], so it can be used with [`Poll`] using
 //! the same [`register`], [`reregister`], and [`deregister`] functions used
-//! with TCP, UDP, etc... types. Once registered with [`Poll`], readiness state
+//! with TCP, UDP, etc. types. Once registered with [`Poll`], readiness state
 //! changes result in readiness events being dispatched to the [`Poll`] instance
 //! with which `Registration` is registered.
 //!
 //! [`Evented`]: ../event/trait.Evented.html
-//! [system selector]: ../poll/struct.Poll.html#implementation-notes
 //! [`Registration::new`]: struct.Registration.html#method.new
 //! [`Poll`]: ../poll/struct.Poll.html
 //! [`Poll.poll`]: ../poll/struct.Poll.html#method.poll
@@ -35,7 +34,7 @@
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
 //! use mio::event::{EventedId, Events};
-//! use mio::poll::{Ready, Poll, PollOpt};
+//! use mio::poll::{Poll, PollOpt, Ready};
 //! use mio::registration::Registration;
 //!
 //! // Create our poll and events.
@@ -44,15 +43,17 @@
 //!
 //! // Create a new user space registration and register it with `poll`.
 //! let (mut registration, mut notifier) = Registration::new();
+//! // Note that `PollOpt` doesn't matter here since this is entirely user space
+//! // driven and not in our control.
 //! poll.register(&mut registration, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 //!
 //! // Notify the `registration` of a new, readable readiness event.
-//! assert!(notifier.notify(&mut poll, Ready::READABLE)?);
+//! notifier.notify(&mut poll, Ready::READABLE)?;
 //!
 //! poll.poll(&mut events, None);
 //!
 //! for event in &mut events {
-//!     if event.token() == EventedId(0) && event.readiness().is_readable() {
+//!     if event.id() == EventedId(0) && event.readiness().is_readable() {
 //!         return Ok(());
 //!     }
 //! }
@@ -77,7 +78,7 @@ use poll::{Poll, PollOpt, Ready};
 ///
 ///
 /// This is a handle to an user space registration and can be used to implement
-/// [`Evented`] for types that cannot work with the [system selector]. A
+/// [`Evented`] for types that cannot work with the system selector. A
 /// `Registration` is always paired with a [`Notifier`], which allows notifying
 /// the registration of events.
 ///
@@ -86,10 +87,9 @@ use poll::{Poll, PollOpt, Ready};
 /// # Note
 ///
 /// The `PollOpt` provided to `register` and `reregister` are ignored, since
-/// use space controls the notifing of readiness.
+/// user space controls the notifing of readiness.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
-/// [system selector]: ../poll/struct.Poll.html#implementation-notes
 /// [`Notifier`]: struct.Notifier.html
 /// [module documentation]: index.html
 #[derive(Debug)]
@@ -125,12 +125,73 @@ impl Evented for Registration {
 /// This handle can be used to notify the accompanying `Registration` of events.
 /// It can be created by calling [`Registration::new`].
 ///
-/// This be cloned to share the ability to notify the same `Registration`.
+/// This handle can be shared by simply cloning it. Both handles will notify the
+/// same `Registration`.
 ///
 /// See the [module documentation] for more information.
 ///
 /// [`Registration::new`]: struct.Registration.html#method.new
 /// [module documentation]: index.html
+///
+/// # Examples
+///
+/// The example below explains the possible errors returned by `notify`.
+///
+/// ```
+/// # use std::error::Error;
+/// # fn try_main() -> Result<(), Box<Error>> {
+/// use mio::event::{EventedId, Events};
+/// use mio::poll::{Poll, PollOpt, Ready};
+/// use mio::registration::{NotifyError, Registration};
+///
+/// // Create our poll, events and registration.
+/// let mut poll = Poll::new()?;
+/// let mut events = Events::with_capacity(128);
+/// let (mut registration, mut notifier) = Registration::new();
+///
+/// // Next we'll try to notify our registration, but it's not registered yet so
+/// // it will return an error.
+/// assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NotRegistered);
+///
+/// // So we'll register our registration. Take not of the readiness arguments,
+/// // they'll come back later.
+/// poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
+///
+/// // Now we'll try to call notify again. But again an error is returned, this
+/// // time it indicate the accompanying `Registration` has no interest in the
+/// // `WRITABLE` readiness and so no event is created.
+/// assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NoInterest);
+///
+/// // Trying to call notify with empty readiness will also result in an error.
+/// assert_eq!(notifier.notify(&mut poll, Ready::empty()), Err(NotifyError::EmptyReadiness);
+///
+/// // Now, with all that we know, we can finally notify our registration with
+/// // the correct information.
+/// notifier.notify(&mut poll, Ready::READABLE)?;
+///
+/// // But now we're no longer interested in our registration, so we drop it.
+/// drop(registration);
+///
+/// // Trying to call notify now will result in an error indicating the
+/// // registration was dropped.
+/// assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::RegistrationGone);
+///
+/// // Note however that only event that we did send will still be returned by
+/// // polling.
+/// poll.poll(&mut events, None);
+/// for event in &mut events {
+///     if event.id() == EventedId(0) && event.readiness().is_readable() {
+///         return Ok(());
+///     }
+/// }
+/// # unreachable!("should have received an event");
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
+/// ```
 #[derive(Clone, Debug)]
 pub struct Notifier {
     inner: Weak<RegistrationInner>,
@@ -140,17 +201,8 @@ impl Notifier {
     /// Creates a new user space event with the provided `ready` and `id`
     /// set when registering the accompanying `Registration`.
     ///
-    /// This will return `false` if no event is created, this can happen in the
-    /// following cases:
-    ///
-    /// * the accompanying `Registration` has not been registered,
-    /// * the `Registration` has no interests (the registered interest is
-    ///   [empty]), or
-    /// * the provided `ready` doesn't match the `Registration`'s interest,
-    ///   e.g. registered with interest `Ready::READABLE` and then `notify` is
-    ///   called with `Ready::WRITABLE`.
-    ///
-    /// Otherwise this will return `true` to indicate an event has been created.
+    /// This will return an error if the event can't be created, see the [error
+    /// variants] for detailed possible error causes.
     ///
     /// [empty]: ../poll/struct.Ready.html#method.empty
     /// [error variants]: enum.NotifyError.html
