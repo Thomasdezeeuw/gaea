@@ -12,9 +12,6 @@ mod ready;
 pub use self::opt::PollOpt;
 pub use self::ready::Ready;
 
-// TODO: remove:
-pub use event::EventedId as Token;
-
 // Poll uses three subsystems to bring a complete event system to the user.
 //
 // 1. Operating System specific event queue. This is currently kqueue or epoll.

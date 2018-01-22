@@ -27,8 +27,7 @@
 //! use mio::net::{TcpListener, TcpStream};
 //! use mio::poll::{Poll, PollOpt, Ready};
 //!
-//! // Setup some tokens to allow us to identify which event is
-//! // for which socket.
+//! // Setup some ids to allow us to identify which event is for which socket.
 //! const SERVER: EventedId = EventedId(0);
 //! const CLIENT: EventedId = EventedId(1);
 //!
@@ -56,7 +55,7 @@
 //!     poll.poll(&mut events, None).unwrap();
 //!
 //!     for event in &mut events {
-//!         match event.token() {
+//!         match event.id() {
 //!             SERVER => {
 //!                 // Accept and drop the socket immediately, this will close
 //!                 // the socket and notify the client of the EOF.

@@ -28,7 +28,7 @@ use poll::{Poll, PollOpt, Ready};
 /// use mio::net::UdpSocket;
 /// use mio::poll::{Poll, PollOpt, Ready};
 ///
-/// // Unique tokens and address for both the sender and echoer.
+/// // Unique ids and address for both the sender and echoer.
 /// const SENDER: EventedId = EventedId(0);
 /// const ECHOER: EventedId = EventedId(1);
 ///
@@ -60,7 +60,7 @@ use poll::{Poll, PollOpt, Ready};
 /// loop {
 ///     poll.poll(&mut events, None)?;
 ///     for event in &mut events {
-///         match event.token() {
+///         match event.id() {
 ///             // Our sender is ready to send.
 ///             SENDER => {
 ///                 let bytes_sent = sender_socket.send(MSG_TO_SEND)?;
@@ -73,8 +73,8 @@ use poll::{Poll, PollOpt, Ready};
 ///                 println!("{:?} ({} bytes)", &buf[0..bytes_recv], bytes_recv);
 ///                 # return Ok(());
 ///             }
-///             // We shouldn't receive any event with another token then the
-///             // two defined above.
+///             // We shouldn't receive any event with another id then the two
+///             // defined above.
 ///             _ => unreachable!("received an unexpected event")
 ///         }
 ///     }
