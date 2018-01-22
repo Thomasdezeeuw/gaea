@@ -229,7 +229,7 @@ impl Notifier {
 /// See the error variants for the cause of the error.
 ///
 /// [`Notifier`]: struct.Notifier.html
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum NotifyError {
     /// The accompanying `Registration` has not been registered.
     NotRegistered,
@@ -270,7 +270,7 @@ impl Error for NotifyError {
 ///
 /// [`Notifier.interest`]: struct.Notifier.html#method.interest
 /// [`NotifyError::RegistrationGone`]: enum.NotifyError.html#variant.RegistrationGone
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct RegistrationGone;
 
 impl fmt::Display for RegistrationGone {
