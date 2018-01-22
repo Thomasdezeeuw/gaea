@@ -45,7 +45,7 @@ use poll::{Poll, PollOpt, Ready};
 ///
 /// // As always create our poll and events.
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(128);
+/// let mut events = Events::with_capacity(128, 128);
 ///
 /// // Register our sockets
 /// poll.register(&mut sender_socket, SENDER, Ready::WRITABLE, PollOpt::EDGE)?;

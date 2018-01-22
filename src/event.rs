@@ -187,7 +187,7 @@ pub trait Evented {
 /// use mio::poll::{Poll, PollOpt, Ready};
 ///
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(1024);
+/// let mut events = Events::with_capacity(128, 128);
 ///
 /// // Register `Evented` handles with `poll` here.
 ///
@@ -219,13 +219,15 @@ pub struct Events {
 }
 
 impl Events {
-    /// Create a new `Events` collection with the provided `capacity`.
-    pub fn with_capacity(capacity: usize) -> Events {
+    /// Create a new `Events` collection, this is split in capacity for system
+    /// events (coming from epoll, kqueue etc.) and one coming from user space
+    /// events (coming from user [`Registration`]s and deadlines).
+    ///
+    /// [`Registration`]: ../registration/struct.Registration.html
+    pub fn with_capacity(system_capacity: usize, user_capacity: usize) -> Events {
         Events {
-            // TODO: add two capacities to the method; one for system events one
-            // for user space events and timers.
-            sys_events: sys::Events::with_capacity(capacity),
-            user_events: Vec::with_capacity(capacity / 2),
+            sys_events: sys::Events::with_capacity(system_capacity),
+            user_events: Vec::with_capacity(user_capacity),
             pos: 0,
         }
     }

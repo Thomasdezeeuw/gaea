@@ -37,7 +37,7 @@
 //!
 //! // Create a `Poll` instance along with an events container.
 //! let mut poll = Poll::new()?;
-//! let mut events = Events::with_capacity(1024);
+//! let mut events = Events::with_capacity(512, 512);
 //!
 //! // Register our TCP listener with `Poll`, this allows us to receive
 //! // notifications about incoming connections.

@@ -69,7 +69,7 @@ pub use self::ready::Ready;
 ///
 /// // Construct a new `Poll` handle as well as the `Events` we'll store into
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(1024);
+/// let mut events = Events::with_capacity(512, 512);
 ///
 /// // Connect the stream
 /// let mut stream = TcpStream::connect(server.local_addr()?)?;
@@ -242,7 +242,7 @@ impl Poll {
     /// let mut poll = Poll::new()?;
     ///
     /// // Create a structure to receive polled events
-    /// let mut events = Events::with_capacity(1024);
+    /// let mut events = Events::with_capacity(512, 512);
     ///
     /// // Wait for events, but none will be received because no `Evented`
     /// // handles have been registered with this `Poll` instance.
@@ -344,7 +344,7 @@ impl Poll {
     /// // Register the socket with `poll`
     /// poll.register(&mut socket, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
-    /// let mut events = Events::with_capacity(1024);
+    /// let mut events = Events::with_capacity(512, 512);
     /// let start = Instant::now();
     /// let timeout = Duration::from_millis(500);
     ///
@@ -476,7 +476,7 @@ impl Poll {
     ///
     /// poll.deregister(&mut socket)?;
     ///
-    /// let mut events = Events::with_capacity(1024);
+    /// let mut events = Events::with_capacity(512, 512);
     ///
     /// // Set a timeout because this poll should never receive any events.
     /// poll.poll(&mut events, Some(Duration::from_secs(1)))?;
@@ -559,7 +559,7 @@ impl Poll {
     ///
     /// // Construct a new `Poll` handle as well as the `Events` we'll store into
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(1024);
+    /// let mut events = Events::with_capacity(512, 512);
     ///
     /// // Connect the stream
     /// let mut stream = TcpStream::connect(addr)?;
@@ -686,7 +686,7 @@ impl Poll {
     /// use mio::event::{Event, Events, EventedId};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(128);
+    /// let mut events = Events::with_capacity(128, 128);
     ///
     /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
     /// poll.add_timeout(EventedId(0), Duration::from_millis(10));
