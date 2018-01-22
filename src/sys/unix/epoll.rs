@@ -168,29 +168,32 @@ impl Events {
     }
 
     pub fn get(&self, index: usize) -> Option<Event> {
-        self.inner.get(index).map(|event| {
-            let id = EventedId(event.u64 as usize);
-            let mut ready = Ready::empty();
-            let epoll = event.events;
+        let event = match self.inner.get(index) {
+            Some(event) => event,
+            None => return None,
+        };
 
-            if contains(epoll, libc::EPOLLIN) || contains(epoll, libc::EPOLLPRI) {
-                ready = ready | Ready::READABLE;
-            }
+        let id = EventedId(event.u64 as usize);
+        let epoll = event.events;
+        let mut readiness = Ready::empty();
 
-            if contains(epoll, libc::EPOLLOUT) {
-                ready = ready | Ready::WRITABLE;
-            }
+        if contains(epoll, libc::EPOLLIN) || contains(epoll, libc::EPOLLPRI) {
+            readiness = readiness | Ready::READABLE;
+        }
 
-            if contains(epoll, libc::EPOLLPRI) || contains(epoll, libc::EPOLLERR){
-                ready = ready | Ready::ERROR;
-            }
+        if contains(epoll, libc::EPOLLOUT) {
+            readiness = readiness | Ready::WRITABLE;
+        }
 
-            if contains(epoll, libc::EPOLLRDHUP) || contains(epoll, libc::EPOLLHUP) {
-                ready = ready | Ready::HUP;
-            }
+        if contains(epoll, libc::EPOLLPRI) || contains(epoll, libc::EPOLLERR){
+            readiness = readiness | Ready::ERROR;
+        }
 
-            Event::new(id, ready)
-        })
+        if contains(epoll, libc::EPOLLRDHUP) || contains(epoll, libc::EPOLLHUP) {
+            readiness = readiness | Ready::HUP;
+        }
+
+        Some(Event::new(id, readiness))
     }
 }
 
