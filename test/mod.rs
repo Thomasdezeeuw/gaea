@@ -47,3 +47,5 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
 
     assert!(expected.is_empty(), "The following expected events were not found: {:?}", expected);
 }
+
+mod userspace_registration;
