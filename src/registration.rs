@@ -165,9 +165,13 @@ impl Evented for Registration {
 /// // Trying to call notify with empty readiness will also result in an error.
 /// assert_eq!(notifier.notify(&mut poll, Ready::empty()), Err(NotifyError::EmptyReadiness);
 ///
+/// // We can get the registration's interests by calling `intersects`. This
+/// // will only fail if the registration is dropped.
+/// let readiness = notifier.interests()?;
+///
 /// // Now, with all that we know, we can finally notify our registration with
 /// // the correct information.
-/// notifier.notify(&mut poll, Ready::READABLE)?;
+/// notifier.notify(&mut poll, readiness)?;
 ///
 /// // But now we're no longer interested in our registration, so we drop it.
 /// drop(registration);
