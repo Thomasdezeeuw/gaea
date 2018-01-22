@@ -5,19 +5,17 @@ mod io;
 mod tcp;
 mod udp;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(target_os = "linux")]
 mod epoll;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(target_os = "linux")]
 pub use self::epoll::{Events, Selector};
 
-#[cfg(any(target_os = "bitrig", target_os = "dragonfly",
-          target_os = "freebsd", target_os = "ios", target_os = "macos",
+#[cfg(any(target_os = "freebsd", target_os = "macos",
           target_os = "netbsd", target_os = "openbsd"))]
 mod kqueue;
 
-#[cfg(any(target_os = "bitrig", target_os = "dragonfly",
-          target_os = "freebsd", target_os = "ios", target_os = "macos",
+#[cfg(any(target_os = "freebsd", target_os = "macos",
           target_os = "netbsd", target_os = "openbsd"))]
 pub use self::kqueue::{Events, Selector};
 
