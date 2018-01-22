@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use libc;
 
-use event::{Event, EventedId};
+use event::{Event, EventedId, INVALID_EVENTED_ID};
 use poll::{PollOpt, Ready};
 
 // Of course each OS that implements kqueue has chosen to go for different types
@@ -133,8 +133,8 @@ impl Selector {
         let flags = libc::EV_DELETE | libc::EV_RECEIPT;
         // id is not used.
         let mut changes: [libc::kevent; 2] = [
-            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, EventedId(0)),
-            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, EventedId(0)),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, INVALID_EVENTED_ID),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, INVALID_EVENTED_ID),
         ];
 
         kevent_register(self.kq, &mut changes, &[libc::ENOENT as kevent_data_t])
