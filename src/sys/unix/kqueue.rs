@@ -1,332 +1,308 @@
-use std::{cmp, fmt, io, ptr};
-#[cfg(not(target_os = "netbsd"))]
-use std::os::raw::{c_int, c_short};
-use std::os::unix::io::AsRawFd;
+use std::{cmp, fmt, mem, io, ptr};
 use std::os::unix::io::RawFd;
-use std::collections::HashMap;
 use std::time::Duration;
 
-use libc::{self, time_t};
+use libc;
 
-use {Ready, PollOpt, Token};
-use event::{self, Event};
-use sys::unix::cvt;
-use sys::unix::io::set_cloexec;
+use event::{Event, EventedId};
+use poll::{PollOpt, Ready};
 
+// Of course each OS that implements kqueue has chosen to go for different types
+// in the `kevent` structure, which requires conversions, hence the type
+// definitons below.
+
+// Type of `nchanges` in the `kevent` system call.
 #[cfg(not(target_os = "netbsd"))]
-type Filter = c_short;
-#[cfg(not(target_os = "netbsd"))]
-type UData = *mut ::libc::c_void;
-#[cfg(not(target_os = "netbsd"))]
-type Count = c_int;
-
+#[allow(non_camel_case_types)]
+type nchanges_t = libc::c_int;
 #[cfg(target_os = "netbsd")]
-type Filter = u32;
-#[cfg(target_os = "netbsd")]
-type UData = ::libc::intptr_t;
-#[cfg(target_os = "netbsd")]
-type Count = usize;
+#[allow(non_camel_case_types)]
+type nchanges_t = libc::size_t;
 
-macro_rules! kevent {
-    ($id: expr, $filter: expr, $flags: expr, $data: expr) => {
-        libc::kevent {
-            ident: $id as ::libc::uintptr_t,
-            filter: $filter as Filter,
-            flags: $flags,
-            fflags: 0,
-            data: 0,
-            udata: $data as UData,
-        }
-    }
-}
+// Type of the `filter` field in the `kevent` structure.
+#[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
+#[allow(non_camel_case_types)]
+type kevent_filter_t = libc::c_short;
+#[cfg(target_os = "macos")]
+#[allow(non_camel_case_types)]
+type kevent_filter_t = libc::int16_t;
+#[cfg(target_os = "netbsd")]
+#[allow(non_camel_case_types)]
+type kevent_filter_t = libc::uint32_t;
 
+// Type of the `flags` field in the `kevent` structure.
+#[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
+#[allow(non_camel_case_types)]
+type kevent_flags_t = libc::c_ushort;
+#[cfg(target_os = "macos")]
+#[allow(non_camel_case_types)]
+type kevent_flags_t = libc::uint16_t;
+#[cfg(target_os = "netbsd")]
+#[allow(non_camel_case_types)]
+type kevent_flags_t = libc::uint32_t;
+
+// Type of the `data` field in the `kevent` structure.
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+#[allow(non_camel_case_types)]
+type kevent_data_t = libc::intptr_t;
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+#[allow(non_camel_case_types)]
+type kevent_data_t = libc::int64_t;
+
+// Type of the `udata` field in the `kevent` structure.
+#[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "openbsd"))]
+#[allow(non_camel_case_types)]
+type kevent_udata_t = *mut libc::c_void;
+#[cfg(target_os = "netbsd")]
+#[allow(non_camel_case_types)]
+type kevent_udata_t = libc::intptr_t;
+
+#[derive(Debug)]
 pub struct Selector {
     kq: RawFd,
 }
 
 impl Selector {
     pub fn new() -> io::Result<Selector> {
-        let kq = unsafe { cvt(libc::kqueue())? };
-
-        Ok(Selector {
-            kq: kq,
-        })
+        let kq = unsafe { libc::kqueue() };
+        if kq == -1 {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(Selector { kq })
+        }
     }
 
     pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
-        let timeout = timeout.map(|to| {
-            libc::timespec {
-                tv_sec: cmp::min(to.as_secs(), time_t::max_value() as u64) as time_t,
-                tv_nsec: libc::c_long::from(to.subsec_nanos()),
-            }
-        });
-        let timeout = timeout.as_ref().map(|s| s as *const _).unwrap_or(ptr::null_mut());
+        let events_ptr = events.events.as_mut_ptr();
+        let events_cap = events.events.capacity() as nchanges_t;
 
-        unsafe {
-            let cnt = cvt(libc::kevent(self.kq,
-                                            ptr::null(),
-                                            0,
-                                            events.sys_events.0.as_mut_ptr(),
-                                            events.sys_events.0.capacity() as Count,
-                                            timeout))?;
-            events.sys_events.0.set_len(cnt as usize);
-            Ok(events.coalesce())
+        let timespec = timeout.map(timespec_from_duration);
+        let timespec_ptr = timespec.as_ref()
+            .map(|t| t as *const libc::timespec)
+            .unwrap_or(ptr::null());
+
+        let n_events = unsafe {
+            libc::kevent(self.kq, ptr::null(), 0,
+                events_ptr, events_cap, timespec_ptr)
+        };
+        match n_events {
+            -1 => {
+                let err = io::Error::last_os_error();
+                match err.raw_os_error() {
+                    // The call was interrupted, try again.
+                    Some(libc::EINTR) => self.select(events, timeout),
+                    _ => Err(err),
+                }
+            },
+            0 => Ok(()), // Reached the time limit, no events are pulled.
+            n => {
+                // Got some events.
+                unsafe { events.events.set_len(n as usize) };
+                Ok(())
+            },
         }
     }
 
-    pub fn register(&self, fd: RawFd, token: Token, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        trace!("registering; token={:?}; interests={:?}", token, interests);
+    pub fn register(&self, fd: RawFd, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        let flags = opts_to_flags(opts) | libc::EV_ADD;
+        // At most we need two changes, but maybe we only need 1.
+        let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
+        let mut n_changes = 0;
 
-        let flags = if opts.contains(PollOpt::EDGE) { libc::EV_CLEAR } else { 0 } |
-                    if opts.contains(PollOpt::ONESHOT) { libc::EV_ONESHOT } else { 0 } |
-                    libc::EV_RECEIPT;
-
-        unsafe {
-            let r = if interests.contains(Ready::READABLE) { libc::EV_ADD } else { libc::EV_DELETE };
-            let w = if interests.contains(Ready::WRITABLE) { libc::EV_ADD } else { libc::EV_DELETE };
-            let mut changes = [
-                kevent!(fd, libc::EVFILT_READ, flags | r, usize::from(token)),
-                kevent!(fd, libc::EVFILT_WRITE, flags | w, usize::from(token)),
-            ];
-
-            cvt(libc::kevent(self.kq,
-                             changes.as_ptr(),
-                             changes.len() as Count,
-                             changes.as_mut_ptr(),
-                             changes.len() as Count,
-                             ::std::ptr::null()))?;
-
-            for change in changes.iter() {
-                debug_assert_eq!(change.flags & libc::EV_ERROR, libc::EV_ERROR);
-
-                // Test to see if an error happened
-                if change.data == 0 {
-                    continue
-                }
-
-                // Older versions of OSX (10.11 and 10.10 have been witnessed)
-                // can return EPIPE when registering a pipe file descriptor
-                // where the other end has already disappeared. For example code
-                // that creates a pipe, closes a file descriptor, and then
-                // registers the other end will see an EPIPE returned from
-                // `register`.
-                //
-                // It also turns out that kevent will still report events on the
-                // file descriptor, telling us that it's readable/hup at least
-                // after we've done this registration. As a result we just
-                // ignore `EPIPE` here instead of propagating it.
-                //
-                // More info can be found at carllerche/mio#582
-                if change.data as i32 == libc::EPIPE &&
-                   change.filter == libc::EVFILT_WRITE as Filter {
-                    continue
-                }
-
-                // ignore ENOENT error for EV_DELETE
-                let orig_flags = if change.filter == libc::EVFILT_READ as Filter { r } else { w };
-                if change.data as i32 == libc::ENOENT && orig_flags & libc::EV_DELETE != 0 {
-                    continue
-                }
-
-                return Err(::std::io::Error::from_raw_os_error(change.data as i32));
-            }
-            Ok(())
+        if interest.contains(Ready::WRITABLE) {
+            let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, id);
+            unsafe { ptr::write(&mut changes[n_changes], kevent) };
+            n_changes += 1;
         }
+
+        if interest.contains(Ready::READABLE) {
+            let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, id);
+            unsafe { ptr::write(&mut changes[n_changes], kevent) };
+            n_changes += 1;
+        }
+
+        kevent_register(self.kq, &mut changes[0..n_changes], &[])
     }
 
-    pub fn reregister(&self, fd: RawFd, token: Token, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        // Just need to call register here since EV_ADD is a mod if already
-        // registered
-        self.register(fd, token, interests, opts)
+    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
+        self.deregister(fd)?;
+        self.register(fd, id, interests, opts)
     }
 
     pub fn deregister(&self, fd: RawFd) -> io::Result<()> {
-        unsafe {
-            // EV_RECEIPT is a nice way to apply changes and get back per-event results while not
-            // draining the actual changes.
-            let filter = libc::EV_DELETE | libc::EV_RECEIPT;
-#[cfg(not(target_os = "netbsd"))]
-            let mut changes = [
-                kevent!(fd, libc::EVFILT_READ, filter, ptr::null_mut()),
-                kevent!(fd, libc::EVFILT_WRITE, filter, ptr::null_mut()),
-            ];
+        let flags = libc::EV_DELETE | libc::EV_RECEIPT;
+        // id is not used.
+        let mut changes: [libc::kevent; 2] = [
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, EventedId(0)),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, EventedId(0)),
+        ];
 
-#[cfg(target_os = "netbsd")]
-            let mut changes = [
-                kevent!(fd, libc::EVFILT_READ, filter, 0),
-                kevent!(fd, libc::EVFILT_WRITE, filter, 0),
-            ];
+        kevent_register(self.kq, &mut changes, &[libc::ENOENT as kevent_data_t])
+    }
+}
 
-            cvt(libc::kevent(self.kq,
-                             changes.as_ptr(),
-                             changes.len() as Count,
-                             changes.as_mut_ptr(),
-                             changes.len() as Count,
-                             ::std::ptr::null())).map(|_| ())?;
+/// Create a `libc::timespec` from a duration.
+fn timespec_from_duration(duration: Duration) -> libc::timespec {
+    libc::timespec {
+        tv_sec: cmp::min(duration.as_secs(), libc::time_t::max_value() as u64) as libc::time_t,
+        tv_nsec: duration.subsec_nanos() as libc::c_long,
+    }
+}
 
-            if changes[0].data as i32 == libc::ENOENT && changes[1].data as i32 == libc::ENOENT {
-                return Err(::std::io::Error::from_raw_os_error(changes[0].data as i32));
-            }
-            for change in changes.iter() {
-                debug_assert_eq!(libc::EV_ERROR & change.flags, libc::EV_ERROR);
-                if change.data != 0 && change.data as i32 != libc::ENOENT {
-                    return Err(::std::io::Error::from_raw_os_error(changes[0].data as i32));
-                }
-            }
-            Ok(())
+/// Convert poll options into `kevent` flags.
+fn opts_to_flags(opts: PollOpt) -> kevent_flags_t {
+    let mut flags = libc::EV_RECEIPT;
+    if opts.contains(PollOpt::EDGE) {
+        flags |= libc::EV_CLEAR
+    }
+    if opts.contains(PollOpt::ONESHOT) {
+        flags |= libc::EV_ONESHOT
+    }
+    flags
+}
+
+/// Create a new `kevent`.
+fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_flags_t, id: EventedId) -> libc::kevent {
+    libc::kevent {
+        ident, filter, flags,
+        fflags: 0,
+        data: 0,
+        udata: usize::from(id) as kevent_udata_t,
+    }
+}
+
+fn kevent_register(kq: RawFd, changes: &mut [libc::kevent], ignored_errors: &[kevent_data_t]) -> io::Result<()> {
+    // No blocking.
+    let timeout = libc::timespec { tv_sec: 0, tv_nsec: 0 };
+    let timeout_ptr = &timeout as *const libc::timespec;
+
+    let ok = unsafe {
+        libc::kevent(kq, changes.as_ptr(), changes.len() as nchanges_t,
+            changes.as_mut_ptr(), changes.len() as nchanges_t, timeout_ptr)
+    };
+
+    if ok == -1 {
+        // EINTR is the only error that we can handle, but according to the man
+        // page: "When kevent() call fails with EINTR error, all changes in the
+        // changelist have been applied", so we're done.
+        //
+        // EACCES, EFAULT, EBADF, EINVAL and ESRCH: all have to do with invalid
+        //                                          argument, which shouldn't
+        //                                          happen or are the users
+        //                                          fault, e.g. bad fd.
+        // ENOMEM: can't handle.
+        // ENOENT: invalid argument, or in case of deregister will be set in the
+        //         change and ignored.
+        let err = io::Error::last_os_error();
+        match err.raw_os_error() {
+            Some(libc::EINTR) => Ok(()),
+            _ => Err(err),
+        }
+    } else {
+        check_errors(&*changes, ignored_errors)
+    }
+}
+
+/// Check all events for possible errors, it returns the first error found.
+fn check_errors(events: &[libc::kevent], ignored_errors: &[kevent_data_t]) -> io::Result<()> {
+    for event in &*events {
+        // Check for the error flag, the actual error will be in the `data`
+        // field.
+        if contains(event.flags, libc::EV_ERROR) && event.data != 0 &&
+            // Make sure the error is not one to ignore.
+            !ignored_errors.contains(&event.data)
+        {
+            return Err(io::Error::from_raw_os_error(event.data as i32));
         }
     }
+    Ok(())
 }
 
-impl fmt::Debug for Selector {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Selector")
-            .field("kq", &self.kq)
-            .finish()
-    }
-}
-
-impl AsRawFd for Selector {
-    fn as_raw_fd(&self) -> RawFd {
-        self.kq
-    }
+/// Wether or not the provided `flags` contains the provided `flag`.
+fn contains(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
+    (flags & flag) == flag
 }
 
 impl Drop for Selector {
     fn drop(&mut self) {
-        unsafe {
-            let _ = libc::close(self.kq);
+        if unsafe { libc::close(self.kq) } == -1 {
+            // Possible errors:
+            // - EBADF, EIO: can't recover.
+            // - EINTR: could try again but we're can't be sure if the file
+            //          descriptor was closed or not, so to be safe we don't
+            //          close it again.
+            let err = io::Error::last_os_error();
+            error!("error closing kqueue: {}", err);
         }
     }
 }
 
 pub struct Events {
-    sys_events: KeventList,
-    events: Vec<Event>,
-    event_map: HashMap<Token, usize>,
+    events: Vec<libc::kevent>,
 }
-
-struct KeventList(Vec<libc::kevent>);
-
-unsafe impl Send for KeventList {}
-unsafe impl Sync for KeventList {}
 
 impl Events {
     pub fn with_capacity(cap: usize) -> Events {
-        Events {
-            sys_events: KeventList(Vec::with_capacity(cap)),
-            events: Vec::with_capacity(cap),
-            event_map: HashMap::with_capacity(cap)
-        }
+        Events { events: Vec::with_capacity(cap) }
     }
 
-    #[inline]
     pub fn len(&self) -> usize {
         self.events.len()
     }
 
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        self.events.capacity()
-    }
-
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.events.is_empty()
-    }
-
-    pub fn get(&self, idx: usize) -> Option<Event> {
-        self.events.get(idx).map(|e| *e)
-    }
-
-    fn coalesce(&mut self) {
+    pub fn clear(&mut self) {
         self.events.clear();
-        self.event_map.clear();
+    }
 
-        for e in self.sys_events.0.iter() {
-            let token = Token(e.udata as usize);
-            let len = self.events.len();
+    pub fn get(&self, index: usize) -> Option<Event> {
+        let kevent = match self.events.get(index) {
+            Some(kevent) => kevent,
+            None => return None,
+        };
 
-            let idx = *self.event_map.entry(token)
-                .or_insert(len);
+        let id = EventedId(kevent.udata as usize);
+        let mut readiness = Ready::empty();
 
-            if idx == len {
-                // New entry, insert the default
-                self.events.push(Event::new(token, Ready::empty()));
-            }
+        if kevent.flags & libc::EV_ERROR != 0 {
+            // The actual error is stored in `kevent.data`, but we can't pass it
+            // to the user from here. So the user need to try and retrieve the
+            // error themselves.
+            readiness.insert(Ready::ERROR);
+        }
 
-            if e.flags & libc::EV_ERROR != 0 {
-                self.events[idx].kind_mut().insert(Ready::ERROR);
-            }
+        if kevent.flags & libc::EV_EOF != 0 {
+            readiness.insert(Ready::HUP);
 
-            if e.filter == libc::EVFILT_READ as Filter {
-                self.events[idx].kind_mut().insert(Ready::READABLE);
-            } else if e.filter == libc::EVFILT_WRITE as Filter {
-                self.events[idx].kind_mut().insert(Ready::WRITABLE);
-            }
-#[cfg(any(target_os = "dragonfly",
-    target_os = "freebsd", target_os = "ios", target_os = "macos"))]
-            {
-                if e.filter == libc::EVFILT_AIO {
-                    self.events[idx].kind_mut().insert(Ready::AIO);
-                }
-            }
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-            {
-                if e.filter == libc::EVFILT_LIO {
-                    self.events[idx].kind_mut().insert(Ready::LIO);
-                }
-            }
-
-            if e.flags & libc::EV_EOF != 0 {
-                self.events[idx].kind_mut().insert(Ready::HUP);
-
-                // When the read end of the socket is closed, EV_EOF is set on
-                // flags, and fflags contains the error if there is one.
-                if e.fflags != 0 {
-                    self.events[idx].kind_mut().insert(Ready::ERROR);
-                }
+            // When the read end of the socket is closed, EV_EOF is set on
+            // flags, and fflags contains the error if there is one.
+            if kevent.fflags != 0 {
+                readiness.insert(Ready::ERROR);
             }
         }
-    }
 
-    pub fn clear(&mut self) {
-        self.sys_events.0.truncate(0);
-        self.events.truncate(0);
-        self.event_map.clear();
+        if kevent.filter == libc::EVFILT_READ {
+            readiness.insert(Ready::READABLE);
+        } else if kevent.filter == libc::EVFILT_WRITE {
+            readiness.insert(Ready::WRITABLE);
+        }
+
+        // Even though the MacOS and NetBSD manuals says `EVFILT_AIO` is
+        // currently not supported, it might be added in the future, so it
+        // doesn't hurt to have it here.
+        #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))] {
+            if kevent.filter == libc::EVFILT_AIO {
+                readiness.insert(Ready::AIO);
+            }
+        }
+
+        Some(Event::new(id, readiness))
     }
 }
 
 impl fmt::Debug for Events {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Events")
-            .field("len", &self.sys_events.0.len())
+            .field("len", &self.events.len())
             .finish()
     }
-}
-
-#[test]
-fn does_not_register_rw() {
-    use {Poll, Ready, PollOpt, Token};
-    use unix::EventedFd;
-
-    let kq = unsafe { libc::kqueue() };
-    let mut kqf = EventedFd(&kq);
-    let mut poll = Poll::new().unwrap();
-
-    // registering kqueue fd will fail if write is requested (On anything but
-    // some versions of OS X).
-    poll.register(&mut kqf, Token(1234), Ready::READABLE,
-                  PollOpt::EDGE | PollOpt::ONESHOT).unwrap();
-}
-
-#[cfg(any(target_os = "dragonfly",
-    target_os = "freebsd", target_os = "ios", target_os = "macos"))]
-#[test]
-fn test_coalesce_aio() {
-    let mut events = Events::with_capacity(1);
-    events.sys_events.0.push(kevent!(0x1234, libc::EVFILT_AIO, 0, 42));
-    events.coalesce();
-    assert!(events.events[0].readiness() == Ready::AIO);
-    assert!(events.events[0].token() == Token(42));
 }
