@@ -1,8 +1,8 @@
 use std::io;
 use std::os::unix::io::RawFd;
 
-use event::Evented;
-use poll::{Poll, PollOpt, Ready, Token};
+use event::{EventedId, Evented};
+use poll::{Poll, PollOpt, Ready};
 
 /// Adapter for a `RawFd` providing an [`Evented`] implementation.
 ///
@@ -35,7 +35,7 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// use std::os::unix::io::AsRawFd;
 ///
 /// use mio::event::Evented;
-/// use mio::poll::{Poll, PollOpt, Ready, Token};
+/// use mio::poll::{Poll, PollOpt, Ready, EventedId};
 /// use mio::unix::EventedFd;
 ///
 /// // Bind a listener from the standard library.
@@ -44,7 +44,7 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// let mut poll = Poll::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poll.register(&mut EventedFd(&listener.as_raw_fd()), Token(0), Ready::READABLE, PollOpt::EDGE)?;
+/// poll.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
 /// #     Ok(())
 /// # }
 /// #
@@ -60,7 +60,7 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// use std::os::unix::io::RawFd;
 ///
 /// use mio::event::Evented;
-/// use mio::poll::{Poll, PollOpt, Ready, Token};
+/// use mio::poll::{Poll, PollOpt, Ready, EventedId};
 /// use mio::unix::EventedFd;
 ///
 /// pub struct MyIo {
@@ -68,12 +68,12 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// }
 ///
 /// impl Evented for MyIo {
-///     fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         EventedFd(&self.fd).register(poll, token, interest, opts)
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///         EventedFd(&self.fd).register(poll, id, interest, opts)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-///         EventedFd(&self.fd).reregister(poll, token, interest, opts)
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+///         EventedFd(&self.fd).reregister(poll, id, interest, opts)
 ///     }
 ///
 ///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -85,12 +85,12 @@ use poll::{Poll, PollOpt, Ready, Token};
 pub struct EventedFd<'a>(pub &'a RawFd);
 
 impl<'a> Evented for EventedFd<'a> {
-    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        poll.selector().register(*self.0, token, interest, opts)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        poll.selector().register(*self.0, id, interest, opts)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        poll.selector().reregister(*self.0, token, interest, opts)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        poll.selector().reregister(*self.0, id, interest, opts)
     }
 
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {

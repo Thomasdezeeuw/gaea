@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
 
-use event::Evented;
-use poll::{Poll, PollOpt, Ready, Token};
+use event::{EventedId, Evented};
+use poll::{Poll, PollOpt, Ready};
 use sys::unix::EventedFd;
 
 /// Manages a file decriptor.
@@ -31,12 +31,12 @@ impl AsRawFd for Io {
 }
 
 impl Evented for Io {
-    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).register(poll, token, interest, opts)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).register(poll, id, interest, opts)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).reregister(poll, token, interest, opts)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).reregister(poll, id, interest, opts)
     }
 
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
