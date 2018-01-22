@@ -49,3 +49,4 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
 }
 
 mod userspace_registration;
+mod event;
