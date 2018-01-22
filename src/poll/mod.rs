@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use std::collections::BinaryHeap;
 
 use sys;
-use event::{Event, Events, Evented};
+use event::{Event, Events, EventedId, Evented};
 
 mod opt;
 mod ready;
@@ -12,8 +12,8 @@ mod ready;
 pub use self::opt::PollOpt;
 pub use self::ready::Ready;
 
+// TODO: remove:
 pub use event::EventedId as Token;
-pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 
 
 
@@ -28,8 +28,8 @@ pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 /// To use `Poll`, an `Evented` type must first be registered with the `Poll`
 /// instance using the [`register`] method, supplying readiness interest. The
 /// readiness interest tells `Poll` which specific operations on the handle to
-/// monitor for readiness. A `Token` is also passed to the [`register`]
-/// function. When `Poll` returns a readiness event, it will include this token.
+/// monitor for readiness. A `EventedId` is also passed to the [`register`]
+/// function. When `Poll` returns a readiness event, it will include this id.
 /// This associates the event with the `Evented` handle that generated the
 /// event.
 ///
@@ -44,7 +44,7 @@ pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio::{Events, Poll, Ready, PollOpt, Token};
+/// use mio::{Events, Poll, Ready, PollOpt, EventedId};
 /// use mio::net::TcpStream;
 ///
 /// use std::net::{TcpListener, SocketAddr};
@@ -61,7 +61,7 @@ pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 /// let mut stream = TcpStream::connect(server.local_addr()?)?;
 ///
 /// // Register the stream with `Poll`
-/// poll.register(&mut stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 ///
 /// // Wait for the socket to become ready. This has to happens in a loop to
 /// // handle spurious wakeups.
@@ -69,7 +69,7 @@ pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 ///     poll.poll(&mut events, None)?;
 ///
 ///     for event in &mut events {
-///         if event.token() == Token(0) && event.readiness().is_writable() {
+///         if event.id() == EventedId(0) && event.readiness().is_writable() {
 ///             // The socket connected (probably, it could still be a spurious
 ///             // wakeup)
 ///             return Ok(());
@@ -145,7 +145,7 @@ pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio::{Poll, Ready, PollOpt, Token};
+/// use mio::{Poll, Ready, PollOpt, EventedId};
 /// use mio::net::TcpStream;
 /// use std::time::Duration;
 /// use std::thread;
@@ -158,7 +158,7 @@ pub(crate) use event::INVALID_EVENTED_ID as INVALID_TOKEN;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point
-/// poll.register(&mut sock, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut sock, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 /// #     Ok(())
 /// # }
 /// #
@@ -260,17 +260,17 @@ impl Poll {
     /// `handle: &E: Evented`: This is the handle that the `Poll` instance
     /// should monitor for readiness state changes.
     ///
-    /// `token: Token`: The caller picks a token to associate with the socket.
-    /// When [`poll`] returns an event for the handle, this token is included.
-    /// This allows the caller to map the event to its handle. The token
+    /// `id: EventedId`: The caller picks a id to associate with the socket.
+    /// When [`poll`] returns an event for the handle, this id is included.
+    /// This allows the caller to map the event to its handle. The id
     /// associated with the `Evented` handle can be changed at any time by
     /// calling [`reregister`].
     ///
-    /// `token` cannot be `Token(usize::MAX)` as it is reserved for internal
+    /// `id` cannot be `EventedId(usize::MAX)` as it is reserved for internal
     /// usage.
     ///
-    /// See documentation on [`Token`] for an example showing how to pick
-    /// [`Token`] values.
+    /// See documentation on [`EventedId`] for an example showing how to pick
+    /// [`EventedId`] values.
     ///
     /// `interest: Ready`: Specifies which operations `Poll` should monitor for
     /// readiness. `Poll` will only return readiness events for operations
@@ -299,7 +299,7 @@ impl Poll {
     ///
     /// # Undefined behaviour
     ///
-    /// Reusing a token with a different `Evented` without deregistering (or
+    /// Reusing a id with a different `Evented` without deregistering (or
     /// closing) the original `Evented` will result in undefined behaviour.
     ///
     /// [`struct`]: #
@@ -309,14 +309,14 @@ impl Poll {
     /// [`level`]: struct.PollOpt.html#method.level
     /// [`edge`]: struct.PollOpt.html#method.edge
     /// [`oneshot`]: struct.PollOpt.html#method.oneshot
-    /// [`Token`]: struct.Token.html
+    /// [`EventedId`]: struct.EventedId.html
     ///
     /// # Examples
     ///
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::{Events, Poll, Ready, PollOpt, Token};
+    /// use mio::{Events, Poll, Ready, PollOpt, EventedId};
     /// use mio::net::TcpStream;
     /// use std::time::{Duration, Instant};
     ///
@@ -324,7 +324,7 @@ impl Poll {
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&mut socket, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// let mut events = Events::with_capacity(1024);
     /// let start = Instant::now();
@@ -342,7 +342,7 @@ impl Poll {
     ///     poll.poll(&mut events, Some(remaining))?;
     ///
     ///     for event in &mut events {
-    ///         if event.token() == Token(0) {
+    ///         if event.id() == EventedId(0) {
     ///             // Something (probably) happened on the socket.
     ///             return Ok(());
     ///         }
@@ -355,18 +355,18 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn register<E>(&mut self, handle: &mut E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
         token.validate()?;
-        trace!("registering with poller, token: {:?}, interest: {:?}, opts: {:?}", token, interest, opts);
-        handle.register(self, token, interest, opts)
+        trace!("registering with poller, id: {:?}, interests: {:?}, opts: {:?}", id, interests, opts);
+        handle.register(self, id, interests, opts)
     }
 
     /// Re-register an `Evented` handle with the `Poll` instance.
     ///
     /// Re-registering an `Evented` handle allows changing the details of the
-    /// registration. Specifically, it allows updating the associated `token`,
+    /// registration. Specifically, it allows updating the associated `id`,
     /// `interest`, and `opts` specified in previous `register` and `reregister`
     /// calls.
     ///
@@ -379,7 +379,7 @@ impl Poll {
     /// instance of `Poll` otherwise the call to `reregister` will return with
     /// an error.
     ///
-    /// `token` cannot be `Token(usize::MAX)` as it is reserved for internal
+    /// `id` cannot be `EventedId(usize::MAX)` as it is reserved for internal
     /// usage.
     ///
     /// See the [`register`] documentation for details about the function
@@ -391,19 +391,19 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::{Poll, Ready, PollOpt, Token};
+    /// use mio::{Poll, Ready, PollOpt, EventedId};
     /// use mio::net::TcpStream;
     ///
     /// let mut poll = Poll::new()?;
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`, requesting readable
-    /// poll.register(&mut socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
-    /// // Reregister the socket specifying a different token and write interest
+    /// // Reregister the socket specifying a different id and write interest
     /// // instead. `PollOpt::EDGE` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&mut socket, Token(2), Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOpt::EDGE)?;
     /// #     Ok(())
     /// # }
     /// #
@@ -416,12 +416,12 @@ impl Poll {
     /// [`register`]: #method.register
     /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
     /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
-    pub fn reregister<E>(&mut self, handle: &mut E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
         token.validate()?;
-        trace!("reregistering with poller, token: {:?}, interest: {:?}, opts: {:?}", token, interest, opts);
-        handle.reregister(self, token, interest, opts)
+        trace!("reregistering with poller, id: {:?}, interests: {:?}, opts: {:?}", id, interests, opts);
+        handle.reregister(self, id, interests, opts)
     }
 
     /// Deregister an `Evented` handle with the `Poll` instance.
@@ -443,7 +443,7 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::{Events, Poll, Ready, PollOpt, Token};
+    /// use mio::{Events, Poll, Ready, PollOpt, EventedId};
     /// use mio::net::TcpStream;
     /// use std::time::Duration;
     ///
@@ -451,7 +451,7 @@ impl Poll {
     /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
     /// // Register the socket with `poll`
-    /// poll.register(&mut socket, Token(0), Ready::READABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::EDGE)?;
     ///
     /// poll.deregister(&mut socket)?;
     ///
@@ -519,7 +519,7 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio::{Events, Poll, Ready, PollOpt, Token};
+    /// use mio::{Events, Poll, Ready, PollOpt, EventedId};
     /// use mio::net::TcpStream;
     ///
     /// use std::net::{TcpListener, SocketAddr};
@@ -543,7 +543,7 @@ impl Poll {
     /// let mut stream = TcpStream::connect(addr)?;
     ///
     /// // Register the stream with `Poll`
-    /// poll.register(&mut stream, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
     ///
     /// // Wait for the socket to become ready. This has to happens in a loop to
     /// // handle spurious wakeups.
@@ -551,7 +551,7 @@ impl Poll {
     ///     poll.poll(&mut events, None)?;
     ///
     ///     for event in &mut events {
-    ///         if event.token() == Token(0) && event.readiness().is_writable() {
+    ///         if event.id() == EventedId(0) && event.readiness().is_writable() {
     ///             // The socket connected (probably, it could still be a spurious
     ///             // wakeup)
     ///             return Ok(());
@@ -646,7 +646,7 @@ impl Poll {
     ///
     /// This will create a new timer that will trigger an [`Event`] after the
     /// `deadline` has passed, which gets returned when [polling]. The `Event`
-    /// will always have [`TIMER`] as `Ready` value and the same `token` as
+    /// will always have [`TIMER`] as `Ready` value and the same `id` as
     /// provided.
     ///
     /// [`Event`]: ../event/struct.Event.html
@@ -660,21 +660,21 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio::poll::{Poll, Token, Ready, PollOpt};
+    /// use mio::poll::{Poll, EventedId, Ready, PollOpt};
     /// use mio::event::{Event, Events};
     ///
     /// let mut poll = Poll::new()?;
     /// let mut events = Events::with_capacity(128);
     ///
     /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
-    /// poll.add_timeout(Token(0), Duration::from_millis(10));
+    /// poll.add_timeout(EventedId(0), Duration::from_millis(10));
     ///
     /// // Eventhough we don't provide a timeout to poll this will return in
     /// // roughly 10 milliseconds and return an event with our deadline.
     /// poll.poll(&mut events, None)?;
     ///
     /// for event in &mut events {
-    ///     assert_eq!(event, Event::new(Token(0), Ready::TIMER));
+    ///     assert_eq!(event, Event::new(EventedId(0), Ready::TIMER));
     /// }
     /// #   Ok(())
     /// # }
@@ -683,18 +683,18 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn add_deadline(&mut self, token: Token, deadline: Instant) {
-        self.deadlines.push(ReverseOrder(Deadline { token, deadline }));
+    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
+        self.deadlines.push(ReverseOrder(Deadline { id, deadline }));
     }
 
     /// Add a new timeout to Poll.
     ///
-    /// This is a shorthand for `poll.add_deadline(token, Instant::now() +
+    /// This is a shorthand for `poll.add_deadline(id, Instant::now() +
     /// timeout)`, see [`add_deadline`].
     ///
     /// [`add_deadline`]: #method.add_deadline
-    pub fn add_timeout(&mut self, token: Token, timeout: Duration) {
-        self.add_deadline(token, Instant::now() + timeout)
+    pub fn add_timeout(&mut self, id: EventedId, timeout: Duration) {
+        self.add_deadline(id, Instant::now() + timeout)
     }
 
     /// Remove a previously added deadline.
@@ -707,15 +707,15 @@ impl Poll {
     /// This function is not at all good for performance. If your code can deal
     /// with timeouts firing after they're no longer needed, then you should not
     /// use this function and let the timeout be fired and ignored.
-    pub fn remove_deadline(&mut self, token: Token) -> Option<Instant> {
+    pub fn remove_deadline(&mut self, id: EventedId) -> Option<Instant> {
         // TODO: optimize this.
         let index = self.deadlines.iter()
-            .position(|deadline| deadline.token == token);
+            .position(|deadline| deadline.id == id);
 
         if let Some(index) = index {
             let deadlines = mem::replace(&mut self.deadlines, BinaryHeap::new());
             let mut deadlines_vec = deadlines.into_vec();
-            debug_assert_eq!(deadlines_vec[index].token, token,
+            debug_assert_eq!(deadlines_vec[index].id, id,
                              "remove_deadline: removing an incorrect deadline");
             let deadline = deadlines_vec.remove(index);
             drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
@@ -732,7 +732,7 @@ impl Poll {
             match self.deadlines.peek().cloned() {
                 Some(deadline) if deadline.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap();
-                    events.push(Event::new(deadline.token, Ready::TIMER));
+                    events.push(Event::new(deadline.id, Ready::TIMER));
                 },
                 _ => return,
             }
@@ -748,11 +748,11 @@ impl Poll {
 
 /// A deadline in `Poll`.
 ///
-/// This must be ordered by `deadline`, then `token`.
+/// This must be ordered by `deadline`, then `id`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct Deadline {
     deadline: Instant,
-    token: Token,
+    id: EventedId,
 }
 
 /// Reverses the order of the comparing arguments.
