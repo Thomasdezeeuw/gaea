@@ -77,6 +77,7 @@ impl Selector {
         let events_cap = events.inner.capacity() as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
+        #[allow(trivial_casts)]
         let timespec_ptr = timespec.as_ref()
             .map(|t| t as *const libc::timespec)
             .unwrap_or(ptr::null());
@@ -187,11 +188,10 @@ fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_fla
 fn kevent_register(kq: RawFd, changes: &mut [libc::kevent], ignored_errors: &[kevent_data_t]) -> io::Result<()> {
     // No blocking.
     let timeout = libc::timespec { tv_sec: 0, tv_nsec: 0 };
-    let timeout_ptr = &timeout as *const libc::timespec;
 
     let ok = unsafe {
         libc::kevent(kq, changes.as_ptr(), changes.len() as nchanges_t,
-            changes.as_mut_ptr(), changes.len() as nchanges_t, timeout_ptr)
+            changes.as_mut_ptr(), changes.len() as nchanges_t, &timeout)
     };
 
     if ok == -1 {

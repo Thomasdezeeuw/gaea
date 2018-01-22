@@ -410,11 +410,10 @@ impl TcpListener {
         }?;
 
         if cfg!(unix) {
-            sock.reuse_address(true)?;
+            drop(sock.reuse_address(true)?);
         }
-        sock.bind(addr)?;
 
-        let listener = sock.listen(1024)?;
+        let listener = sock.bind(addr)?.listen(1024)?;
         Ok(TcpListener {
             inner: sys::TcpListener::new(listener, &addr)?,
         })

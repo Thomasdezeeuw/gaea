@@ -75,7 +75,14 @@
 #![doc(html_root_url = "https://docs.rs/mio/0.6.12")]
 #![crate_name = "mio"]
 
-#![deny(warnings, missing_docs, missing_debug_implementations)]
+#![warn(missing_debug_implementations,
+        missing_docs,
+        trivial_casts,
+        trivial_numeric_casts,
+        unused_import_braces,
+        unused_qualifications,
+        unused_results,
+)]
 
 #[macro_use]
 extern crate bitflags;
