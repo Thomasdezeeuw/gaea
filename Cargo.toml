@@ -11,15 +11,15 @@ keywords      = ["io", "async", "non-blocking"]
 categories    = ["asynchronous"]
 
 [dependencies]
-log      = "0.3.1"
-net2     = "0.2.29"
 bitflags = "1.0.1"
+log      = "0.4.1"
+net2     = "0.2.31"
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.19"
+libc = "0.2.36"
 
 [dev-dependencies]
-env_logger = { version = "0.4.0", default-features = false }
+env_logger = "0.5.3"
 
 [[test]]
 name = "test"
