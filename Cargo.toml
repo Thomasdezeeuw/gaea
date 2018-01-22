@@ -1,5 +1,4 @@
 [package]
-
 name          = "mio"
 version       = "0.1.0"
 license       = "MIT"
@@ -8,14 +7,8 @@ description   = "Single threaded, lightweight non-blocking IO"
 documentation = "https://docs.rs/mio-st"
 homepage      = "https://github.com/Thomasdezeeuw/mio-st"
 repository    = "https://github.com/Thomasdezeeuw/mio-st"
-readme        = "README.md"
 keywords      = ["io", "async", "non-blocking"]
 categories    = ["asynchronous"]
-exclude       = [
-  ".gitignore",
-  ".travis.yml",
-  "deploy.sh",
-]
 
 [dependencies]
 log      = "0.3.1"
