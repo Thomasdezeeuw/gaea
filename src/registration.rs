@@ -137,7 +137,7 @@ pub struct Notifier {
 }
 
 impl Notifier {
-    /// Creates a new user space event with the provided `ready` and the `token`
+    /// Creates a new user space event with the provided `ready` and `id`
     /// set when registering the accompanying `Registration`.
     ///
     /// This will return `false` if no event is created, this can happen in the
@@ -153,10 +153,11 @@ impl Notifier {
     /// Otherwise this will return `true` to indicate an event has been created.
     ///
     /// [empty]: ../poll/struct.Ready.html#method.empty
-    pub fn notify(&mut self, poll: &mut Poll, ready: Ready) -> Result<bool, RegistrationGone> {
+    /// [error variants]: enum.NotifyError.html
+    pub fn notify(&mut self, poll: &mut Poll, ready: Ready) -> Result<(), NotifyError> {
         self.inner.upgrade()
-            .ok_or(RegistrationGone)
-            .map(|inner| inner.notify(poll, ready))
+            .ok_or(NotifyError::RegistrationGone)
+            .and_then(|inner| inner.notify(poll, ready))
     }
 
     /// Returns the interest of the accompanying `Registration`. This will be
@@ -173,9 +174,50 @@ impl Notifier {
 
 /// Error returned by [`Notifier`].
 ///
-/// It means the accompanying `Registration` is gone (as in it's been dropped).
+/// See the error variants for the cause of the error.
 ///
 /// [`Notifier`]: struct.Notifier.html
+#[derive(Debug, Eq, PartialEq)]
+pub enum NotifyError {
+    /// The accompanying `Registration` has not been registered.
+    NotRegistered,
+    /// The provided `readiness` is empty.
+    EmptyReadiness,
+    /// The accompanying `Registration` has no interest in the provided
+    /// readiness, e.g. registered with interest `Ready::READABLE` and then
+    /// `notify` is called with `Ready::WRITABLE`.
+    NoInterest,
+    /// The accompanying `Registration` is gone (as in it's been dropped). Same
+    /// error as [`RegistrationGone`].
+    ///
+    /// [`RegistrationGone`]: struct.RegistrationGone.html
+    RegistrationGone,
+}
+
+impl fmt::Display for NotifyError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.description())
+    }
+}
+
+impl Error for NotifyError {
+    fn description(&self) -> &str {
+        match *self {
+            NotifyError::NotRegistered => "accompanying registration is not registered",
+            NotifyError::EmptyReadiness => "readiness is empty",
+            NotifyError::NoInterest => "accompanying registration has no interest in the event",
+            NotifyError::RegistrationGone => RegistrationGone.description(),
+        }
+    }
+}
+
+/// Error returned by [`Notifier.interest`].
+///
+/// It means the accompanying `Registration` is gone (as in it's been dropped).
+/// This is the same error as [`NotifyError::RegistrationGone`].
+///
+/// [`Notifier.interest`]: struct.Notifier.html#method.interest
+/// [`NotifyError::RegistrationGone`]: enum.NotifyError.html#variant.RegistrationGone
 #[derive(Debug, Eq, PartialEq)]
 pub struct RegistrationGone;
 
@@ -229,16 +271,19 @@ impl RegistrationInner {
         Ok(())
     }
 
-    fn notify(&self, poll: &mut Poll, ready: Ready) -> bool {
+    fn notify(&self, poll: &mut Poll, ready: Ready) -> Result<(), NotifyError> {
         let interest = self.interest();
         let id = self.id.get();
-        // Only pass the ready bits we're interested in.
-        let ready = ready & interest;
-        if !id.is_valid() || interest.is_empty() || ready.is_empty() {
-            false
+        if !id.is_valid() {
+            Err(NotifyError::NotRegistered)
+        } else if ready.is_empty() {
+            Err(NotifyError::EmptyReadiness)
+        } else if !interest.intersects(ready) {
+            Err(NotifyError::NoInterest)
         } else {
-            poll.userspace_add_event(Event::new(id, ready));
-            true
+            // Only pass the ready bits we're interested in.
+            poll.userspace_add_event(Event::new(id, ready & interest));
+            Ok(())
         }
     }
 
