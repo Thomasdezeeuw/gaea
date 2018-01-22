@@ -15,7 +15,23 @@ pub use self::ready::Ready;
 // TODO: remove:
 pub use event::EventedId as Token;
 
-
+// Poll uses three subsystems to bring a complete event system to the user.
+//
+// 1. Operating System specific event queue. This is currently kqueue or epoll.
+//    All the relavent code is in `sys/*/selector.rs`. This mainly deals with
+//    file descriptor, e.g. for sockets.
+//
+// 2. User space events. This is simply a vector in the `Poll` instance. Adding
+//    an new events is a simple a push it onto the vector. `events::Events` hold
+//    both the system events and user space events. Each call to `Poll.poll`
+//    simply flushes all user space events to the provided `events::Events`.
+//
+// 3. Deadline system. The third system is used for deadlines and timeout. Each
+//    deadline is a pair of `Instant` and `EventedId` in a binary heap. Each
+//    call to `Poll.poll` will get the first deadline, if any, and use it as a
+//    timeout to the system selector. Then after the system selector returns
+//    exceeded deadlines are popped and converted into Events and added to the
+//    user space events.
 
 /// Polls for readiness events on all registered values.
 ///
