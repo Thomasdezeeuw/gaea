@@ -125,8 +125,24 @@ impl Selector {
     }
 
     pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        self.deregister(fd)?;
-        self.register(fd, id, interests, opts)
+        let flags = opts_to_flags(opts);
+        let write_flags = if interests.is_writable() {
+            flags | libc::EV_ADD
+        } else {
+            flags | libc::EV_DELETE
+        };
+        let read_flags = if interests.is_readable() {
+            flags | libc::EV_ADD
+        } else {
+            flags | libc::EV_DELETE
+        };
+
+        let mut changes: [libc::kevent; 2] = [
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, write_flags, id),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, read_flags, id),
+        ];
+
+        kevent_register(self.kq, &mut changes, &[libc::ENOENT as kevent_data_t])
     }
 
     pub fn deregister(&self, fd: RawFd) -> io::Result<()> {
