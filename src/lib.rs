@@ -88,9 +88,6 @@ extern crate net2;
 #[cfg(unix)]
 extern crate libc;
 
-#[cfg(unix)]
-extern crate nix;
-
 mod sys;
 
 // TODO: move event as submodule of poll, rexport `Events` and `Event` in poll.
