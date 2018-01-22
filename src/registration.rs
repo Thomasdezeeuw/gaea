@@ -34,8 +34,8 @@
 //! ```
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
-//! use mio::event::Events;
-//! use mio::poll::{Ready, Poll, PollOpt, Token};
+//! use mio::event::{EventedId, Events};
+//! use mio::poll::{Ready, Poll, PollOpt};
 //! use mio::registration::Registration;
 //!
 //! // Create our poll and events.
@@ -44,7 +44,7 @@
 //!
 //! // Create a new user space registration and register it with `poll`.
 //! let (mut registration, mut notifier) = Registration::new();
-//! poll.register(&mut registration, Token(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
+//! poll.register(&mut registration, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::EDGE)?;
 //!
 //! // Notify the `registration` of a new, readable readiness event.
 //! assert!(notifier.notify(&mut poll, Ready::READABLE)?);
@@ -52,7 +52,7 @@
 //! poll.poll(&mut events, None);
 //!
 //! for event in &mut events {
-//!     if event.token() == Token(0) && event.readiness().is_readable() {
+//!     if event.token() == EventedId(0) && event.readiness().is_readable() {
 //!         return Ok(());
 //!     }
 //! }
@@ -70,8 +70,8 @@ use std::cell::Cell;
 use std::error::Error;
 use std::rc::{Rc, Weak};
 
-use event::{Event, Evented};
-use poll::{Poll, PollOpt, Ready, Token, INVALID_TOKEN};
+use event::{Event, EventedId, Evented, INVALID_EVENTED_ID};
+use poll::{Poll, PollOpt, Ready};
 
 /// Handle to a user space registration.
 ///
@@ -107,19 +107,16 @@ impl Registration {
 }
 
 impl Evented for Registration {
-    fn register(&mut self, _poll: &mut Poll, token: Token, interest: Ready, _: PollOpt) -> io::Result<()> {
-        self.inner.register(token, interest);
-        Ok(())
+    fn register(&mut self, _poll: &mut Poll, id: EventedId, interest: Ready, _: PollOpt) -> io::Result<()> {
+        self.inner.register(id, interest)
     }
 
-    fn reregister(&mut self, _poll: &mut Poll, token: Token, interest: Ready, _: PollOpt) -> io::Result<()> {
-        self.inner.reregister(token, interest);
-        Ok(())
+    fn reregister(&mut self, _poll: &mut Poll, id: EventedId, interest: Ready, _: PollOpt) -> io::Result<()> {
+        self.inner.reregister(id, interest)
     }
 
     fn deregister(&mut self, _: &mut Poll) -> io::Result<()> {
-        self.inner.deregister();
-        Ok(())
+        self.inner.deregister()
     }
 }
 
@@ -198,42 +195,49 @@ impl Error for RegistrationGone {
 /// (possibly multiple) `Notifier`s.
 #[derive(Debug)]
 struct RegistrationInner {
-    token: Cell<Token>,
+    id: Cell<EventedId>,
     interest: Cell<Ready>,
 }
 
 impl RegistrationInner {
     fn new() -> RegistrationInner {
         RegistrationInner{
-            token: Cell::new(INVALID_TOKEN),
+            id: Cell::new(INVALID_EVENTED_ID),
             interest: Cell::new(Ready::empty()),
         }
     }
 
-    fn register(&self, token: Token, interest: Ready) {
-        assert_eq!(self.token.get(), INVALID_TOKEN, "cannot reregistering \
-                   `Registration` without deregistering first");
-        self.reregister(token, interest);
+    fn register(&self, id: EventedId, interest: Ready) -> io::Result<()> {
+        if self.id.get().is_valid() {
+            Err(io::Error::new(io::ErrorKind::Other, "cannot register \
+                               `Registration` twice without deregistering first, \
+                               or use reregister"))
+        } else {
+            self.reregister(id, interest)
+        }
     }
 
-    fn reregister(&self, token: Token, interest: Ready) {
-        self.token.set(token);
+    fn reregister(&self, id: EventedId, interest: Ready) -> io::Result<()> {
+        self.id.set(id);
         self.interest.set(interest);
+        Ok(())
     }
 
-    fn deregister(&self) {
-        self.token.set(INVALID_TOKEN);
+    fn deregister(&self) -> io::Result<()> {
+        self.id.set(INVALID_EVENTED_ID);
         self.interest.set(Ready::empty());
+        Ok(())
     }
 
     fn notify(&self, poll: &mut Poll, ready: Ready) -> bool {
         let interest = self.interest();
+        let id = self.id.get();
         // Only pass the ready bits we're interested in.
         let ready = ready & interest;
-        if self.token.get() == INVALID_TOKEN || interest.is_empty() || ready.is_empty() {
+        if !id.is_valid() || interest.is_empty() || ready.is_empty() {
             false
         } else {
-            poll.userspace_add_event(Event::new(self.token.get(), ready));
+            poll.userspace_add_event(Event::new(id, ready));
             true
         }
     }
