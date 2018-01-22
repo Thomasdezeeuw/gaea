@@ -7,8 +7,8 @@ use poll::{Poll, PollOpt, Ready};
 
 /// A value that may be registered with `Poll`.
 ///
-/// Values that implement `Evented` can be registered with [`Poll`]. Users of
-/// Mio should not use the `Evented` trait functions directly. Instead, the
+/// Values that implement `Evented` can be registered with [`Poll`]. **Users of
+/// Mio should not use the `Evented` trait functions directly**. Instead, the
 /// equivalent functions on [`Poll`] should be used.
 ///
 /// See [`Poll`] for more details.
@@ -183,8 +183,8 @@ pub trait Evented {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::poll::{Poll, Ready, PollOpt};
-/// use mio::event::{Events, EventedId};
+/// use mio::event::{EventedId, Events};
+/// use mio::poll::{Poll, PollOpt, Ready};
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::with_capacity(1024);
@@ -301,13 +301,13 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 /// # Examples
 ///
 /// ```
-/// use mio::Ready;
+/// use mio::poll::Ready;
 /// use mio::event::{Event, EventedId};
 ///
 /// let event = Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE);
 ///
-/// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// assert_eq!(event.id(), EventedId(0));
+/// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// ```
 ///
 /// [readiness state]: ../struct.Ready.html
@@ -326,20 +326,14 @@ impl Event {
         Event { id, readiness }
     }
 
-    /// Returns the event's readiness.
-    pub fn readiness(&self) -> Ready {
-        self.readiness
-    }
-
     /// Returns the event's id.
     pub fn id(&self) -> EventedId {
         self.id
     }
 
-    // TODO: REMOVE
-    /// Returns the event's token.
-    pub fn token(&self) -> EventedId {
-        self.id()
+    /// Returns the event's readiness.
+    pub fn readiness(&self) -> Ready {
+        self.readiness
     }
 }
 
@@ -352,10 +346,10 @@ impl Event {
 /// See [`Poll`] for more documentation on polling.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
-/// [`Poll.register`]: struct.Poll.html#method.register
-/// [`Poll.reregister`]: struct.Poll.html#method.reregister
+/// [`Poll.register`]: ../struct.Poll.html#method.register
+/// [`Poll.reregister`]: ../struct.Poll.html#method.reregister
 /// [`Event`]: ../event/struct.Event.html
-/// [`Poll`]: struct.Poll.html
+/// [`Poll`]: ../struct.Poll.html
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct EventedId(pub usize);
 
@@ -365,7 +359,7 @@ pub struct EventedId(pub usize);
 pub(crate) const INVALID_EVENTED_ID: EventedId = EventedId(::std::usize::MAX);
 
 impl EventedId {
-    /// Wether or not the `EventedId` is valid.
+    /// Whether or not the `EventedId` is valid.
     pub fn is_valid(&self) -> bool {
         *self != INVALID_EVENTED_ID
     }
