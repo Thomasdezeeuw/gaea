@@ -96,16 +96,10 @@ extern crate libc;
 
 mod sys;
 
-// TODO: move event as submodule of poll, rexport `Events` and `Event` in poll.
 pub mod event;
 pub mod net;
 pub mod poll;
 pub mod registration;
-
-// TODO: fix the imports in other files.
-pub use poll::{Poll, PollOpt, Ready, Token};
-pub use registration::{Registration, Notifier};
-pub use event::{Event, Events};
 
 #[cfg(unix)]
 pub mod unix {
