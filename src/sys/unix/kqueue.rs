@@ -104,8 +104,8 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        let flags = opts_to_flags(opts) | libc::EV_ADD;
+    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        let flags = opt_to_flags(opt) | libc::EV_ADD;
         // At most we need two changes, but maybe we only need 1.
         let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
         let mut n_changes = 0;
@@ -125,8 +125,8 @@ impl Selector {
         kevent_register(self.kq, &mut changes[0..n_changes], &[])
     }
 
-    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        let flags = opts_to_flags(opts);
+    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        let flags = opt_to_flags(opt);
         let write_flags = if interests.is_writable() {
             flags | libc::EV_ADD
         } else {
@@ -167,8 +167,8 @@ fn timespec_from_duration(duration: Duration) -> libc::timespec {
 }
 
 /// Convert poll options into `kevent` flags.
-fn opts_to_flags(opts: PollOpt) -> kevent_flags_t {
-    libc::EV_RECEIPT | match opts {
+fn opt_to_flags(opt: PollOpt) -> kevent_flags_t {
+    libc::EV_RECEIPT | match opt {
         PollOpt::Edge => libc::EV_CLEAR,
         PollOpt::Level => 0, // Default.
         PollOpt::Oneshot => libc::EV_ONESHOT,

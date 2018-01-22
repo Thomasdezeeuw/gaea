@@ -315,12 +315,12 @@ impl<'a> Write for &'a TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.register(poll, id, interests, opts)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        self.inner.register(poll, id, interests, opt)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.reregister(poll, id, interests, opts)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        self.inner.reregister(poll, id, interests, opt)
     }
 
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -511,12 +511,12 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.register(poll, id, interests, opts)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        self.inner.register(poll, id, interests, opt)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.reregister(poll, id, interests, opts)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        self.inner.reregister(poll, id, interests, opt)
     }
 
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {

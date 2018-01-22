@@ -50,14 +50,14 @@ use poll::{Poll, PollOpt, Ready};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`
-///         self.socket.register(poll, id, interests, opts)
+///         self.socket.register(poll, id, interests, opt)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`
-///         self.socket.reregister(poll, id, interests, opts)
+///         self.socket.reregister(poll, id, interests, opt)
 ///     }
 ///
 ///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -108,12 +108,12 @@ use poll::{Poll, PollOpt, Ready};
 ///
 /// // Deligate the Evented registration to the user space registration.
 /// impl<T> Evented for Receiver<T> {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.register(poll, id, interests, opts)
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+///         self.registration.register(poll, id, interests, opt)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-///         self.registration.reregister(poll, id, interests, opts)
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+///         self.registration.reregister(poll, id, interests, opt)
 ///     }
 ///
 ///     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {

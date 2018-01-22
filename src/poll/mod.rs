@@ -298,7 +298,7 @@ impl Poll {
     /// The readiness interests for an `Evented` handle can be changed at any
     /// time by calling [`reregister`].
     ///
-    /// `opts: PollOpt`: Specifies the registration options. The most common
+    /// `opt: PollOpt`: Specifies the registration options. The most common
     /// options being [`level`] for level-triggered events, [`edge`] for
     /// edge-triggered events, and [`oneshot`].
     ///
@@ -373,19 +373,19 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
-        trace!("registering with poller, id: {:?}, interests: {:?}, opts: {:?}", id, interests, opts);
-        handle.register(self, id, interests, opts)
+        trace!("registering with poller, id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
+        handle.register(self, id, interests, opt)
     }
 
     /// Re-register an `Evented` handle with the `Poll` instance.
     ///
     /// Re-registering an `Evented` handle allows changing the details of the
     /// registration. Specifically, it allows updating the associated `id`,
-    /// `interests`, and `opts` specified in previous `register` and `reregister`
+    /// `interests`, and `opt` specified in previous `register` and `reregister`
     /// calls.
     ///
     /// The `reregister` arguments fully override the previous values. In other
@@ -435,12 +435,12 @@ impl Poll {
     /// [`register`]: #method.register
     /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
     /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
-    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()>
+    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
-        trace!("reregistering with poller, id: {:?}, interests: {:?}, opts: {:?}", id, interests, opts);
-        handle.reregister(self, id, interests, opts)
+        trace!("reregistering with poller, id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
+        handle.reregister(self, id, interests, opt)
     }
 
     /// Deregister an `Evented` handle with the `Poll` instance.

@@ -47,14 +47,14 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        let epoll_event = new_epoll_event(interests, opts, id);
+    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        let epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_ADD, fd, &mut epoll_event)
     }
 
     /// Register event interests for the given IO handle with the OS
-    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opts: PollOpt) -> io::Result<()> {
-        let epoll_event = new_epoll_event(interests, opts, id);
+    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+        let epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_MOD, fd, &mut epoll_event)
     }
 
@@ -75,14 +75,14 @@ pub fn duration_to_millis(duration: Duration) -> libc::c_int {
 }
 
 /// Create a new `epoll_event`.
-fn new_epoll_event(interests: Ready, opts: PollOpt, id: EventedId) -> libc::kevent {
+fn new_epoll_event(interests: Ready, opt: PollOpt, id: EventedId) -> libc::kevent {
     libc::epoll_event {
-        events: to_epoll_events(interests, opts),
+        events: to_epoll_events(interests, opt),
         u64: id.into()
     }
 }
 
-fn to_epoll_events(interests: Ready, opts: PollOpt) -> libc::uint32_t {
+fn to_epoll_events(interests: Ready, opt: PollOpt) -> libc::uint32_t {
     let mut events = 0;
 
     if interests.is_readable() {
@@ -101,7 +101,7 @@ fn to_epoll_events(interests: Ready, opts: PollOpt) -> libc::uint32_t {
         events |= libc::EPOLLRDHUP;
     }
 
-    events | match opts {
+    events | match opt {
         PollOpt::Edge => libc::EPOLLET,
         PollOpt::Level => 0, // Default.
         PollOpt::Oneshot => libc::EPOLLONESHOT,
