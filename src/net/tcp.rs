@@ -1,5 +1,5 @@
 use std::io::{self, Read, Write};
-use std::net::{self, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::net::{self, Shutdown, SocketAddr};
 #[cfg(unix)]
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 use std::time::Duration;
@@ -7,8 +7,8 @@ use std::time::Duration;
 use net2::TcpBuilder;
 
 use sys;
-use event::Evented;
-use poll::{Poll, PollOpt, Ready, Token};
+use event::{EventedId, Evented};
+use poll::{Poll, PollOpt, Ready};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -22,9 +22,9 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::event::Events;
+/// use mio::event::{Events, EventedId};
 /// use mio::net::TcpStream;
-/// use mio::poll::{Poll, PollOpt, Ready, Token};
+/// use mio::poll::{Poll, PollOpt, Ready};
 ///
 /// let address = "127.0.0.1:8888".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -33,7 +33,7 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// let mut events = Events::with_capacity(128);
 ///
 /// // Register the socket with `Poll`.
-/// poll.register(&mut stream, Token(0), Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOpt::EDGE)?;
 ///
 /// poll.poll(&mut events, None)?;
 ///
@@ -282,21 +282,6 @@ impl TcpStream {
     }
 }
 
-fn inaddr_any(other: &SocketAddr) -> SocketAddr {
-    match *other {
-        SocketAddr::V4(..) => {
-            let any = Ipv4Addr::new(0, 0, 0, 0);
-            let addr = SocketAddrV4::new(any, 0);
-            SocketAddr::V4(addr)
-        }
-        SocketAddr::V6(..) => {
-            let any = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
-            let addr = SocketAddrV6::new(any, 0, 0, 0);
-            SocketAddr::V6(addr)
-        }
-    }
-}
-
 impl Read for TcpStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         (&self.inner).read(buf)
@@ -330,12 +315,12 @@ impl<'a> Write for &'a TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.register(poll, token, interest, opts)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.inner.register(poll, id, interest, opts)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.reregister(poll, token, interest, opts)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.inner.reregister(poll, id, interest, opts)
     }
 
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
@@ -375,9 +360,9 @@ impl FromRawFd for TcpStream {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::event::Events;
+/// use mio::event::{Events, EventedId};
 /// use mio::net::TcpListener;
-/// use mio::poll::{Poll, PollOpt, Ready, Token};
+/// use mio::poll::{Poll, PollOpt, Ready};
 ///
 /// let address = "127.0.0.1:7777".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
@@ -386,7 +371,7 @@ impl FromRawFd for TcpStream {
 /// let mut events = Events::with_capacity(128);
 ///
 /// // Register the socket with `Poll`
-/// poll.register(&mut listener, Token(0), Ready::WRITABLE, PollOpt::EDGE)?;
+/// poll.register(&mut listener, EventedId(0), Ready::WRITABLE, PollOpt::EDGE)?;
 ///
 /// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
@@ -527,12 +512,12 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.register(poll, token, interest, opts)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.inner.register(poll, id, interest, opts)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.inner.reregister(poll, token, interest, opts)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.inner.reregister(poll, id, interest, opts)
     }
 
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {

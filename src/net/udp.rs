@@ -4,8 +4,8 @@ use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
 use sys;
-use event::Evented;
-use poll::{Poll, PollOpt, Ready, Token};
+use event::{EventedId, Evented};
+use poll::{Poll, PollOpt, Ready};
 
 /// A User Datagram Protocol socket.
 ///
@@ -24,13 +24,13 @@ use poll::{Poll, PollOpt, Ready, Token};
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio::event::Events;
+/// use mio::event::{Events, EventedId};
 /// use mio::net::UdpSocket;
-/// use mio::poll::{Poll, PollOpt, Ready, Token};
+/// use mio::poll::{Poll, PollOpt, Ready};
 ///
 /// // Unique tokens and address for both the sender and echoer.
-/// const SENDER: Token = Token(0);
-/// const ECHOER: Token = Token(1);
+/// const SENDER: EventedId = EventedId(0);
+/// const ECHOER: EventedId = EventedId(1);
 ///
 /// let sender_address = "127.0.0.1:7777".parse()?;
 /// let echoer_address = "127.0.0.1:8888".parse()?;
@@ -447,12 +447,12 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.socket.register(poll, token, interest, opts)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.socket.register(poll, id, interest, opts)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        self.socket.reregister(poll, token, interest, opts)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.socket.reregister(poll, id, interest, opts)
     }
 
     fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
