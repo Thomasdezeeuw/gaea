@@ -23,13 +23,14 @@
 //! # Example
 //!
 //! ```
-//! use mio::*;
+//! use mio::event::{Events, Evented, EventedId};
 //! use mio::net::{TcpListener, TcpStream};
+//! use mio::poll::{Poll, PollOpt, Ready};
 //!
 //! // Setup some tokens to allow us to identify which event is
 //! // for which socket.
-//! const SERVER: Token = Token(0);
-//! const CLIENT: Token = Token(1);
+//! const SERVER: EventedId = EventedId(0);
+//! const CLIENT: EventedId = EventedId(1);
 //!
 //! let addr = "127.0.0.1:13265".parse().unwrap();
 //!
