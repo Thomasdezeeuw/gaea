@@ -230,6 +230,11 @@ impl Events {
         }
     }
 
+    /// Returns the number of events in this iteration.
+    pub fn len(&self) -> usize {
+        self.sys_events.len() + self.user_events.len()
+    }
+
     /// Reset the events to allow it to be filled again.
     pub(crate) fn reset(&mut self) {
         self.sys_events.clear();
@@ -269,14 +274,15 @@ impl<'a> Iterator for &'a mut Events {
         ret
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.sys_events.len() + self.user_events.len();
+        let len = self.len();
         (len, Some(len))
     }
 }
 
 impl<'a> ExactSizeIterator for &'a mut Events {
     fn len(&self) -> usize {
-        self.sys_events.len() + self.user_events.len()
+        // & &mut self -> & self.
+        (&**self).len()
     }
 }
 
