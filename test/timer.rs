@@ -51,11 +51,14 @@ fn add_timeout() {
 
     poll.add_timeout(EventedId(0), Duration::from_millis(20)).unwrap();
     poll.add_timeout(EventedId(1), Duration::from_millis(10)).unwrap();
+    // Same id and timeout should be ok.
+    poll.add_timeout(EventedId(0), Duration::from_millis(20)).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
         Event::new(EventedId(1), Ready::TIMER),
     ]);
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
+        Event::new(EventedId(0), Ready::TIMER),
         Event::new(EventedId(0), Ready::TIMER),
     ]);
 }
