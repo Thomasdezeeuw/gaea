@@ -4,7 +4,7 @@ bitflags! {
     /// `Ready` is a set of operation descriptors indicating which kind of
     /// operation is ready to be performed. For example, `Ready::READABLE`
     /// indicates that the associated `Evented` handle is ready to perform a
-    /// `read` operation.
+    /// read operation.
     ///
     /// `Ready` values can be combined together using the various bitwise
     /// operators, see examples below.
@@ -72,7 +72,7 @@ impl Ready {
 
     /// Returns true if the value includes an timer.
     #[inline]
-    pub fn is_timeout(&self) -> bool {
+    pub fn is_timer(&self) -> bool {
         self.contains(Ready::TIMER)
     }
 
