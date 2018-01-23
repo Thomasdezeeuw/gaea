@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{Event, Events, EventedId};
@@ -16,10 +17,21 @@ fn expect_events_elapsed(poll: &mut Poll, events: &mut Events, max_elapsed: Dura
 }
 
 #[test]
+fn invalid_id() {
+    let (mut poll, mut events) = init_with_poll(8);
+
+    let result = poll.add_deadline(EventedId(usize::max_value()), Instant::now());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().description().contains("invalid evented id"));
+
+    expect_events(&mut poll, &mut events, 1, vec![]);
+}
+
+#[test]
 fn add_deadline() {
     let (mut poll, mut events) = init_with_poll(8);
 
-    poll.add_deadline(EventedId(0), Instant::now());
+    poll.add_deadline(EventedId(0), Instant::now()).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10), vec![
         Event::new(EventedId(0), Ready::TIMER),
@@ -30,8 +42,8 @@ fn add_deadline() {
 fn add_timeout() {
     let (mut poll, mut events) = init_with_poll(8);
 
-    poll.add_timeout(EventedId(0), Duration::from_millis(20));
-    poll.add_timeout(EventedId(1), Duration::from_millis(10));
+    poll.add_timeout(EventedId(0), Duration::from_millis(20)).unwrap();
+    poll.add_timeout(EventedId(1), Duration::from_millis(10)).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
         Event::new(EventedId(1), Ready::TIMER),
@@ -45,9 +57,9 @@ fn add_timeout() {
 fn remove_deadline() {
     let (mut poll, mut events) = init_with_poll(8);
 
-    poll.add_timeout(EventedId(0), Duration::from_millis(10));
     // It's hard to compare the actual deadline returned, so we just make an
     // estimate.
+    poll.add_timeout(EventedId(0), Duration::from_millis(10)).unwrap();
     let deadline = poll.remove_deadline(EventedId(0)).unwrap();
     assert!(deadline > Instant::now() + Duration::from_millis(5));
     assert!(deadline < Instant::now() + Duration::from_millis(10));
@@ -91,9 +103,9 @@ fn multiple_deadlines() {
             let first_token = EventedId(token.0 * 100);
 
             let timeout = Duration::from_millis(*timeout_ms);
-            poll.add_timeout(first_token, timeout);
             poll.remove_deadline(first_token);
-            poll.add_timeout(token, timeout);
+            poll.add_timeout(first_token, timeout).unwrap();
+            poll.add_timeout(token, timeout).unwrap();
         }
 
         for token in 1..4 {
@@ -110,7 +122,7 @@ fn multiple_deadlines_same_deadline() {
 
     let deadline = Instant::now() + Duration::from_millis(10);
     for token in 0..3 {
-        poll.add_deadline(EventedId(token), deadline);
+        poll.add_deadline(EventedId(token), deadline).unwrap();
     }
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![

@@ -708,8 +708,9 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
-        self.deadlines.push(ReverseOrder(Deadline { id, deadline }));
+    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
+        validate_args(id, Ready::TIMER)
+            .map(|()| self.deadlines.push(ReverseOrder(Deadline { id, deadline })))
     }
 
     /// Add a new timeout to Poll.
@@ -718,7 +719,7 @@ impl Poll {
     /// timeout)`, see [`add_deadline`].
     ///
     /// [`add_deadline`]: #method.add_deadline
-    pub fn add_timeout(&mut self, id: EventedId, timeout: Duration) {
+    pub fn add_timeout(&mut self, id: EventedId, timeout: Duration) -> io::Result<()> {
         self.add_deadline(id, Instant::now() + timeout)
     }
 
