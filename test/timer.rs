@@ -64,6 +64,8 @@ fn add_timeout() {
 fn remove_deadline() {
     let (mut poll, mut events) = init_with_poll(8);
 
+    assert!(poll.remove_deadline(EventedId(0)).is_none());
+
     poll.add_timeout(EventedId(0), Duration::from_millis(10)).unwrap();
     let deadline = poll.remove_deadline(EventedId(0)).unwrap();
     within_margin(deadline, Instant::now() + Duration::from_millis(10), Duration::from_millis(5));
