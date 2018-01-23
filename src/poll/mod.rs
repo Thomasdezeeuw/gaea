@@ -691,7 +691,7 @@ fn validate_args(id: EventedId, interests: Ready) -> io::Result<()> {
     if interests.is_empty() {
         Err(io::Error::new(io::ErrorKind::Other, "empty interests"))
     } else if !id.is_valid() {
-        Err(io::Error::new(io::ErrorKind::Other, "invalid evented id"))
+        Err(EventedId::invalid_error())
     } else {
         Ok(())
     }

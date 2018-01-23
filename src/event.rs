@@ -374,6 +374,11 @@ impl EventedId {
     pub fn is_valid(&self) -> bool {
         *self != INVALID_EVENTED_ID
     }
+
+    /// Create a new invalid `EventedId` id error.
+    pub(crate) fn invalid_error() -> io::Error {
+        io::Error::new(io::ErrorKind::Other, "invalid evented id")
+    }
 }
 
 impl From<usize> for EventedId {

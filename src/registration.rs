@@ -305,25 +305,46 @@ impl RegistrationInner {
     }
 
     fn register(&self, id: EventedId, interests: Ready) -> io::Result<()> {
-        if self.id.get().is_valid() {
+        if !id.is_valid() {
+            Err(EventedId::invalid_error())
+        } else if self.id.get().is_valid() {
             Err(io::Error::new(io::ErrorKind::Other, "cannot register \
                                `Registration` twice without deregistering first, \
                                or use reregister"))
         } else {
-            self.reregister(id, interests)
+            self.id.set(id);
+            self.interests.set(interests);
+            Ok(())
         }
     }
 
     fn reregister(&self, id: EventedId, interests: Ready) -> io::Result<()> {
-        self.id.set(id);
-        self.interests.set(interests);
-        Ok(())
+        // The registration must be registered first, before it can be
+        // reregistered. However it is allowed to deregister it before
+        // reregistering. To allow for these combinations deregister only resets
+        // the `id`, not the `interests`, which will be empty before
+        // registering, for which we check here.
+        if !id.is_valid() {
+            Err(EventedId::invalid_error())
+        } else if !self.id.get().is_valid() && self.interests.get().is_empty() {
+            Err(io::Error::new(io::ErrorKind::Other, "cannot reregister \
+                               `Registration` before registering first"))
+        } else {
+            self.id.set(id);
+            self.interests.set(interests);
+            Ok(())
+        }
     }
 
     fn deregister(&self) -> io::Result<()> {
-        self.id.set(INVALID_EVENTED_ID);
-        self.interests.set(Ready::empty());
-        Ok(())
+        if !self.id.get().is_valid() {
+            Err(io::Error::new(io::ErrorKind::Other, "cannot deregister \
+                               `Registration` before registering first"))
+        } else {
+            self.id.set(INVALID_EVENTED_ID);
+            // Leave interests as is, see `reregister`.
+            Ok(())
+        }
     }
 
     fn notify(&self, poll: &mut Poll, ready: Ready) -> Result<(), NotifyError> {
