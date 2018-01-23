@@ -30,13 +30,20 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
     let timeout = Duration::from_millis(1_000);
 
     for _ in 0..poll_try_count {
+        debug!(target: "expect_events", "polling");
         poll.poll(events, Some(timeout)).expect("unable to poll");
 
         for event in &mut *events {
+            debug!(target: "expect_events", "got event: {:?}", event);
+
             let pos = expected.iter()
-                .position(|exp_event| *exp_event == event);
+                .position(|exp_event| {
+                    event.id() == exp_event.id() &&
+                    event.readiness().contains(exp_event.readiness())
+                });
 
             if let Some(pos) = pos {
+                debug!(target: "expect_events", "got an event match");
                 drop(expected.remove(pos));
             }
         }
