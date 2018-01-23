@@ -144,7 +144,7 @@ pub trait Evented {
     /// This function should not be called directly, use [`Poll.register`]
     /// instead.
     ///
-    /// [`Poll.register`]: ../struct.Poll.html#method.register
+    /// [`Poll.register`]: ../poll/struct.Poll.html#method.register
     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()>;
 
     /// Reregister `self` with the given `Poll` instance.
@@ -152,7 +152,7 @@ pub trait Evented {
     /// This function should not be called directly, use [`Poll.reregister`]
     /// instead.
     ///
-    /// [`Poll.reregister`]: ../struct.Poll.html#method.reregister
+    /// [`Poll.reregister`]: ../poll/struct.Poll.html#method.reregister
     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poll` instance
@@ -160,7 +160,7 @@ pub trait Evented {
     /// This function should not be called directly, use [`Poll.deregister`]
     /// instead.
     ///
-    /// [`Poll.deregister`]: ../struct.Poll.html#method.deregister
+    /// [`Poll.deregister`]: ../poll/struct.Poll.html#method.deregister
     fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()>;
 }
 
