@@ -32,6 +32,14 @@ use poll::{Poll, PollOpt, Ready, Private};
 /// [`TcpStream`]: ../net/struct.TcpStream.html
 /// [`EventedFd`]: ../unix/struct.EventedFd.html
 ///
+/// # Dropping `Evented` types
+///
+/// All `Evented` types, unless otherwise specified, need to be deregistered
+/// before being dropped for them to not leak resources. This goes against the
+/// normal drop behaviour of types in Rust which cleanup after themselves, e.g.
+/// a `File` will close itself. However since deregistering needs mutable access
+/// to `Poll` this cannot be done while being dropped.
+///
 /// # Examples
 ///
 /// Implementing `Evented` on a struct containing a system handle, such as a
@@ -347,7 +355,7 @@ impl Event {
 ///
 /// See [`Poll`] for more documentation on polling.
 ///
-/// # Uniqueness of EventedId
+/// # Uniqueness of `EventedId`
 ///
 /// `EventedId` does not have to be unique within a `Poll` instance, it is
 /// purely a tool for the user of `Poll` to associate an `Event` with an
