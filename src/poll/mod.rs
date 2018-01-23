@@ -266,10 +266,11 @@ impl Poll {
     /// readiness. `Poll` will only return readiness events for operations
     /// specified by this argument. If a socket is registered with [readable]
     /// interests and the socket becomes writable, no event will be returned
-    /// from [`poll`]. Note that [timer] readiness events will always be
-    /// triggered, even if the `Evented` handle is not registered with that
-    /// interest. The readiness interests for an `Evented` handle can be changed
-    /// at any time by calling [`reregister`].
+    /// from [`poll`]. The readiness interests for an `Evented` handle can be
+    /// changed at any time by calling [`reregister`]. Note that [timer]
+    /// readiness events will always be triggered, even if the `Evented` handle
+    /// is not registered with that interest. If an empty interests is passed
+    /// this will return an error.
     ///
     /// `opt`: Specifies the registration option. Just like the interests, the
     /// option can be changed for an `Evented` handle at any time by calling
