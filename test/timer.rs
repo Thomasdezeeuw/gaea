@@ -16,6 +16,13 @@ fn expect_events_elapsed(poll: &mut Poll, events: &mut Events, max_elapsed: Dura
             it returned after: {:?}", max_elapsed, elapsed);
 }
 
+/// It's hard to compare the actual deadline, so instead we make it is within a
+/// range of time.
+fn within_margin(got: Instant, expected: Instant, margin: Duration) {
+    assert!(got > (expected - margin), "expected {:?} to be after {:?}", got, (expected - margin));
+    assert!(got < (expected + margin), "expected {:?} to be before {:?}", got, (expected + margin));
+}
+
 #[test]
 fn invalid_id() {
     let (mut poll, mut events) = init_with_poll(8);
@@ -57,12 +64,9 @@ fn add_timeout() {
 fn remove_deadline() {
     let (mut poll, mut events) = init_with_poll(8);
 
-    // It's hard to compare the actual deadline returned, so we just make an
-    // estimate.
     poll.add_timeout(EventedId(0), Duration::from_millis(10)).unwrap();
     let deadline = poll.remove_deadline(EventedId(0)).unwrap();
-    assert!(deadline > Instant::now() + Duration::from_millis(5));
-    assert!(deadline < Instant::now() + Duration::from_millis(10));
+    within_margin(deadline, Instant::now() + Duration::from_millis(10), Duration::from_millis(5));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -103,8 +107,11 @@ fn multiple_deadlines() {
             let first_token = EventedId(token.0 * 100);
 
             let timeout = Duration::from_millis(*timeout_ms);
-            poll.remove_deadline(first_token);
             poll.add_timeout(first_token, timeout).unwrap();
+
+            let got_deadline = poll.remove_deadline(first_token).unwrap();
+            within_margin(got_deadline, Instant::now() + timeout, Duration::from_millis(5));
+
             poll.add_timeout(token, timeout).unwrap();
         }
 
