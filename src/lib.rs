@@ -13,63 +13,105 @@
 //! Using mio starts by creating a [`Poll`], which used to poll events, both
 //! from the OS (backed by epoll, kqueue, etc.) and from user space.
 //!
-//! For more detail, see [`Poll`].
+//! For more detail, including supported platforms, see [`Poll`].
 //!
 //! [`Poll`]: poll/struct.Poll.html
 //!
-//! # Example
+//! # Examples
+//!
+//! A simple TCP server.
 //!
 //! ```
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
+//! use std::io;
+//! use std::collections::HashMap;
+//!
 //! use mio_st::event::{Events, EventedId};
 //! use mio_st::net::{TcpListener, TcpStream};
 //! use mio_st::poll::{Poll, PollOpt, Ready};
 //!
-//! // Unique ids to associate an event with a handle, in this can a TCP
-//! // listener (server) or stream (client).
-//! const SERVER: EventedId = EventedId(0);
-//! const CLIENT: EventedId = EventedId(1);
+//! // An unique id to associate an event with a handle, in this case for our
+//! // TCP listener.
+//! const SERVER_ID: EventedId = EventedId(0);
 //!
-//! // Setup the server socket.
+//! // Create a `Poll` instance.
+//! let mut poll = Poll::new()?;
+//! // Also create a container for all events, using a capacity of 512 events
+//! // for system events and 128 for user space events.
+//! let mut events = Events::with_capacity(512, 128);
+//!
+//! // Setup the server listener.
 //! let addr = "127.0.0.1:12345".parse()?;
 //! let mut server = TcpListener::bind(addr)?;
 //!
-//! // Create a `Poll` instance along with an events container.
-//! let mut poll = Poll::new()?;
-//! let mut events = Events::with_capacity(512, 512);
-//!
 //! // Register our TCP listener with `Poll`, this allows us to receive
 //! // notifications about incoming connections.
-//! poll.register(&mut server, SERVER, Ready::READABLE, PollOpt::Level)?;
+//! poll.register(&mut server, SERVER_ID, Ready::READABLE, PollOpt::Edge)?;
 //!
-//! // Setup the client socket, connection to our server.
-//! let mut sock = TcpStream::connect(addr)?;
+//! // A hashmap with `EventedId` -> `TcpStream` connections.
+//! let mut connections = HashMap::with_capacity(512);
 //!
-//! // Register the socket with `Poll`.
-//! poll.register(&mut sock, CLIENT, Ready::READABLE, PollOpt::Edge)?;
+//! // A simple "counter" to create new unique ids for each incoming connection.
+//! let mut current_id = EventedId(10);
 //!
 //! // Start the event loop.
 //! loop {
+//!     # break;
 //!     // Check for new events.
 //!     poll.poll(&mut events, None)?;
 //!
 //!     for event in &mut events {
 //!         // Depending on the event id we need to take an action.
 //!         match event.id() {
-//!             SERVER => {
-//!                 // Accept and drop the socket immediately, this will close
-//!                 // the socket and notify the client of the EOF.
-//!                 let _ = server.accept();
+//!             SERVER_ID => {
+//!                 // The server is ready to accept one or more connections.
+//!                 accept_connections(&mut server, &mut poll, &mut connections, &mut current_id)?;
 //!             }
-//!             CLIENT => {
-//!                 // The server just shuts down the socket, let's just exit
-//!                 // from our event loop.
-//!                 return Ok(());
-//!             }
-//!             _ => unreachable!(),
+//!             connection_id => {
+//!                 // A connection is possibly ready, but it might a spurious
+//!                 // event.
+//!                 let connection = match connections.get_mut(&connection_id) {
+//!                     Some(connection) => connection,
+//!                     // Spurious event, we can safely ignore it.
+//!                     None => continue,
+//!                 };
+//!
+//!                 // Do something with the connection.
+//!                 # drop(connection)
+//!             },
 //!         }
 //!     }
+//! }
+//!
+//! fn accept_connections(server: &mut TcpListener, poll: &mut Poll, connections: &mut HashMap<EventedId, TcpStream>, current_id: &mut EventedId) -> io::Result<()> {
+//!     // Since we registered with edge-triggered events for our server we need
+//!     // to accept connections until we hit a would block "error".
+//!     loop {
+//!         let (mut connection, address) = match server.accept() {
+//!             Ok((connection, address)) => (connection, address),
+//!             Err(ref err) if is_would_block(err) => return Ok(()),
+//!             Err(err) => return Err(err),
+//!         };
+//!
+//!         // Generate a new id for the connection.
+//!         let id = *current_id;
+//!         *current_id = EventedId(current_id.0 + 1);
+//!
+//!         println!("got a new connection from: {}, id: {:?}", address, id);
+//!
+//!         // Register the TCP connection so we can handle events for it as
+//!         // well.
+//!         let interests = Ready::READABLE | Ready::WRITABLE | Ready::ERROR;
+//!         poll.register(&mut connection, id, interests, PollOpt::Edge)?;
+//!
+//!         // Store our connection so we can access it later.
+//!         connections.insert(id, connection);
+//!     }
+//! }
+//!
+//! fn is_would_block(err: &io::Error) -> bool {
+//!     err.kind() == io::ErrorKind::WouldBlock
 //! }
 //! #     Ok(())
 //! # }
