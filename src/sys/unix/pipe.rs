@@ -53,14 +53,13 @@ use unix::EventedIo;
 ///                 let mut buf = Vec::with_capacity(128);
 ///                 let n = receiver.read(&mut buf)?;
 ///                 println!("received: {:?}", &buf[0..n]);
-/// #               break;
+/// #               return Ok(());
 ///             },
 ///             CHANNEL_SEND_ID => sender.write_all(b"Hello world")?,
 ///             _ => unreachable!(),
 ///         }
 ///     }
 /// }
-/// #     Ok(())
 /// # }
 /// #
 /// # fn main() {
