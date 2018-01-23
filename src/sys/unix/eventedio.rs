@@ -21,8 +21,10 @@ use sys::unix::EventedFd;
 /// # Examples
 ///
 /// ```
+/// # use std::error::Error;
+/// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::net::TcpListener;
-/// use std::os::unix::io::AsRawFd;
+/// use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 ///
 /// use mio_st::event::{Evented, EventedId};
 /// use mio_st::poll::{Poll, PollOpt, Ready};
@@ -36,12 +38,18 @@ use sys::unix::EventedFd;
 /// let listener_fd = listener.into_raw_fd();
 ///
 /// // Now we can let `EventedIo` manage the lifetime for us.
-/// let evented_listener = unsafe { EventedIo::from_raw_fd(listener_fd) };
+/// let mut evented_listener = unsafe { EventedIo::from_raw_fd(listener_fd) };
 ///
 /// let mut poll = Poll::new()?;
 ///
 /// // Register the listener using `EventedFd`.
 /// poll.register(&mut evented_listener, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
 /// ```
 ///
 /// [`Evented`]: ../event/trait.Evented.html
