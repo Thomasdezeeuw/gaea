@@ -49,5 +49,6 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
 }
 
 mod event;
+mod registering;
 mod timer;
 mod userspace_registration;
