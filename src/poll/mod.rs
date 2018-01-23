@@ -347,7 +347,7 @@ impl Poll {
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
-        trace!("registering with poller, id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
+        trace!("registering with poller: id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
         handle.register(self, id, interests, opt, Private(()))
     }
 
@@ -408,7 +408,7 @@ impl Poll {
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
-        trace!("reregistering with poller, id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
+        trace!("reregistering with poller: id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
         handle.reregister(self, id, interests, opt, Private(()))
     }
 
@@ -502,6 +502,7 @@ impl Poll {
     /// [writable]: struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
+        trace!("polling");
         let mut timeout = self.determine_timeout(timeout);
 
         // Clear any previously set events.
@@ -567,6 +568,7 @@ impl Poll {
 
     /// Add a new user space event to the queue.
     pub(crate) fn userspace_add_event(&mut self, event: Event) {
+        trace!("adding user space event: {:?}", event);
         self.userspace_events.push(event)
     }
 
@@ -618,6 +620,7 @@ impl Poll {
     /// # }
     /// ```
     pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
+        trace!("adding deadline: id: {:?}, deadline: {:?}", id, deadline);
         validate_args(id, Ready::TIMER)
             .map(|()| self.deadlines.push(ReverseOrder(Deadline { id, deadline })))
     }
@@ -643,6 +646,7 @@ impl Poll {
     /// with timeouts firing after they're no longer needed, then you should not
     /// use this function and let the timeout be fired and simply ignore it.
     pub fn remove_deadline(&mut self, id: EventedId) -> Option<Instant> {
+        trace!("removing deadline: id: {:?}", id);
         // TODO: optimize this.
         let index = self.deadlines.iter()
             .position(|deadline| deadline.id == id);
