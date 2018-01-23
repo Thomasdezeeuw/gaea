@@ -259,7 +259,7 @@ impl Poll {
     /// returns an event for the handle, this id is included. This allows the
     /// caller to map the event to its handle. The id associated with the
     /// `Evented` handle can be changed at any time by calling [`reregister`].
-    /// Not that `id` may not be invalid, see [`is_valid`], and will return an
+    /// Note that `id` may not be invalid, see [`is_valid`], and will return an
     /// error if it is.
     ///
     /// `interests`: Specifies which operations `Poll` should monitor for
@@ -283,11 +283,6 @@ impl Poll {
     /// that `Poll` instance for the lifetime of the `Evented` handle. This
     /// remains true even if the `Evented` handle is deregistered from the poll
     /// instance using [`deregister`].
-    ///
-    /// # Undefined behaviour
-    ///
-    /// Reusing a id with a different `Evented` without deregistering the
-    /// original `Evented` will result in undefined behaviour.
     ///
     /// [`Evented`]: ../event/trait.Evented.html
     /// [`poll`]: #method.poll
