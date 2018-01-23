@@ -20,9 +20,12 @@ use poll::{Poll, PollOpt, Ready, Private};
 /// constructed right before a call to [`Poll.register`]. See the examples
 /// below for more detail.
 ///
+/// For a owned, or managed, type see [`EventedIo`].
+///
 /// [`Evented`]: ../event/trait.Evented.html
 /// [`Poll`]: ../struct.Poll.html
 /// [`Poll.register`]: ../struct.Poll.html#method.register
+/// [`EventedIo`]: struct.EventedIo.html
 ///
 /// # Examples
 ///

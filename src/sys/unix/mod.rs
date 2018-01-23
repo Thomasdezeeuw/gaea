@@ -1,5 +1,5 @@
 mod eventedfd;
-mod io;
+mod eventedio;
 mod tcp;
 mod udp;
 
@@ -18,6 +18,6 @@ mod kqueue;
 pub use self::kqueue::{Events, Selector};
 
 pub use self::eventedfd::EventedFd;
-pub use self::io::Io;
+pub use self::eventedio::EventedIo;
 pub use self::tcp::{TcpStream, TcpListener};
 pub use self::udp::UdpSocket;

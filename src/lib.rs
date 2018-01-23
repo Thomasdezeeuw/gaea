@@ -163,4 +163,5 @@ pub mod unix {
     //! Unix only extensions.
 
     pub use sys::EventedFd;
+    pub use sys::EventedIo;
 }
