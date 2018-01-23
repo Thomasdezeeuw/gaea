@@ -17,6 +17,18 @@
 //!
 //! [`Poll`]: poll/struct.Poll.html
 //!
+//! # Undefined behaviour
+//!
+//! It is undefined how `Poll` will behave after a process is forked, if you
+//! need fork a process do it before creating a `Poll` instance.
+//!
+//! As this is the single threaded version of mio, no types implement [`Sync`]
+//! or [`Send`] and sharing these types across threads will result in undefined
+//! behaviour.
+//!
+//! [`Sync`]: https://doc.rust-lang.org/nightly/std/marker/trait.Sync.html
+//! [`Send`]: https://doc.rust-lang.org/nightly/std/marker/trait.Send.html
+//!
 //! # Examples
 //!
 //! A simple TCP server.
