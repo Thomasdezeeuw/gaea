@@ -11,8 +11,9 @@ use mio_st::event::{Event, Events};
 
 /// Initializate the test setup.
 pub fn init() {
+    let env = env_logger::Env::new().filter("LOG_LEVEL");
     // Logger could already be set, so we ignore the result.
-    drop(env_logger::try_init());
+    drop(env_logger::try_init_from_env(env));
 }
 
 /// Initializate the test setup (same as init) and create a Poll instance and
