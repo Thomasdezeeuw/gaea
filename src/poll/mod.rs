@@ -236,8 +236,8 @@ impl Poll {
     pub fn new() -> io::Result<Poll> {
         Ok(Poll {
             selector: sys::Selector::new()?,
-            deadlines: BinaryHeap::new(),
             userspace_events: Vec::new(),
+            deadlines: BinaryHeap::new(),
         })
     }
 
@@ -685,7 +685,7 @@ impl Poll {
 /// arguments aren't empty.
 fn validate_args(id: EventedId, interests: Ready) -> io::Result<()> {
     if interests.is_empty() {
-        Err(io::Error::new(io::ErrorKind::Other, "registering with empty interests"))
+        Err(io::Error::new(io::ErrorKind::Other, "empty interests"))
     } else if !id.is_valid() {
         Err(io::Error::new(io::ErrorKind::Other, "invalid evented id"))
     } else {
