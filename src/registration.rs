@@ -305,9 +305,7 @@ impl RegistrationInner {
     }
 
     fn register(&self, id: EventedId, interests: Ready) -> io::Result<()> {
-        if !id.is_valid() {
-            Err(EventedId::invalid_error())
-        } else if self.id.get().is_valid() {
+        if self.id.get().is_valid() {
             Err(io::Error::new(io::ErrorKind::Other, "cannot register \
                                `Registration` twice without deregistering first, \
                                or use reregister"))
@@ -324,9 +322,7 @@ impl RegistrationInner {
         // reregistering. To allow for these combinations deregister only resets
         // the `id`, not the `interests`, which will be empty before
         // registering, for which we check here.
-        if !id.is_valid() {
-            Err(EventedId::invalid_error())
-        } else if !self.id.get().is_valid() && self.interests.get().is_empty() {
+        if !self.id.get().is_valid() && self.interests.get().is_empty() {
             Err(io::Error::new(io::ErrorKind::Other, "cannot reregister \
                                `Registration` before registering first"))
         } else {

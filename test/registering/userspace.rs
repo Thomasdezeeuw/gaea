@@ -110,3 +110,41 @@ fn registering_twice() {
         Event::new(EventedId(0), Ready::READABLE),
     ]);
 }
+
+#[test]
+fn invalid_id() {
+    let (mut poll, mut events) = init_with_poll(8);
+    let (mut registration, _) = Registration::new();
+
+    let invalid_id = EventedId(usize::max_value());
+
+    let result = poll.register(&mut registration, invalid_id, Ready::READABLE, PollOpt::Edge);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().description().contains("invalid evented id"));
+    expect_events(&mut poll, &mut events, 1, vec![]);
+
+    poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+
+    let result = poll.reregister(&mut registration, invalid_id, Ready::READABLE, PollOpt::Edge);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().description().contains("invalid evented id"));
+    expect_events(&mut poll, &mut events, 1, vec![]);
+}
+
+#[test]
+fn empty_interests() {
+    let (mut poll, mut events) = init_with_poll(8);
+    let (mut registration, _) = Registration::new();
+
+    let result = poll.register(&mut registration, EventedId(0), Ready::empty(), PollOpt::Edge);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().description().contains("empty interests"));
+    expect_events(&mut poll, &mut events, 1, vec![]);
+
+    poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+
+    let result = poll.reregister(&mut registration, EventedId(0), Ready::empty(), PollOpt::Edge);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().description().contains("empty interests"));
+    expect_events(&mut poll, &mut events, 1, vec![]);
+}
