@@ -44,7 +44,7 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
 
             if let Some(pos) = pos {
                 debug!(target: "expect_events", "got an event match");
-                drop(expected.remove(pos));
+                expected.remove(pos);
             }
         }
 
