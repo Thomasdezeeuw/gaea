@@ -104,5 +104,9 @@ fn registering_twice() {
     assert!(result.is_err());
     assert!(result.unwrap_err().description().contains("cannot register"));
 
-    expect_events(&mut poll, &mut events, 1, vec![]);
+    notifier.notify(&mut poll, Ready::READABLE).unwrap();
+
+    expect_events(&mut poll, &mut events, 1, vec![
+        Event::new(EventedId(0), Ready::READABLE),
+    ]);
 }
