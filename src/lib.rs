@@ -164,4 +164,5 @@ pub mod unix {
 
     pub use sys::EventedFd;
     pub use sys::EventedIo;
+    pub use sys::pipe::{new_pipe, Receiver, Sender};
 }

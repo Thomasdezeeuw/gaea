@@ -3,6 +3,8 @@ mod eventedio;
 mod tcp;
 mod udp;
 
+pub mod pipe;
+
 #[cfg(target_os = "linux")]
 mod epoll;
 
