@@ -1,4 +1,10 @@
 //! Types related to polling.
+//!
+//! The main type is [`Poll`], see it as well as the [root of the crate] for
+//! examples.
+//!
+//! [`Poll`]: struct.Poll.html
+//! [root of the crate]: ../index.html
 
 use std::{io, mem, ops};
 use std::cmp::Ordering;
@@ -32,73 +38,30 @@ pub use self::ready::Ready;
 //    exceeded deadlines are popped and converted into Events and added to the
 //    user space events.
 
-/// Polls for readiness events on all registered values.
+/// Polls for readiness events on all registered handles.
 ///
-/// `Poll` allows a program to monitor a large number of `Evented` types,
+/// `Poll` allows a program to monitor a large number of [`Evented`] handles,
 /// waiting until one or more become "ready" for some class of operations; e.g.
-/// reading and writing. An `Evented` type is considered ready if it is possible
-/// to immediately perform a corresponding operation; e.g. [`read`] or
-/// [`write`].
+/// [reading] or [writing]. An `Evented` type is considered ready if it is
+/// possible to immediately perform a corresponding operation; e.g. read or
+/// write.
 ///
-/// To use `Poll`, an `Evented` type must first be registered with the `Poll`
-/// instance using the [`register`] method, supplying readiness interests. The
-/// readiness interests tells `Poll` which specific operations on the handle to
-/// monitor for readiness. A `EventedId` is also passed to the [`register`]
-/// function. When `Poll` returns a readiness event, it will include this id.
-/// This associates the event with the `Evented` handle that generated the
-/// event.
+/// To use `Poll` an `Evented` handle must first be registered with the `Poll`
+/// instance using the [`register`] method, supplying an associated id,
+/// readiness interests and polling option. The associated id, or [`EventedId`],
+/// is used to associate an readiness event with an `Evented` handle. The
+/// readiness interests, or [`Ready`], tells `Poll` which specific operations on
+/// the handle to monitor for readiness. And the final argument, [`PollOpt`],
+/// tells `Poll` how to deliver the readiness events, see [`PollOpt`] for more
+/// information.
 ///
-/// [`read`]: tcp/struct.TcpStream.html#method.read
-/// [`write`]: tcp/struct.TcpStream.html#method.write
+/// [`Evented`]: ../event/trait.Evented.html
+/// [reading]: struct.Ready.html#associatedconstant.READABLE
+/// [writing]: struct.Ready.html#associatedconstant.WRITABLE
 /// [`register`]: #method.register
-///
-/// # Examples
-///
-/// A basic example -- establishing a `TcpStream` connection.
-///
-/// ```
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio_st::event::{EventedId, Events};
-/// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, Ready, PollOpt};
-///
-/// use std::net::{TcpListener, SocketAddr};
-///
-/// // Bind a server socket to connect to.
-/// let addr: SocketAddr = "127.0.0.1:0".parse()?;
-/// let mut server = TcpListener::bind(addr)?;
-///
-/// // Construct a new `Poll` handle as well as the `Events` we'll store into
-/// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(512, 512);
-///
-/// // Connect the stream
-/// let mut stream = TcpStream::connect(server.local_addr()?)?;
-///
-/// // Register the stream with `Poll`
-/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
-///
-/// // Wait for the socket to become ready. This has to happens in a loop to
-/// // handle spurious wakeups.
-/// loop {
-///     poll.poll(&mut events, None)?;
-///
-///     for event in &mut events {
-///         if event.id() == EventedId(0) && event.readiness().is_writable() {
-///             // The socket connected (probably, it could still be a spurious
-///             // wakeup)
-///             return Ok(());
-///         }
-///     }
-/// }
-/// #     Ok(())
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
-/// # }
-/// ```
+/// [`EventedId`]: ../event/struct.EventedId.html
+/// [`Ready`]: struct.Ready.html
+/// [`PollOpt`]: enum.PollOpt.html
 ///
 /// # Portability
 ///
@@ -107,13 +70,13 @@ pub use self::ready::Ready;
 ///
 /// ### Spurious events
 ///
-/// [`Poll::poll`] may return readiness events even if the associated
+/// [`Poll.poll`] may return readiness events even if the associated
 /// [`Evented`] handle is not actually ready. Given the same code, this may
 /// happen more on some platforms than others. It is important to never assume
 /// that, just because a readiness notification was received, that the
 /// associated operation will as well.
 ///
-/// If operation fails with [`WouldBlock`], then the caller should not treat
+/// If operation fails with a [`WouldBlock`] error, then the caller should not treat
 /// this as an error and wait until another readiness event is received.
 ///
 /// ### Draining readiness
@@ -122,34 +85,24 @@ pub use self::ready::Ready;
 /// corresponding operation must be performed repeatedly until it returns
 /// [`WouldBlock`]. Unless this is done, there is no guarantee that another
 /// readiness event will be delivered, even if further data is received for the
-/// [`Evented`] handle.
-///
-/// For example, in the first scenario described above, after step 5, even if
-/// the socket receives more data there is no guarantee that another readiness
-/// event will be delivered.
+/// [`Evented`] handle. See [`PollOpt`] for more.
 ///
 /// ### Readiness operations
 ///
 /// The only readiness operations that are guaranteed to be present on all
-/// supported platforms are [`readable`] and [`writable`]. All other readiness
-/// operations may have false negatives and as such should be considered
-/// **hints**. This means that if a socket is registered with [`readable`],
-/// [`error`], and [`hup`] interest, and either an error or hup is received, a
-/// readiness event will be generated for the socket, but it **may** only
-/// include `readable` readiness. Also note that, given the potential for
+/// supported platforms are [readable], [writable] and [timer]. All other
+/// readiness operations may have false negatives and as such should be
+/// considered **hints**. This means that if a socket is registered with
+/// [readable], [error], and [hup] interest, and either an error or hup is
+/// received, a readiness event will be generated for the socket, but it **may**
+/// only include `readable` readiness. Also note that, given the potential for
 /// spurious events, receiving a readiness event with `hup` or `error` doesn't
 /// actually mean that a `read` on the socket will return a result matching the
 /// readiness event.
 ///
-/// In other words, portable programs that explicitly check for [`hup`] or
-/// [`error`] readiness should be doing so as an **optimization** and always be
-/// able to handle an error or HUP situation when performing the actual read
-/// operation.
-///
-/// [`readable`]: struct.Ready.html#method.readable
-/// [`writable`]: struct.Ready.html#method.writable
-/// [`error`]: struct.Ready.html#associatedconstant.ERROR
-/// [`hup`]: struct.Ready.html#associatedconstant.HUP
+/// In other words, portable programs that explicitly check for [hup] or [error]
+/// readiness should be doing so as an **optimization** and always be able to
+/// handle an error or HUP situation when performing the actual read operation.
 ///
 /// ### Registering handles
 ///
@@ -161,21 +114,23 @@ pub use self::ready::Ready;
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use std::time::Duration;
 /// use std::thread;
+/// use std::time::Duration;
 ///
 /// use mio_st::event::EventedId;
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poll, Ready, PollOpt};
 ///
-/// let mut sock = TcpStream::connect("216.58.193.100:80".parse()?)?;
+/// let address = "216.58.193.100:80".parse()?;
+/// let mut stream = TcpStream::connect(address)?;
 ///
+/// // This actually does nothing.
 /// thread::sleep(Duration::from_secs(1));
 ///
 /// let mut poll = Poll::new()?;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
-/// // this point
+/// // this point.
 /// poll.register(&mut sock, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
 /// #     Ok(())
 /// # }
@@ -185,36 +140,46 @@ pub use self::ready::Ready;
 /// # }
 /// ```
 ///
+/// [`Poll.poll`]: struct.Poll.html#method.poll
+/// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
+/// [readable]: struct.Ready.html#associatedconstant.READABLE
+/// [writable]: struct.Ready.html#associatedconstant.WRITABLE
+/// [error]: struct.Ready.html#associatedconstant.ERROR
+/// [timer]: struct.Ready.html#associatedconstant.TIMER
+/// [hup]: struct.Ready.html#associatedconstant.HUP
+///
 /// # Implementation notes
 ///
 /// `Poll` is backed by the selector provided by the operating system.
 ///
-/// |      OS    |  Selector |
-/// |------------|-----------|
-/// | Linux      | [epoll]   |
-/// | OS X, iOS  | [kqueue]  |
-/// | FreeBSD    | [kqueue]  |
-/// | Android    | [epoll]   |
+/// | OS      | Selector |
+/// |---------|----------|
+/// | FreeBSD | [kqueue](https://www.freebsd.org/cgi/man.cgi?query=kqueue) |
+/// | Linux   | [epoll](http://man7.org/linux/man-pages/man7/epoll.7.html) |
+/// | Mac OS  | [kqueue](https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man2/kqueue.2.html) |
+/// | NetBSD  | [kqueue](http://netbsd.gw.com/cgi-bin/man-cgi?kqueue) |
+/// | OpenBSD | [kqueue](https://man.openbsd.org/kqueue) |
 ///
-/// On all supported platforms, socket operations are handled by using the
-/// system selector. Platform specific extensions (e.g. [`EventedFd`]) allow
-/// accessing other features provided by individual system selectors. For
-/// example, Linux's [`signalfd`] feature can be used by registering the FD with
+/// On all supported platforms socket operations are handled by using the system
+/// selector. Platform specific extensions (e.g. [`EventedFd`]) allow accessing
+/// other features provided by individual system selectors. For example Linux's
+/// [`signalfd`] feature can be used by registering the file descriptor with
 /// `Poll` via [`EventedFd`].
 ///
-/// On all platforms a call to [`Poll::poll`] is mostly just a
-/// direct call to the system selector.
+/// On all platforms a call to [`Poll.poll`] is mostly just a direct call to the
+/// system selector, but it also adds user space and timer events. Notifications
+/// generated by user space registration ([`Registration`] and [`Notifier`]) are
+/// handled by an internal readiness queue. Deadlines and timers use the same
+/// queue. A single call to [`Poll.poll`] will collect events from both from the
+/// system selector and the internal readiness queue.
 ///
-/// Notifications generated by [`SetReadiness`] are handled by an internal
-/// readiness queue. A single call to [`Poll::poll`] will collect events from
-/// both from the system selector and the internal readiness queue.
+/// `Events` itself is split among system events and user space events,
+/// including timers.
 ///
-/// [epoll]: http://man7.org/linux/man-pages/man7/epoll.7.html
-/// [kqueue]: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
+/// [`EventedFd`]: ../unix/struct.EventedFd.html
 /// [`signalfd`]: http://man7.org/linux/man-pages/man2/signalfd.2.html
-/// [`EventedFd`]: unix/struct.EventedFd.html
-/// [`SetReadiness`]: struct.SetReadiness.html
-/// [`Poll::poll`]: struct.Poll.html#method.poll
+/// [`Registration`]: ../registration/struct.Registration.html
+/// [`Notifier`]: ../registration/struct.Notifier.html
 #[derive(Debug)]
 pub struct Poll {
     selector: sys::Selector,
@@ -225,8 +190,8 @@ pub struct Poll {
 /// A private struct.
 ///
 /// This struct is used in the [`Evented`] trait. Since it can only created from
-/// with in the poll module it forces all calls to `Evented` handles to go via
-/// a `Poll` instance.
+/// within the poll module it forces all calls to `Evented` handles to go via a
+/// `Poll` instance.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
 #[derive(Debug)]
@@ -248,9 +213,10 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio_st::poll::Poll;
-    /// use mio_st::event::Events;
     /// use std::time::Duration;
+    ///
+    /// use mio_st::event::Events;
+    /// use mio_st::poll::Poll;
     ///
     /// let mut poll = Poll::new()?;
     ///
@@ -277,7 +243,7 @@ impl Poll {
 
     /// Register an `Evented` handle with the `Poll` instance.
     ///
-    /// Once registered, the `Poll` instance will monitor the `Evented` handle
+    /// Once registered, the `Poll` instance will monitor the [`Evented`] handle
     /// for readiness state changes. When it notices a state change, it will
     /// return a readiness event for the handle the next time [`poll`] is
     /// called.
@@ -286,37 +252,28 @@ impl Poll {
     ///
     /// # Arguments
     ///
-    /// `handle: &E: Evented`: This is the handle that the `Poll` instance
-    /// should monitor for readiness state changes.
+    /// `handle`: This is the handle that the `Poll` instance should monitor for
+    /// readiness state changes.
     ///
-    /// `id: EventedId`: The caller picks a id to associate with the socket.
-    /// When [`poll`] returns an event for the handle, this id is included.
-    /// This allows the caller to map the event to its handle. The id
-    /// associated with the `Evented` handle can be changed at any time by
-    /// calling [`reregister`].
+    /// `id`: The caller picks a id to associate with the handle. When [`poll`]
+    /// returns an event for the handle, this id is included. This allows the
+    /// caller to map the event to its handle. The id associated with the
+    /// `Evented` handle can be changed at any time by calling [`reregister`].
+    /// Not that `id` may not be invalid, see [`is_valid`], and will return an
+    /// error if it is.
     ///
-    /// `id` cannot be `EventedId(usize::MAX)` as it is reserved for internal
-    /// usage.
-    ///
-    /// See documentation on [`EventedId`] for an example showing how to pick
-    /// [`EventedId`] values.
-    ///
-    /// `interests: Ready`: Specifies which operations `Poll` should monitor for
+    /// `interests`: Specifies which operations `Poll` should monitor for
     /// readiness. `Poll` will only return readiness events for operations
-    /// specified by this argument.
+    /// specified by this argument. If a socket is registered with [readable]
+    /// interests and the socket becomes writable, no event will be returned
+    /// from [`poll`]. Note that [timer] readiness events will always be
+    /// triggered, even if the `Evented` handle is not registered with that
+    /// interest. The readiness interests for an `Evented` handle can be changed
+    /// at any time by calling [`reregister`].
     ///
-    /// If a socket is registered with [`readable`] interests and the socket
-    /// becomes writable, no event will be returned from [`poll`].
-    ///
-    /// The readiness interests for an `Evented` handle can be changed at any
-    /// time by calling [`reregister`].
-    ///
-    /// `opt: PollOpt`: Specifies the registration options. The most common
-    /// options being [`level`] for level-triggered events, [`edge`] for
-    /// edge-triggered events, and [`oneshot`].
-    ///
-    /// The registration options for an `Evented` handle can be changed at any
-    /// time by calling [`reregister`].
+    /// `opt`: Specifies the registration option. Just like the interests, the
+    /// option can be changed for an `Evented` handle at any time by calling
+    /// [`reregister`].
     ///
     /// # Notes
     ///
@@ -328,17 +285,17 @@ impl Poll {
     ///
     /// # Undefined behaviour
     ///
-    /// Reusing a id with a different `Evented` without deregistering (or
-    /// closing) the original `Evented` will result in undefined behaviour.
+    /// Reusing a id with a different `Evented` without deregistering the
+    /// original `Evented` will result in undefined behaviour.
     ///
+    /// [`Evented`]: ../event/trait.Evented.html
+    /// [`poll`]: #method.poll
     /// [`struct`]: #
     /// [`reregister`]: #method.reregister
+    /// [`is_valid`]: ../event/struct.EventedId.html#method.is_valid
+    /// [readable]: struct.Ready.html#associatedconstant.READABLE
+    /// [timer]: struct.Ready.html#associatedconstant.TIMER
     /// [`deregister`]: #method.deregister
-    /// [`poll`]: #method.poll
-    /// [`level`]: struct.PollOpt.html#method.level
-    /// [`edge`]: struct.PollOpt.html#method.edge
-    /// [`oneshot`]: struct.PollOpt.html#method.oneshot
-    /// [`EventedId`]: struct.EventedId.html
     ///
     /// # Examples
     ///
@@ -351,35 +308,35 @@ impl Poll {
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
+    /// // Create a new `Poll` instance as well a containers for the vents.
     /// let mut poll = Poll::new()?;
-    /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
+    /// let mut events = Events::with_capacity(128, 128);
     ///
-    /// // Register the socket with `poll`
-    /// poll.register(&mut socket, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
+    /// // Create a TCP connection.
+    /// let address = "216.58.193.100:80".parse()?;
+    /// let mut stream = TcpStream::connect(address)?;
     ///
-    /// let mut events = Events::with_capacity(512, 512);
-    /// let start = Instant::now();
-    /// let timeout = Duration::from_millis(500);
+    /// // Register the connection with `poll`.
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
     ///
+    /// // Add a timeout so we don't wait too long for the connection to setup.
+    /// poll.add_time(EventedId(0), Duration::from_millis(500));
+    ///
+    /// // Start the event loop.
     /// loop {
-    ///     let elapsed = start.elapsed();
-    ///
-    ///     if elapsed >= timeout {
-    ///         // Connection timed out
-    ///         return Ok(());
-    ///     }
-    ///
-    ///     let remaining = timeout - elapsed;
-    ///     poll.poll(&mut events, Some(remaining))?;
+    ///     poll.poll(&mut events, None)?;
     ///
     ///     for event in &mut events {
     ///         if event.id() == EventedId(0) {
-    ///             // Something (probably) happened on the socket.
-    ///             return Ok(());
+    ///             if event.readiness.is_timer() {
+    ///                 // Connection likely timed out.
+    ///             } else {
+    ///                 // Connection is (probably) connected.
+    ///             }
+    ///             # return Ok(());
     ///         }
     ///     }
     /// }
-    /// #     Ok(())
     /// # }
     /// #
     /// # fn main() {
@@ -402,20 +359,22 @@ impl Poll {
     /// calls.
     ///
     /// The `reregister` arguments fully override the previous values. In other
-    /// words, if a socket is registered with [`readable`] interest and the call
-    /// to `reregister` specifies [`writable`], then read interest is no longer
-    /// requested for the handle.
+    /// words, if a socket is registered with [readable] interest and the call
+    /// to `reregister` specifies only [writable], then read interest is no
+    /// longer requested for the handle.
     ///
     /// The `Evented` handle must have previously been registered with this
     /// instance of `Poll` otherwise the call to `reregister` will return with
     /// an error.
     ///
-    /// `id` cannot be `EventedId(usize::MAX)` as it is reserved for internal
-    /// usage.
-    ///
     /// See the [`register`] documentation for details about the function
     /// arguments and see the [`struct`] docs for a high level overview of
     /// polling.
+    ///
+    /// [readable]: struct.Ready.html#associatedconstant.READABLE
+    /// [writable]: struct.Ready.html#associatedconstant.WRITABLE
+    /// [`register`]: #method.register
+    /// [`struct`]: #
     ///
     /// # Examples
     ///
@@ -427,15 +386,17 @@ impl Poll {
     /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
     ///
-    /// // Register the socket with `poll`, requesting readable
-    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
+    /// let address = "216.58.193.100:80".parse()?;
+    /// let mut stream = TcpStream::connect(address)?;
     ///
-    /// // Reregister the socket specifying a different id and write interest
-    /// // instead. `PollOpt::EDGE` must be specified even though that value
+    /// // Register the connection with `Poll`, only with readable interest.
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
+    ///
+    /// // Reregister the connection specifying a different id and write interest
+    /// // instead. `PollOpt::Edge` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOpt::Edge)?;
+    /// poll.reregister(&mut stream, EventedId(2), Ready::WRITABLE, PollOpt::Edge)?;
     /// #     Ok(())
     /// # }
     /// #
@@ -443,11 +404,6 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    ///
-    /// [`struct`]: #
-    /// [`register`]: #method.register
-    /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
-    /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
     pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()>
         where E: Evented + ?Sized
     {
@@ -458,17 +414,16 @@ impl Poll {
 
     /// Deregister an `Evented` handle with the `Poll` instance.
     ///
-    /// When an `Evented` handle is deregistered, the `Poll` instance will
-    /// no longer monitor it for readiness state changes. Unlike disabling
-    /// handles with [`oneshot`], deregistering clears up any internal resources
-    /// needed to track the handle.
+    /// When an `Evented` handle is deregistered, the `Poll` instance will no
+    /// longer monitor it for readiness state changes. Unlike disabling handles
+    /// with [`oneshot`], deregistering clears up any internal resources needed
+    /// to track the handle.
     ///
     /// A handle can be passed back to `register` after it has been
     /// deregistered; however, it must be passed back to the **same** `Poll`
     /// instance.
     ///
-    /// `Evented` handles are automatically deregistered when they are dropped.
-    /// It is common to never need to explicitly call `deregister`.
+    /// [`oneshot`]: enum.PollOpt.html#variant.Oneshot
     ///
     /// # Examples
     ///
@@ -482,17 +437,22 @@ impl Poll {
     /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut socket = TcpStream::connect("216.58.193.100:80".parse()?)?;
+    /// let mut events = Events::with_capacity(128, 128);
     ///
-    /// // Register the socket with `poll`
-    /// poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
+    /// let address = "216.58.193.100:80".parse()?;
+    /// let mut stream = TcpStream::connect(address)?;
     ///
-    /// poll.deregister(&mut socket)?;
+    /// // Register the connection with `Poll`.
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
     ///
-    /// let mut events = Events::with_capacity(512, 512);
+    /// // Do stuff with the connection etc.
+    ///
+    /// // Deregister it so the resources can be cleaned up.
+    /// poll.deregister(&mut stream)?;
     ///
     /// // Set a timeout because this poll should never receive any events.
     /// poll.poll(&mut events, Some(Duration::from_secs(1)))?;
+    /// assert!(events.is_empty());
     /// #     Ok(())
     /// # }
     /// #
@@ -507,100 +467,39 @@ impl Poll {
         handle.deregister(self, Private(()))
     }
 
-    /// Wait for readiness events
+    /// Poll for readiness events.
     ///
     /// Blocks the current thread and waits for readiness events for any of the
-    /// `Evented` handles that have been registered with this `Poll` instance.
-    /// The function will block until either at least one readiness event has
-    /// been received or `timeout` has elapsed. A `timeout` of `None` means that
-    /// `poll` will block until a readiness event has been received.
+    /// `Evented` handles that have been registered with this `Poll` instance
+    /// previously.
     ///
-    /// The supplied `events` will be cleared and newly received readiness events
-    /// will be pushed onto the end. At most `events.capacity()` events will be
-    /// returned. If there are further pending readiness events, they will be
-    /// returned on the next call to `poll`.
+    /// The function will block until either;
+    ///
+    /// * at least one readiness event has been received,
+    /// * a timer was trigger, or
+    /// * the `timeout` has elapsed.
+    ///
+    /// A `timeout` of `None` means that `poll` will block until one of the
+    /// other two conditions are true. Note that the `timeout` will be rounded
+    /// up to the system clock granularity (usually 1ms), and kernel scheduling
+    /// delays mean that the blocking interval may be overrun by a small amount.
+    ///
+    /// The supplied `events` will be cleared and newly received readiness
+    /// events will be stored in it. If not all events fit into the `events`,
+    /// they will be returned on the next call to `poll`.
     ///
     /// A single call to `poll` may result in multiple readiness events being
     /// returned for a single `Evented` handle. For example, if a TCP socket
     /// becomes both readable and writable, it may be possible for a single
-    /// readiness event to be returned with both [`readable`] and [`writable`]
+    /// readiness event to be returned with both [readable] and [writable]
     /// readiness **OR** two separate events may be returned, one with
-    /// [`readable`] set and one with [`writable`] set.
-    ///
-    /// Note that the `timeout` will be rounded up to the system clock
-    /// granularity (usually 1ms), and kernel scheduling delays mean that
-    /// the blocking interval may be overrun by a small amount.
-    ///
-    /// `poll` returns the number of readiness events that have been pushed into
-    /// `events` or `Err` when an error has been encountered with the system
-    /// selector.  The value returned is deprecated and will be removed in 0.7.0.
-    /// Accessing the events by index is also deprecated.  Events can be
-    /// inserted by other events triggering, thus making sequential access
-    /// problematic.  Use the iterator API instead.  See [`iter`].
+    /// [readable] set and one with [writable] set.
     ///
     /// See the [struct] level documentation for a higher level discussion of
     /// polling.
     ///
-    /// [`readable`]: struct.Ready.html#associatedconstant.READABLE
-    /// [`writable`]: struct.Ready.html#associatedconstant.WRITABLE
-    /// [struct]: #
-    /// [`iter`]: struct.Events.html#method.iter
-    ///
-    /// # Examples
-    ///
-    /// A basic example -- establishing a `TcpStream` connection.
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use std::net::{TcpListener, SocketAddr};
-    /// use std::thread;
-    ///
-    /// use mio_st::event::{Events, EventedId};
-    /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, Ready, PollOpt};
-    ///
-    /// // Bind a server socket to connect to.
-    /// let addr: SocketAddr = "127.0.0.1:0".parse()?;
-    /// let mut server = TcpListener::bind(addr)?;
-    /// let addr = server.local_addr()?.clone();
-    ///
-    /// // Spawn a thread to accept the socket
-    /// thread::spawn(move || {
-    ///     let _ = server.accept();
-    /// });
-    ///
-    /// // Construct a new `Poll` handle as well as the `Events` we'll store into
-    /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(512, 512);
-    ///
-    /// // Connect the stream
-    /// let mut stream = TcpStream::connect(addr)?;
-    ///
-    /// // Register the stream with `Poll`
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
-    ///
-    /// // Wait for the socket to become ready. This has to happens in a loop to
-    /// // handle spurious wakeups.
-    /// loop {
-    ///     poll.poll(&mut events, None)?;
-    ///
-    ///     for event in &mut events {
-    ///         if event.id() == EventedId(0) && event.readiness().is_writable() {
-    ///             // The socket connected (probably, it could still be a spurious
-    ///             // wakeup)
-    ///             return Ok(());
-    ///         }
-    ///     }
-    /// }
-    /// #     Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     try_main().unwrap();
-    /// # }
-    /// ```
-    ///
+    /// [readable]: struct.Ready.html#associatedconstant.READABLE
+    /// [writable]: struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
         let mut timeout = self.determine_timeout(timeout);
@@ -699,7 +598,7 @@ impl Poll {
     /// use mio_st::event::{Event, Events, EventedId};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(128, 128);
+    /// let mut events = Events::with_capacity(8, 8);
     ///
     /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
     /// poll.add_timeout(EventedId(0), Duration::from_millis(10));
@@ -742,7 +641,7 @@ impl Poll {
     ///
     /// This function is not at all good for performance. If your code can deal
     /// with timeouts firing after they're no longer needed, then you should not
-    /// use this function and let the timeout be fired and ignored.
+    /// use this function and let the timeout be fired and simply ignore it.
     pub fn remove_deadline(&mut self, id: EventedId) -> Option<Instant> {
         // TODO: optimize this.
         let index = self.deadlines.iter()
