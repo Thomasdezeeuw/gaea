@@ -347,6 +347,15 @@ impl Event {
 ///
 /// See [`Poll`] for more documentation on polling.
 ///
+/// # Uniqueness of EventedId
+///
+/// `EventedId` does not have to be unique within a `Poll` instance, it is
+/// purely a tool for the user of `Poll` to associate an `Event` with an
+/// `Evented` handle. It is advised for example to use the same `EventedId` for
+/// say a `TcpStream` and any related timeout or deadline for the same
+/// connection. The `EventedID` is effectively opaque to `Poll`, as long as it
+/// is valid.
+///
 /// [`Evented`]: ../event/trait.Evented.html
 /// [`Poll.register`]: ../struct.Poll.html#method.register
 /// [`Poll.reregister`]: ../struct.Poll.html#method.reregister
