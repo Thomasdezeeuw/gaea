@@ -4,7 +4,7 @@ use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
 use net2::UdpSocketExt;
 
 use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready};
+use poll::{Poll, PollOpt, Ready, Private};
 use sys::unix::EventedFd;
 
 #[derive(Debug)]
@@ -112,16 +112,16 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).deregister(poll)
+    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).deregister(poll, p)
     }
 }
 

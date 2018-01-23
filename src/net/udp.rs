@@ -5,7 +5,7 @@ use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
 use sys;
 use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready};
+use poll::{Poll, PollOpt, Ready, Private};
 
 /// A User Datagram Protocol socket.
 ///
@@ -447,16 +447,16 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
-        self.socket.register(poll, id, interests, opt)
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+        self.socket.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
-        self.socket.reregister(poll, id, interests, opt)
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+        self.socket.reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll) -> io::Result<()> {
-        self.socket.deregister(poll)
+    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+        self.socket.deregister(poll, p)
     }
 }
 
