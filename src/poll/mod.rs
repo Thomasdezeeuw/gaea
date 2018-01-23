@@ -131,7 +131,7 @@ pub use self::ready::Ready;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point.
-/// poll.register(&mut sock, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
+/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
 /// #     Ok(())
 /// # }
 /// #
@@ -320,7 +320,7 @@ impl Poll {
     /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
     ///
     /// // Add a timeout so we don't wait too long for the connection to setup.
-    /// poll.add_time(EventedId(0), Duration::from_millis(500));
+    /// poll.add_timeout(EventedId(0), Duration::from_millis(500));
     ///
     /// // Start the event loop.
     /// loop {
@@ -328,7 +328,7 @@ impl Poll {
     ///
     ///     for event in &mut events {
     ///         if event.id() == EventedId(0) {
-    ///             if event.readiness.is_timer() {
+    ///             if event.readiness().is_timer() {
     ///                 // Connection likely timed out.
     ///             } else {
     ///                 // Connection is (probably) connected.
