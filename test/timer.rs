@@ -140,20 +140,20 @@ fn multiple_deadlines_same_deadline() {
 }
 
 #[test]
-fn test_poll_time() {
+fn poll_timeout() {
     let (mut poll, mut events) = init_with_poll(8);
 
-    let deadlines = [
+    let timeouts = [
         // Should not block.
-        (Instant::now(), Duration::from_millis(5)),
+        (Duration::from_millis(0), Duration::from_millis(5)),
         // Should set timeout to 20 milliseconds.
-        (Instant::now() + Duration::from_millis(20), Duration::from_millis(30)),
+        (Duration::from_millis(20), Duration::from_millis(30)),
         // Should keep the original 50 milliseconds timeout.
-        (Instant::now() + Duration::from_millis(100), Duration::from_millis(60)),
+        (Duration::from_millis(100), Duration::from_millis(60)),
     ];
 
-    for &(deadline, max_elapsed) in &deadlines {
-        poll.add_deadline(EventedId(0), deadline);
+    for &(timeout, max_elapsed) in &timeouts {
+        poll.add_timeout(EventedId(0), timeout).unwrap();
 
         let start = Instant::now();
         poll.poll(&mut events, Some(Duration::from_millis(50))).unwrap();
