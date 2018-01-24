@@ -251,7 +251,8 @@ impl FromRawFd for TcpStream {
 /// # }
 /// ```
 ///
-/// Using the [`net2`] crate to create a listener.
+/// Using the [`net2`] crate to create a listener and change settings on the
+/// accepted incoming connection.
 ///
 /// ```
 /// extern crate net2;
@@ -262,8 +263,8 @@ impl FromRawFd for TcpStream {
 /// use std::time::Duration;
 /// use std::net::SocketAddr;
 ///
-/// use net2;
-/// use mio_st::net::TcpListener;
+/// use mio_st::net::{TcpListener, TcpStream};
+/// use net2::{self, TcpStreamExt};
 ///
 /// // Create a new `net2` `TcpBuilder`.
 /// let builder = net2::TcpBuilder::new_v4()?;
@@ -276,8 +277,22 @@ impl FromRawFd for TcpStream {
 /// // Convert the listener into an mio listener.
 /// let mio_listener = TcpListener::from_std_listener(std_listener)?;
 ///
-/// // Use mio_listener as normal.
-/// # drop(mio_listener);
+/// // Use `mio_listener` as normal, such as registering it with poll, etc.
+///
+/// // This may return a `WouldBlock` error.
+/// # (|| -> ::std::io::Result<()> {
+/// let (std_stream, addr) = mio_listener.accept_std()?;
+///
+/// // Use net2's `TcpStreamExt` trait to modifiy the receiving buffer size.
+/// std_stream.set_recv_buffer_size(4 * 1024)?;
+///
+/// // Now convert the stream into a mio stream, set it non-blocking mode etc.
+/// let mio_stream = TcpStream::from_std_stream(std_stream)?;
+///
+/// // Now the `mio_stream` can be used as normal.
+/// # drop(mio_stream);
+/// # Ok(())
+/// # })();
 /// #     Ok(())
 /// # }
 /// #
