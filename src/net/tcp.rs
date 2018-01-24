@@ -404,13 +404,10 @@ impl TcpListener {
     /// Creates a new `TcpListener` from an instance of a
     /// `std::net::TcpListener` type.
     ///
-    /// This function will set the `listener` provided into nonblocking mode on
-    /// Unix, and otherwise the stream will just be wrapped up in an mio stream
-    /// ready to accept new connections and become associated with an event
-    /// loop.
-    ///
-    /// The address provided must be the address that the listener is bound to.
-    pub fn from_listener(listener: net::TcpListener, addr: SocketAddr) -> io::Result<TcpListener> {
+    /// This function will set the `listener` provided into nonblocking mode,
+    /// and otherwise the listener will just be wrapped up in an mio listener
+    /// ready to accept new connections and become associated with `Poll`.
+    pub fn from_std_listener(listener: net::TcpListener) -> io::Result<TcpListener> {
         sys::TcpListener::new(listener).map(|inner| TcpListener { inner })
     }
 
