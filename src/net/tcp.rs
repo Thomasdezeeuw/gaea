@@ -398,9 +398,7 @@ impl TcpListener {
         }
 
         let listener = sock.bind(addr)?.listen(1024)?;
-        Ok(TcpListener {
-            inner: sys::TcpListener::new(listener, &addr)?,
-        })
+        TcpListener::from_std_listener(listener)
     }
 
     /// Creates a new `TcpListener` from an instance of a
@@ -413,9 +411,7 @@ impl TcpListener {
     ///
     /// The address provided must be the address that the listener is bound to.
     pub fn from_listener(listener: net::TcpListener, addr: SocketAddr) -> io::Result<TcpListener> {
-        sys::TcpListener::new(listener, &addr).map(|s| TcpListener {
-            inner: s,
-        })
+        sys::TcpListener::new(listener).map(|inner| TcpListener { inner })
     }
 
     /// Accepts a new `TcpStream`.

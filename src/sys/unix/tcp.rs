@@ -165,7 +165,7 @@ pub struct TcpListener {
 }
 
 impl TcpListener {
-    pub fn new(listener: net::TcpListener, _addr: &SocketAddr) -> io::Result<TcpListener> {
+    pub fn new(listener: net::TcpListener) -> io::Result<TcpListener> {
         listener.set_nonblocking(true)?;
         Ok(TcpListener { listener })
     }
