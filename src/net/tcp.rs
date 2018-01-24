@@ -53,13 +53,6 @@ pub struct TcpStream {
 impl TcpStream {
     /// Create a new TCP stream and issue a non-blocking connect to the
     /// specified address.
-    ///
-    /// This convenience method is available and uses the system's default
-    /// options when creating a socket which is then connected. If fine-grained
-    /// control over the creation of the socket is desired, you can use
-    /// `net2::TcpBuilder` to configure a socket and then pass its socket to
-    /// `TcpStream::connect_stream` to transfer ownership into mio and schedule
-    /// the connect operation.
     pub fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
         let sock = match addr {
             SocketAddr::V4(..) => TcpBuilder::new_v4(),
@@ -80,16 +73,8 @@ impl TcpStream {
     ///
     /// * On Unix, the socket is placed into nonblocking mode and then a
     ///   `connect` call is issued.
-    ///
-    /// * On Windows, the address is stored internally and the connect operation
-    ///   is issued when the returned `TcpStream` is registered with an event
-    ///   loop. Note that on Windows you must `bind` a socket before it can be
-    ///   connected, so if a custom `TcpBuilder` is used it should be bound
-    ///   (perhaps to `INADDR_ANY`) before this method is called.
     pub fn connect_stream(stream: net::TcpStream, addr: SocketAddr) -> io::Result<TcpStream> {
-        Ok(TcpStream {
-            inner: sys::TcpStream::connect(stream, &addr)?,
-        })
+        sys::TcpStream::connect(stream, &addr).map(|inner| TcpStream { inner })
     }
 
     /// Creates a new `TcpStream` from a standard `net::TcpStream`.
@@ -101,12 +86,9 @@ impl TcpStream {
     ///
     /// Note that the TCP stream here will not have `connect` called on it, so
     /// it should already be connected via some other means (be it manually, the
-    /// net2 crate, or the standard library).
-    pub fn from_stream(stream: net::TcpStream) -> io::Result<TcpStream> {
-        stream.set_nonblocking(true)?;
-        Ok(TcpStream {
-            inner: sys::TcpStream::from_stream(stream),
-        })
+    /// `net2` crate, or the standard library).
+    pub fn from_std_stream(stream: net::TcpStream) -> io::Result<TcpStream> {
+        sys::TcpStream::from_std_stream(stream).map(|inner| TcpStream { inner })
     }
 
     /// Returns the socket address of the remote peer of this TCP connection.
@@ -119,76 +101,10 @@ impl TcpStream {
         self.inner.local_addr()
     }
 
-    /// Shuts down the read, write, or both halves of this connection.
-    ///
-    /// This function will cause all pending and future I/O on the specified
-    /// portions to return immediately with an appropriate value (see the
-    /// documentation of `Shutdown`).
-    pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
-        self.inner.shutdown(how)
-    }
-
-    /// Sets the value of the `TCP_NODELAY` option on this socket.
-    ///
-    /// If set, this option disables the Nagle algorithm. This means that
-    /// segments are always sent as soon as possible, even if there is only a
-    /// small amount of data. When not set, data is buffered until there is a
-    /// sufficient amount to send out, thereby avoiding the frequent sending of
-    /// small packets.
-    pub fn set_nodelay(&self, nodelay: bool) -> io::Result<()> {
-        self.inner.set_nodelay(nodelay)
-    }
-
-    /// Gets the value of the `TCP_NODELAY` option on this socket.
-    ///
-    /// For more information about this option, see [`set_nodelay`][link].
-    ///
-    /// [link]: #method.set_nodelay
-    pub fn nodelay(&self) -> io::Result<bool> {
-        self.inner.nodelay()
-    }
-
-    /// Sets the value of the `SO_RCVBUF` option on this socket.
-    ///
-    /// Changes the size of the operating system's receive buffer associated
-    /// with the socket.
-    pub fn set_recv_buffer_size(&self, size: usize) -> io::Result<()> {
-        self.inner.set_recv_buffer_size(size)
-    }
-
-    /// Gets the value of the `SO_RCVBUF` option on this socket.
-    ///
-    /// For more information about this option, see
-    /// [`set_recv_buffer_size`][link].
-    ///
-    /// [link]: #method.set_recv_buffer_size
-    pub fn recv_buffer_size(&self) -> io::Result<usize> {
-        self.inner.recv_buffer_size()
-    }
-
-    /// Sets the value of the `SO_SNDBUF` option on this socket.
-    ///
-    /// Changes the size of the operating system's send buffer associated with
-    /// the socket.
-    pub fn set_send_buffer_size(&self, size: usize) -> io::Result<()> {
-        self.inner.set_send_buffer_size(size)
-    }
-
-    /// Gets the value of the `SO_SNDBUF` option on this socket.
-    ///
-    /// For more information about this option, see
-    /// [`set_send_buffer_size`][link].
-    ///
-    /// [link]: #method.set_send_buffer_size
-    pub fn send_buffer_size(&self) -> io::Result<usize> {
-        self.inner.send_buffer_size()
-    }
-
     /// Sets whether keepalive messages are enabled to be sent on this socket.
     ///
     /// On Unix, this option will set the `SO_KEEPALIVE` as well as the
     /// `TCP_KEEPALIVE` or `TCP_KEEPIDLE` option (depending on your platform).
-    /// On Windows, this will set the `SIO_KEEPALIVE_VALS` option.
     ///
     /// If `None` is specified then keepalive messages are disabled, otherwise
     /// the duration specified will be the time to remain idle before sending a
@@ -203,72 +119,11 @@ impl TcpStream {
     /// Returns whether keepalive messages are enabled on this socket, and if so
     /// the duration of time between them.
     ///
-    /// For more information about this option, see [`set_keepalive`][link].
+    /// For more information about this option, see [`set_keepalive`].
     ///
-    /// [link]: #method.set_keepalive
+    /// [`set_keepalive`]: #method.set_keepalive
     pub fn keepalive(&self) -> io::Result<Option<Duration>> {
         self.inner.keepalive()
-    }
-
-    /// Sets the value for the `IP_TTL` option on this socket.
-    ///
-    /// This value sets the time-to-live field that is used in every packet sent
-    /// from this socket.
-    pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        self.inner.set_ttl(ttl)
-    }
-
-    /// Gets the value of the `IP_TTL` option for this socket.
-    ///
-    /// For more information about this option, see [`set_ttl`][link].
-    ///
-    /// [link]: #method.set_ttl
-    pub fn ttl(&self) -> io::Result<u32> {
-        self.inner.ttl()
-    }
-
-    /// Sets the value for the `IPV6_V6ONLY` option on this socket.
-    ///
-    /// If this is set to `true` then the socket is restricted to sending and
-    /// receiving IPv6 packets only. In this case two IPv4 and IPv6 applications
-    /// can bind the same port at the same time.
-    ///
-    /// If this is set to `false` then the socket can be used to send and
-    /// receive packets from an IPv4-mapped IPv6 address.
-    pub fn set_only_v6(&self, only_v6: bool) -> io::Result<()> {
-        self.inner.set_only_v6(only_v6)
-    }
-
-    /// Gets the value of the `IPV6_V6ONLY` option for this socket.
-    ///
-    /// For more information about this option, see [`set_only_v6`][link].
-    ///
-    /// [link]: #method.set_only_v6
-    pub fn only_v6(&self) -> io::Result<bool> {
-        self.inner.only_v6()
-    }
-
-    /// Sets the value for the `SO_LINGER` option on this socket.
-    pub fn set_linger(&self, dur: Option<Duration>) -> io::Result<()> {
-        self.inner.set_linger(dur)
-    }
-
-    /// Gets the value of the `SO_LINGER` option on this socket.
-    ///
-    /// For more information about this option, see [`set_linger`][link].
-    ///
-    /// [link]: #method.set_linger
-    pub fn linger(&self) -> io::Result<Option<Duration>> {
-        self.inner.linger()
-    }
-
-    /// Get the value of the `SO_ERROR` option on this socket.
-    ///
-    /// This will retrieve the stored error in the underlying socket, clearing
-    /// the field in the process. This can be useful for checking errors between
-    /// calls.
-    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
-        self.inner.take_error()
     }
 
     /// Receives data on the socket from the remote address to which it is
@@ -279,6 +134,26 @@ impl TcpStream {
     /// `MSG_PEEK` as a flag to the underlying recv system call.
     pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.peek(buf)
+    }
+
+    /// Shuts down the read, write, or both halves of this connection.
+    ///
+    /// This function will cause all pending and future I/O on the specified
+    /// portions to return immediately with an appropriate value (see the
+    /// documentation of [`Shutdown`]).
+    ///
+    /// [`Shutdown`]: https://doc.rust-lang.org/nightly/std/net/enum.Shutdown.html
+    pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
+        self.inner.shutdown(how)
+    }
+
+    /// Get the value of the `SO_ERROR` option on this socket.
+    ///
+    /// This will retrieve the stored error in the underlying socket, clearing
+    /// the field in the process. This can be useful for checking errors between
+    /// calls.
+    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
+        self.inner.take_error()
     }
 }
 

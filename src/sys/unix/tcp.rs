@@ -28,8 +28,9 @@ impl TcpStream {
         Ok(TcpStream { stream })
     }
 
-    pub fn from_stream(stream: net::TcpStream) -> TcpStream {
-        TcpStream { stream }
+    pub fn from_std_stream(stream: net::TcpStream) -> io::Result<TcpStream> {
+        stream.set_nonblocking(true)?;
+        Ok(TcpStream { stream })
     }
 
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
@@ -40,34 +41,6 @@ impl TcpStream {
         self.stream.local_addr()
     }
 
-    pub fn shutdown(&self, how: net::Shutdown) -> io::Result<()> {
-        self.stream.shutdown(how)
-    }
-
-    pub fn set_nodelay(&self, nodelay: bool) -> io::Result<()> {
-        self.stream.set_nodelay(nodelay)
-    }
-
-    pub fn nodelay(&self) -> io::Result<bool> {
-        self.stream.nodelay()
-    }
-
-    pub fn set_recv_buffer_size(&self, size: usize) -> io::Result<()> {
-        self.stream.set_recv_buffer_size(size)
-    }
-
-    pub fn recv_buffer_size(&self) -> io::Result<usize> {
-        self.stream.recv_buffer_size()
-    }
-
-    pub fn set_send_buffer_size(&self, size: usize) -> io::Result<()> {
-        self.stream.set_send_buffer_size(size)
-    }
-
-    pub fn send_buffer_size(&self) -> io::Result<usize> {
-        self.stream.send_buffer_size()
-    }
-
     pub fn set_keepalive(&self, keepalive: Option<Duration>) -> io::Result<()> {
         self.stream.set_keepalive(keepalive)
     }
@@ -76,36 +49,16 @@ impl TcpStream {
         self.stream.keepalive()
     }
 
-    pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        self.stream.set_ttl(ttl)
+    pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.stream.peek(buf)
     }
 
-    pub fn ttl(&self) -> io::Result<u32> {
-        self.stream.ttl()
-    }
-
-    pub fn set_only_v6(&self, only_v6: bool) -> io::Result<()> {
-        self.stream.set_only_v6(only_v6)
-    }
-
-    pub fn only_v6(&self) -> io::Result<bool> {
-        self.stream.only_v6()
-    }
-
-    pub fn set_linger(&self, dur: Option<Duration>) -> io::Result<()> {
-        self.stream.set_linger(dur)
-    }
-
-    pub fn linger(&self) -> io::Result<Option<Duration>> {
-        self.stream.linger()
+    pub fn shutdown(&self, how: net::Shutdown) -> io::Result<()> {
+        self.stream.shutdown(how)
     }
 
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.stream.take_error()
-    }
-
-    pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
-        self.stream.peek(buf)
     }
 }
 
