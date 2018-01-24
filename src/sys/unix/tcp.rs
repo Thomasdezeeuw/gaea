@@ -178,16 +178,6 @@ impl TcpListener {
         self.listener.accept()
     }
 
-    #[allow(deprecated)]
-    pub fn set_only_v6(&self, only_v6: bool) -> io::Result<()> {
-        self.listener.set_only_v6(only_v6)
-    }
-
-    #[allow(deprecated)]
-    pub fn only_v6(&self) -> io::Result<bool> {
-        self.listener.only_v6()
-    }
-
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.listener.take_error()
     }
