@@ -188,14 +188,6 @@ impl TcpListener {
         self.listener.only_v6()
     }
 
-    pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        self.listener.set_ttl(ttl)
-    }
-
-    pub fn ttl(&self) -> io::Result<u32> {
-        self.listener.ttl()
-    }
-
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.listener.take_error()
     }
