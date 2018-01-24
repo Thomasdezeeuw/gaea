@@ -451,16 +451,19 @@ impl TcpListener {
 
     /// Accepts a new `TcpStream`.
     ///
-    /// This may return an `Err(e)` where `e.kind()` is
-    /// `io::ErrorKind::WouldBlock`. This means a stream may be ready at a later
-    /// point and one should wait for a notification before calling `accept`
-    /// again.
+    /// This may return an [`WouldBlock`] error, this means a stream may be
+    /// ready at a later point and one should wait for a notification before
+    /// calling `accept` again.
     ///
     /// If an accepted stream is returned, the remote address of the peer is
     /// returned along with it.
+    ///
+    /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
     pub fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        let (s, a) = try!(self.accept_std());
-        Ok((TcpStream::from_stream(s)?, a))
+        self.accept_std().and_then(|(stream, addr)| {
+            let stream = TcpStream::from_std_stream(stream)?;
+            Ok((stream, addr))
+        })
     }
 
     /// Accepts a new `std::net::TcpStream`.
