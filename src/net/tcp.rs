@@ -12,7 +12,10 @@ use poll::{Poll, PollOpt, Ready, Private};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
-/// The socket will be closed when the value is dropped.
+/// If fine-grained control over the creation of the socket is desired, you can
+/// use `net2::TcpBuilder` to configure a socket and then pass its socket to
+/// `TcpStream::connect_stream` to transfer ownership into mio and schedule the
+/// connect operation.
 ///
 /// # Examples
 ///
