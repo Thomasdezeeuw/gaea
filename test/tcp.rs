@@ -67,19 +67,20 @@ fn deregistered_listener() {
 
 #[test]
 fn listener_poll_opt() {
-    let mut level_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
-    let level_addr = level_listener.local_addr().unwrap();
-    let mut edge_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
-    let edge_addr = edge_listener.local_addr().unwrap();
-    let mut oneshot_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
-    let oneshot_addr = oneshot_listener.local_addr().unwrap();
-
     // Fork before creating poll, because doing it after creating poll will
     // result in undefined behaviour.
 
+    let mut level_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let level_addr = level_listener.local_addr().unwrap();
     let t1 = thread::spawn(move || two_connections(level_addr));
-    let t2 = thread::spawn(move || two_connections(level_addr));
-    let t3 = thread::spawn(move || two_connections(level_addr));
+
+    let mut edge_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let edge_addr = edge_listener.local_addr().unwrap();
+    let t2 = thread::spawn(move || two_connections(edge_addr));
+
+    let mut oneshot_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let oneshot_addr = oneshot_listener.local_addr().unwrap();
+    let t3 = thread::spawn(move || two_connections(oneshot_addr));
 
     let (mut poll, mut events) = init_with_poll(16);
 
@@ -100,16 +101,13 @@ fn listener_poll_opt() {
     while another_loop > 0 {
         poll.poll(&mut events, None).unwrap();
 
-        let mut seen_level_loop = false;
-
         for event in &mut events {
             match event.id() {
                 LEVEL_ID => {
-                    if seen_level == 0 {
+                    if seen_level == 1 {
                         level_listener.accept().unwrap();
                     }
-                    seen_level = true;
-                    seen_level_loop = true;
+                    seen_level += 1;
                 },
                 EDGE_ID => {
                     edge_listener.accept().unwrap();
@@ -126,9 +124,7 @@ fn listener_poll_opt() {
             }
         }
 
-        assert!(seen_level_loop, "didn't see level event this iteration");
-
-        if seen_level && seen_edge == 2 && seen_oneshot {
+        if seen_level >= 3 && seen_edge == 2 && seen_oneshot {
             // We we're done we still run another iteration to make sure we get
             // another event for the level stream.
             another_loop -= 1;
@@ -141,8 +137,10 @@ fn listener_poll_opt() {
 }
 
 fn two_connections(addr: SocketAddr) {
-    let stream1 = net::TcpStream::connect(level_addr).unwrap();
-    let stream2 = net::TcpStream::connect(level_addr).unwrap();
+    let s1 = net::TcpStream::connect(addr).unwrap();
+    let s2 = net::TcpStream::connect(addr).unwrap();
+    drop(s1);
+    drop(s2);
 }
 
 #[test]
