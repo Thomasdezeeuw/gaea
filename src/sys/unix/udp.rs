@@ -1,7 +1,6 @@
 use std::io;
-use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::net::{self, SocketAddr};
 use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
-use net2::UdpSocketExt;
 
 use event::{EventedId, Evented};
 use poll::{Poll, PollOpt, Ready, Private};
@@ -14,7 +13,6 @@ pub struct UdpSocket {
 
 impl UdpSocket {
     pub fn new(socket: net::UdpSocket) -> io::Result<UdpSocket> {
-        socket.set_nonblocking(true)?;
         Ok(UdpSocket { socket })
     }
 
@@ -30,6 +28,14 @@ impl UdpSocket {
         self.socket.recv_from(buf)
     }
 
+    pub fn peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+        self.socket.peek_from(buf)
+    }
+
+    pub fn connect(&self, addr: SocketAddr) -> io::Result<()> {
+        self.socket.connect(addr)
+    }
+
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
         self.socket.send(buf)
     }
@@ -38,72 +44,8 @@ impl UdpSocket {
         self.socket.recv(buf)
     }
 
-    pub fn connect(&self, addr: SocketAddr) -> io::Result<()> {
-        self.socket.connect(addr)
-    }
-
-    pub fn broadcast(&self) -> io::Result<bool> {
-        self.socket.broadcast()
-    }
-
-    pub fn set_broadcast(&self, on: bool) -> io::Result<()> {
-        self.socket.set_broadcast(on)
-    }
-
-    pub fn multicast_loop_v4(&self) -> io::Result<bool> {
-        self.socket.multicast_loop_v4()
-    }
-
-    pub fn set_multicast_loop_v4(&self, on: bool) -> io::Result<()> {
-        self.socket.set_multicast_loop_v4(on)
-    }
-
-    pub fn multicast_ttl_v4(&self) -> io::Result<u32> {
-        self.socket.multicast_ttl_v4()
-    }
-
-    pub fn set_multicast_ttl_v4(&self, ttl: u32) -> io::Result<()> {
-        self.socket.set_multicast_ttl_v4(ttl)
-    }
-
-    pub fn multicast_loop_v6(&self) -> io::Result<bool> {
-        self.socket.multicast_loop_v6()
-    }
-
-    pub fn set_multicast_loop_v6(&self, on: bool) -> io::Result<()> {
-        self.socket.set_multicast_loop_v6(on)
-    }
-
-    pub fn ttl(&self) -> io::Result<u32> {
-        self.socket.ttl()
-    }
-
-    pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        self.socket.set_ttl(ttl)
-    }
-
-    pub fn join_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
-        self.socket.join_multicast_v4(multiaddr, interface)
-    }
-
-    pub fn join_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
-        self.socket.join_multicast_v6(multiaddr, interface)
-    }
-
-    pub fn leave_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
-        self.socket.leave_multicast_v4(multiaddr, interface)
-    }
-
-    pub fn leave_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
-        self.socket.leave_multicast_v6(multiaddr, interface)
-    }
-
-    pub fn set_only_v6(&self, only_v6: bool) -> io::Result<()> {
-        self.socket.set_only_v6(only_v6)
-    }
-
-    pub fn only_v6(&self) -> io::Result<bool> {
-        self.socket.only_v6()
+    pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.socket.peek(buf)
     }
 
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
