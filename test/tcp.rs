@@ -45,7 +45,7 @@ fn listener() {
 
 #[test]
 fn listener_bind_twice() {
-    let listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
     let addr = listener.local_addr().unwrap();
     assert!(TcpListener::bind(addr).is_err());
 }

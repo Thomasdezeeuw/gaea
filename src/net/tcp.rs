@@ -95,12 +95,12 @@ impl TcpStream {
     }
 
     /// Returns the socket address of the remote peer of this TCP connection.
-    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+    pub fn peer_addr(&mut self) -> io::Result<SocketAddr> {
         self.inner.peer_addr()
     }
 
     /// Returns the socket address of the local half of this TCP connection.
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+    pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
         self.inner.local_addr()
     }
 
@@ -115,7 +115,7 @@ impl TcpStream {
     ///
     /// Some platforms specify this value in seconds, so sub-second
     /// specifications may be omitted.
-    pub fn set_keepalive(&self, keepalive: Option<Duration>) -> io::Result<()> {
+    pub fn set_keepalive(&mut self, keepalive: Option<Duration>) -> io::Result<()> {
         self.inner.set_keepalive(keepalive)
     }
 
@@ -125,7 +125,7 @@ impl TcpStream {
     /// For more information about this option, see [`set_keepalive`].
     ///
     /// [`set_keepalive`]: #method.set_keepalive
-    pub fn keepalive(&self) -> io::Result<Option<Duration>> {
+    pub fn keepalive(&mut self) -> io::Result<Option<Duration>> {
         self.inner.keepalive()
     }
 
@@ -135,7 +135,7 @@ impl TcpStream {
     ///
     /// Successive calls return the same data. This is accomplished by passing
     /// `MSG_PEEK` as a flag to the underlying recv system call.
-    pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+    pub fn peek(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.peek(buf)
     }
 
@@ -146,7 +146,7 @@ impl TcpStream {
     /// documentation of [`Shutdown`]).
     ///
     /// [`Shutdown`]: https://doc.rust-lang.org/nightly/std/net/enum.Shutdown.html
-    pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
+    pub fn shutdown(&mut self, how: Shutdown) -> io::Result<()> {
         self.inner.shutdown(how)
     }
 
@@ -155,7 +155,7 @@ impl TcpStream {
     /// This will retrieve the stored error in the underlying socket, clearing
     /// the field in the process. This can be useful for checking errors between
     /// calls.
-    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
+    pub fn take_error(&mut self) -> io::Result<Option<io::Error>> {
         self.inner.take_error()
     }
 }
@@ -278,7 +278,7 @@ impl FromRawFd for TcpStream {
 /// let std_listener = builder.bind(addr)?.listen(128)?;
 ///
 /// // Convert the listener into an mio listener.
-/// let mio_listener = TcpListener::from_std_listener(std_listener)?;
+/// let mut mio_listener = TcpListener::from_std_listener(std_listener)?;
 ///
 /// // Use `mio_listener` as normal, such as registering it with poll, etc.
 ///
@@ -352,7 +352,7 @@ impl TcpListener {
     /// returned along with it.
     ///
     /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
-    pub fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
+    pub fn accept(&mut self) -> io::Result<(TcpStream, SocketAddr)> {
         self.accept_std().and_then(|(stream, addr)| {
             let stream = TcpStream::from_std_stream(stream)?;
             Ok((stream, addr))
@@ -364,12 +364,12 @@ impl TcpListener {
     /// This method is the same as `accept`, except that it returns a TCP socket
     /// *in blocking mode* which isn't bound to `mio`. This can be later then
     /// converted to a `mio` type, if necessary.
-    pub fn accept_std(&self) -> io::Result<(net::TcpStream, SocketAddr)> {
+    pub fn accept_std(&mut self) -> io::Result<(net::TcpStream, SocketAddr)> {
         self.inner.accept()
     }
 
     /// Returns the local socket address of this listener.
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+    pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
         self.inner.local_addr()
     }
 
@@ -378,7 +378,7 @@ impl TcpListener {
     /// This will retrieve the stored error in the underlying socket, clearing
     /// the field in the process. This can be useful for checking errors between
     /// calls.
-    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
+    pub fn take_error(&mut self) -> io::Result<Option<io::Error>> {
         self.inner.take_error()
     }
 }
