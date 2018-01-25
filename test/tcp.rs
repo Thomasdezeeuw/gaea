@@ -149,7 +149,7 @@ fn stream() {
     let listener = net::TcpListener::bind(addr).unwrap();
     let addr = listener.local_addr().unwrap();
 
-    const MSG: &'static [u8; 11] = b"Hello world";
+    const MSG: &[u8; 11] = b"Hello world";
 
     // Fork before creating poll, because doing it after creating poll will
     // result in undefined behaviour.

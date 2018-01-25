@@ -116,7 +116,7 @@ impl UdpSocket {
     /// ```
     pub fn bind(addr: SocketAddr) -> io::Result<UdpSocket> {
         net::UdpSocket::bind(addr)
-            .and_then(|socket| UdpSocket::from_std_socket(socket))
+            .and_then(UdpSocket::from_std_socket)
     }
 
     /// Creates a new mio-wrapped socket from an underlying and bound std

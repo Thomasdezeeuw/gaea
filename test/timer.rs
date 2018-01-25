@@ -106,7 +106,7 @@ fn multiple_deadlines() {
         }
     }
 
-    for timers in TIMEOUTS.iter() {
+    for timers in &TIMEOUTS {
         for timeout_ms in timers.iter() {
             let token = timeout_to_token(*timeout_ms);
             let first_token = EventedId(token.0 * 100);
