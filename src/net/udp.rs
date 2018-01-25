@@ -146,7 +146,7 @@ impl UdpSocket {
     /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
-    /// let socket = UdpSocket::bind(addr)?;
+    /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// assert_eq!(socket.local_addr()?, addr);
     /// #    Ok(())
@@ -155,7 +155,7 @@ impl UdpSocket {
     /// # fn main() {
     /// #   try_main().unwrap();
     /// # }
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+    pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
         self.socket.local_addr()
     }
 
@@ -170,7 +170,7 @@ impl UdpSocket {
     /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7777".parse()?;
-    /// let socket = UdpSocket::bind(addr)?;
+    /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// // We must check if the socket is writable before calling send_to,
     /// // or we could run into a WouldBlock error.
@@ -186,7 +186,7 @@ impl UdpSocket {
     /// #   try_main().unwrap();
     /// # }
     /// ```
-    pub fn send_to(&self, buf: &[u8], target: SocketAddr) -> io::Result<usize> {
+    pub fn send_to(&mut self, buf: &[u8], target: SocketAddr) -> io::Result<usize> {
         self.socket.send_to(buf, &target)
     }
 
@@ -218,7 +218,7 @@ impl UdpSocket {
     /// #   try_main().unwrap();
     /// # }
     /// ```
-    pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+    pub fn recv_from(&mut self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.socket.recv_from(buf)
     }
 
@@ -243,7 +243,7 @@ impl UdpSocket {
     /// let mut buf1 = [0; 9];
     /// let mut buf2 = [0; 9];
     /// let (num_recv, from_addr) = socket.peek_from(&mut buf1)?;
-    /// let (num_recv, from_addr) = socket.read_from(&mut buf2)?;
+    /// let (num_recv, from_addr) = socket.recv_from(&mut buf2)?;
     /// assert_eq!(buf1, buf2);
     /// #
     /// #    Ok(())
@@ -253,33 +253,33 @@ impl UdpSocket {
     /// #   try_main().unwrap();
     /// # }
     /// ```
-    pub fn peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+    pub fn peek_from(&mut self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.socket.peek_from(buf)
     }
 
     /// Connects the UDP socket setting the default destination for `send()` and
     /// limiting packets that are read, writen and peeked to the address
     /// specified in `addr`.
-    pub fn connect(self, addr: SocketAddr) -> io::Result<()> {
+    pub fn connect(&mut self, addr: SocketAddr) -> io::Result<()> {
         self.socket.connect(addr)
     }
 
     /// Sends data on the socket to the address previously bound via
     /// `connect()`. On success, returns the number of bytes written.
-    pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
+    pub fn send(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.socket.send(buf)
     }
 
     /// Receives data from the socket previously bound with `connect()`. On
     /// success, returns the number of bytes read.
-    pub fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
+    pub fn recv(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.socket.recv(buf)
     }
 
     /// Receives data from the socket previously bound with `connect()`, without
     /// removing it from the input queue. On success, returns the number of
     /// bytes read.
-    pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+    pub fn peek(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.socket.peek(buf)
     }
 
@@ -288,7 +288,7 @@ impl UdpSocket {
     /// This will retrieve the stored error in the underlying socket, clearing
     /// the field in the process. This can be useful for checking errors between
     /// calls.
-    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
+    pub fn take_error(&mut self) -> io::Result<Option<io::Error>> {
         self.socket.take_error()
     }
 }
