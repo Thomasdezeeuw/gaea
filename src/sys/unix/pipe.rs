@@ -5,7 +5,7 @@ use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
 use libc;
 
 use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready, Private};
+use poll::{Poll, PollOpt, Ready, PollCalled};
 use unix::EventedIo;
 
 /// Create a new non-blocking unix pipe.
@@ -94,17 +94,17 @@ pub struct Receiver {
 }
 
 impl Evented for Receiver {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
         self.inner.reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
         self.inner.deregister(poll, p)
     }
 }
@@ -138,17 +138,17 @@ pub struct Sender {
 }
 
 impl Evented for Sender {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
         self.inner.reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
         self.inner.deregister(poll, p)
     }
 }

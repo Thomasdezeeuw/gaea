@@ -8,7 +8,7 @@ use net2::TcpBuilder;
 
 use sys;
 use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready, Private};
+use poll::{Poll, PollOpt, Ready, PollCalled};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -177,15 +177,15 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
         self.inner.deregister(poll, p)
     }
 }
@@ -384,15 +384,15 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
         self.inner.deregister(poll, p)
     }
 }

@@ -72,7 +72,7 @@ use std::error::Error;
 use std::rc::{Rc, Weak};
 
 use event::{Event, EventedId, Evented, INVALID_EVENTED_ID};
-use poll::{Poll, PollOpt, Ready, Private};
+use poll::{Poll, PollOpt, Ready, PollCalled};
 
 /// Handle to a user space registration.
 ///
@@ -107,15 +107,15 @@ impl Registration {
 }
 
 impl Evented for Registration {
-    fn register(&mut self, _poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt, _: Private) -> io::Result<()> {
+    fn register(&mut self, _poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt, _: PollCalled) -> io::Result<()> {
         self.inner.register(id, interests)
     }
 
-    fn reregister(&mut self, _poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt, _: Private) -> io::Result<()> {
+    fn reregister(&mut self, _poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt, _: PollCalled) -> io::Result<()> {
         self.inner.reregister(id, interests)
     }
 
-    fn deregister(&mut self, _: &mut Poll, _: Private) -> io::Result<()> {
+    fn deregister(&mut self, _: &mut Poll, _: PollCalled) -> io::Result<()> {
         self.inner.deregister()
     }
 }

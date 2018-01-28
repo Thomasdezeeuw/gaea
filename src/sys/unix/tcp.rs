@@ -7,7 +7,7 @@ use libc;
 use net2::TcpStreamExt;
 
 use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready, Private};
+use poll::{Poll, PollOpt, Ready, PollCalled};
 use sys::unix::eventedfd::EventedFd;
 
 #[derive(Debug)]
@@ -79,15 +79,15 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).deregister(poll, p)
     }
 }
@@ -137,15 +137,15 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).deregister(poll, p)
     }
 }

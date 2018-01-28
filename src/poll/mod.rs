@@ -187,7 +187,7 @@ pub struct Poll {
     deadlines: BinaryHeap<ReverseOrder<Deadline>>,
 }
 
-/// A private struct.
+/// A type to check if `Evented` handles are called via a `Poll` instance.
 ///
 /// This struct is used in the [`Evented`] trait. Since it can only created from
 /// within the poll module it forces all calls to `Evented` handles to go via a
@@ -195,7 +195,7 @@ pub struct Poll {
 ///
 /// [`Evented`]: ../event/trait.Evented.html
 #[derive(Debug)]
-pub struct Private(());
+pub struct PollCalled(());
 
 impl Poll {
     /// Return a new `Poll` handle.
@@ -344,7 +344,7 @@ impl Poll {
     {
         validate_args(id, interests)?;
         trace!("registering with poller: id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
-        handle.register(self, id, interests, opt, Private(()))
+        handle.register(self, id, interests, opt, PollCalled(()))
     }
 
     /// Re-register an `Evented` handle with the `Poll` instance.
@@ -405,7 +405,7 @@ impl Poll {
     {
         validate_args(id, interests)?;
         trace!("reregistering with poller: id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
-        handle.reregister(self, id, interests, opt, Private(()))
+        handle.reregister(self, id, interests, opt, PollCalled(()))
     }
 
     /// Deregister an `Evented` handle with the `Poll` instance.
@@ -460,7 +460,7 @@ impl Poll {
         where E: Evented + ?Sized
     {
         trace!("deregistering handle with poller");
-        handle.deregister(self, Private(()))
+        handle.deregister(self, PollCalled(()))
     }
 
     /// Poll for readiness events.

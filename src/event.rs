@@ -3,7 +3,7 @@
 use std::io;
 
 use sys;
-use poll::{Poll, PollOpt, Ready, Private};
+use poll::{Poll, PollOpt, Ready, PollCalled};
 
 /// A value that may be registered with `Poll`.
 ///
@@ -50,7 +50,7 @@ use poll::{Poll, PollOpt, Ready, Private};
 ///
 /// use mio_st::event::{Evented, EventedId};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOpt, Ready, Private};
+/// use mio_st::poll::{Poll, PollOpt, Ready, PollCalled};
 ///
 /// pub struct MyEvented {
 ///     /// Our system handle that implements `Evented`.
@@ -58,17 +58,17 @@ use poll::{Poll, PollOpt, Ready, Private};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`
 ///         self.socket.register(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`
 ///         self.socket.reregister(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+///     fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
 ///         // Delegate the `deregister` call to `socket`
 ///         self.socket.deregister(poll, p)
 ///     }
@@ -83,7 +83,7 @@ use poll::{Poll, PollOpt, Ready, Private};
 /// use std::marker::PhantomData;
 ///
 /// use mio_st::event::{Evented, EventedId};
-/// use mio_st::poll::{Poll, PollOpt, Ready, Private};
+/// use mio_st::poll::{Poll, PollOpt, Ready, PollCalled};
 /// use mio_st::registration::{Registration, Notifier};
 ///
 /// /// Create a new channel.
@@ -116,15 +116,15 @@ use poll::{Poll, PollOpt, Ready, Private};
 ///
 /// // Deligate the Evented registration to the user space registration.
 /// impl<T> Evented for Receiver<T> {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
 ///         self.registration.register(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
 ///         self.registration.reregister(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+///     fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
 ///         self.registration.deregister(poll, p)
 ///     }
 /// }
@@ -153,7 +153,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poll.register`]: ../poll/struct.Poll.html#method.register
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()>;
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()>;
 
     /// Reregister `self` with the given `Poll` instance.
     ///
@@ -161,7 +161,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poll.reregister`]: ../poll/struct.Poll.html#method.reregister
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()>;
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poll` instance
     ///
@@ -169,7 +169,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poll.deregister`]: ../poll/struct.Poll.html#method.deregister
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()>;
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()>;
 }
 
 /// An iterator over a collection of readiness events.

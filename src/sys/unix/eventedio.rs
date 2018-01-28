@@ -3,7 +3,7 @@ use std::io::{self, Read, Write};
 use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
 
 use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready, Private};
+use poll::{Poll, PollOpt, Ready, PollCalled};
 use sys::unix::EventedFd;
 
 /// Managed adaptor for a `RawFd` providing an [`Evented`] implementation.
@@ -78,15 +78,15 @@ impl AsRawFd for EventedIo {
 }
 
 impl Evented for EventedIo {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: Private) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: Private) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).deregister(poll, p)
     }
 }
