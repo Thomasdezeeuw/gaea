@@ -80,7 +80,7 @@ use poll::{Poll, PollOpt, Ready, Private};
 ///
 /// ```
 /// use std::io;
-/// # use std::marker::PhantomData;
+/// use std::marker::PhantomData;
 ///
 /// use mio_st::event::{Evented, EventedId};
 /// use mio_st::poll::{Poll, PollOpt, Ready, Private};
@@ -92,17 +92,17 @@ use poll::{Poll, PollOpt, Ready, Private};
 ///     let (registration, notifier) = Registration::new();
 ///     (Sender {
 ///         notifier,
-/// #       _phantom: PhantomData,
+///         _phantom: PhantomData,
 ///     }, Receiver {
 ///         registration,
-/// #       _phantom: PhantomData,
+///         _phantom: PhantomData,
 ///     })
 /// }
 ///
 /// /// The receiving end of a channel.
 /// pub struct Receiver<T> {
 ///     registration: Registration,
-///     # _phantom: PhantomData<T>,
+///     _phantom: PhantomData<T>,
 /// }
 ///
 /// impl<T> Receiver<T> {
@@ -132,7 +132,7 @@ use poll::{Poll, PollOpt, Ready, Private};
 /// /// The sending end of a channel.
 /// pub struct Sender<T> {
 ///     notifier: Notifier,
-/// #   _phantom: PhantomData<T>,
+///     _phantom: PhantomData<T>,
 /// }
 ///
 /// impl<T> Sender<T> {
