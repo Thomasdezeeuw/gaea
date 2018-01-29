@@ -6,7 +6,7 @@
 //! [`Poll`]: struct.Poll.html
 //! [root of the crate]: ../index.html
 
-use std::{io, mem, ops};
+use std::{io, mem, ops, ptr};
 use std::cmp::Ordering;
 use std::time::{Duration, Instant};
 use std::collections::BinaryHeap;
@@ -236,7 +236,8 @@ impl Poll {
     pub fn new() -> io::Result<Poll> {
         Ok(Poll {
             selector: sys::Selector::new()?,
-            userspace_events: Vec::new(),
+            // TODO: try to get rid of this allocation.
+            userspace_events: Vec::with_capacity(512),
             deadlines: BinaryHeap::new(),
         })
     }
@@ -524,10 +525,10 @@ impl Poll {
             }
         }
 
-        // Poll user space events.
-        self.poll_userspace(events);
         // Then poll deadlines.
         self.poll_deadlines(events);
+        // Poll user space events.
+        self.poll_userspace(events);
         Ok(())
     }
 
@@ -570,8 +571,18 @@ impl Poll {
 
     /// Poll user space events.
     fn poll_userspace(&mut self, events: &mut Events) {
-        events.extend_events(&self.userspace_events);
-        self.userspace_events.clear();
+        let n_copied = events.extend_events(&self.userspace_events);
+        let left = self.userspace_events.len() - n_copied;
+        if left == 0 {
+            unsafe { self.userspace_events.set_len(0); }
+        } else {
+            // Move all leftover elements to the beginning of the vector.
+            unsafe {
+                let src = self.userspace_events.as_ptr().offset(n_copied as isize);
+                ptr::copy(src, self.userspace_events.as_mut_ptr(), left);
+                self.userspace_events.set_len(left);
+            }
+        }
     }
 
     /// Add a new deadline to Poll.
@@ -663,11 +674,13 @@ impl Poll {
     /// Add expired deadlines to the the provided `events`.
     fn poll_deadlines(&mut self, events: &mut Events) {
         let now = Instant::now();
-        loop {
+
+        for _ in 0..events.user_capacity_left() {
             match self.deadlines.peek().cloned() {
                 Some(deadline) if deadline.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap();
-                    events.push(Event::new(deadline.id, Ready::TIMER));
+                    let r = events.push(Event::new(deadline.id, Ready::TIMER));
+                    debug_assert!(r, "tried to expand events");
                 },
                 _ => return,
             }

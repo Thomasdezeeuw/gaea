@@ -57,6 +57,7 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
 }
 
 mod event;
+mod poll;
 mod registering;
 mod tcp;
 mod timer;

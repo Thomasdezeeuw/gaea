@@ -1,6 +1,6 @@
 //! Readiness event types and utilities.
 
-use std::io;
+use std::{cmp, io, ptr};
 
 use sys;
 use poll::{Poll, PollOpt, Ready, PollCalled};
@@ -233,6 +233,8 @@ impl Events {
     ///
     /// [`Registration`]: ../registration/struct.Registration.html
     pub fn with_capacity(system_capacity: usize, user_capacity: usize) -> Events {
+        debug_assert!(system_capacity != 0 && user_capacity != 0,
+                      "`Events` can't created with a capacity of 0");
         Events {
             sys_events: sys::Events::with_capacity(system_capacity),
             user_events: Vec::with_capacity(user_capacity),
@@ -263,13 +265,35 @@ impl Events {
     }
 
     /// Add an user space event.
-    pub(crate) fn push(&mut self, event: Event) {
-        self.user_events.push(event);
+    pub(crate) fn push(&mut self, event: Event) -> bool {
+        if self.user_capacity_left() >= 1 {
+            self.user_events.push(event);
+            true
+        } else {
+            false
+        }
     }
 
     /// Extend the user space events.
-    pub(crate) fn extend_events(&mut self, events: &[Event]) {
-        self.user_events.extend_from_slice(events);
+    pub(crate) fn extend_events(&mut self, events: &[Event]) -> usize {
+        let count = cmp::min(self.user_capacity_left(), events.len());
+        if count == 0 {
+            return 0;
+        }
+
+        let len = self.user_events.len();
+        unsafe {
+            let dst = self.user_events.as_mut_ptr().offset(len as isize);
+            ptr::copy_nonoverlapping(events.as_ptr(), dst, count);
+            self.user_events.set_len(len + count);
+        }
+
+        count
+    }
+
+    /// Returns the leftover space in the user space events.
+    pub(crate) fn user_capacity_left(&self) -> usize {
+        self.user_events.capacity() - self.user_events.len()
     }
 
     fn user_pos(&self) -> usize {
