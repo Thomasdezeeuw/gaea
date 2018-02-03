@@ -1,4 +1,4 @@
-use std::{cmp, io, i32};
+use std::{cmp, fmt, io, ptr};
 use std::os::unix::io::RawFd;
 use std::time::Duration;
 
@@ -27,7 +27,7 @@ impl Selector {
 
         let n_events = unsafe {
             libc::epoll_wait(self.epfd, events.inner.as_mut_ptr(),
-                events.inner.capacity(), timeout_ms);
+                events.inner.capacity() as libc::c_int, timeout_ms)
         };
         match n_events {
             -1 => {
@@ -48,37 +48,35 @@ impl Selector {
     }
 
     pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
-        let epoll_event = new_epoll_event(interests, opt, id);
+        let mut epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_ADD, fd, &mut epoll_event)
     }
 
-    /// Register event interests for the given IO handle with the OS
     pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
-        let epoll_event = new_epoll_event(interests, opt, id);
+        let mut epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_MOD, fd, &mut epoll_event)
     }
 
-    /// Deregister event interests for the given IO handle with the OS
     pub fn deregister(&self, fd: RawFd) -> io::Result<()> {
         epoll_ctl(self.epfd, libc::EPOLL_CTL_DEL, fd, ptr::null_mut())
     }
 }
 
 const MILLIS_PER_SEC: u64 = 1_000;
-const NANOS_PER_MILLI: u32 = 1_000_000;
+const NANOS_PER_MILLI: u64 = 1_000_000;
 
 /// Convert a `Duration` to milliseconds.
 pub fn duration_to_millis(duration: Duration) -> libc::c_int {
     let millis = duration.as_secs().saturating_mul(MILLIS_PER_SEC)
-        .saturating_add(duration.subsec_nanos / NANOS_PER_MILLI);
+        .saturating_add((duration.subsec_nanos() as u64 / NANOS_PER_MILLI) + 1);
     cmp::min(millis, libc::c_int::max_value() as u64) as libc::c_int
 }
 
 /// Create a new `epoll_event`.
-fn new_epoll_event(interests: Ready, opt: PollOpt, id: EventedId) -> libc::kevent {
+fn new_epoll_event(interests: Ready, opt: PollOpt, id: EventedId) -> libc::epoll_event {
     libc::epoll_event {
         events: to_epoll_events(interests, opt),
-        u64: id.into()
+        u64: id.0 as u64,
     }
 }
 
@@ -101,17 +99,16 @@ fn to_epoll_events(interests: Ready, opt: PollOpt) -> libc::uint32_t {
         events |= libc::EPOLLRDHUP;
     }
 
-    events | match opt {
+    events |= match opt {
         PollOpt::Edge => libc::EPOLLET,
         PollOpt::Level => 0, // Default.
         PollOpt::Oneshot => libc::EPOLLONESHOT,
-    }
+    };
+    events as libc::uint32_t
 }
 
-fn epoll_ctl(epfd: RawFd, op: libc::c_int, fd: RawFd, event: *mut libc::epoll_event) -> io::Result<()>
-    let ok = unsafe {
-        libc::epoll_ctl(epfd, op, fd, ptr::null_mut());
-    };
+fn epoll_ctl(epfd: RawFd, op: libc::c_int, fd: RawFd, event: *mut libc::epoll_event) -> io::Result<()> {
+    let ok = unsafe { libc::epoll_ctl(epfd, op, fd, event) };
 
     if ok == -1 {
         // Possible errors:
@@ -190,6 +187,15 @@ impl Events {
 }
 
 /// Whether or not the provided `flags` contains the provided `flag`.
-fn contains(flags: libc::c_int, flag: libc::c_int) -> bool {
+fn contains(flags: libc::uint32_t, flag: libc::c_int) -> bool {
+    let flag = flag as libc::uint32_t;
     (flags & flag) == flag
+}
+
+impl fmt::Debug for Events {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("Events")
+            .field("len", &self.inner.len())
+            .finish()
+    }
 }
