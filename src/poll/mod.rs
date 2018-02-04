@@ -550,7 +550,7 @@ impl Poll {
             return Some(Duration::from_millis(0));
         } else if let Some(deadline) = self.deadlines.peek() {
             let now = Instant::now();
-            if deadline.deadline < now {
+            if deadline.deadline <= now {
                 // Deadline has already expired, so no blocking.
                 return Some(Duration::from_millis(0));
             }
