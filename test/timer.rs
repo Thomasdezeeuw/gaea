@@ -23,6 +23,9 @@ fn within_margin(got: Instant, expected: Instant, margin: Duration) {
     assert!(got < (expected + margin), "expected {:?} to be before {:?}", got, (expected + margin));
 }
 
+/// Allowed margin for `Poll.poll` to return
+const MARGIN_MS: u64 = 5;
+
 #[test]
 fn invalid_id() {
     let (mut poll, mut events) = init_with_poll(8);
@@ -40,7 +43,7 @@ fn add_deadline() {
 
     poll.add_deadline(EventedId(0), Instant::now()).unwrap();
 
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10), vec![
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(MARGIN_MS), vec![
         Event::new(EventedId(0), Ready::TIMER),
     ]);
 }
@@ -54,10 +57,10 @@ fn add_timeout() {
     // Same id and timeout should be ok.
     poll.add_timeout(EventedId(0), Duration::from_millis(20)).unwrap();
 
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
         Event::new(EventedId(1), Ready::TIMER),
     ]);
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
         Event::new(EventedId(0), Ready::TIMER),
         Event::new(EventedId(0), Ready::TIMER),
     ]);
@@ -83,7 +86,7 @@ fn multiple_deadlines() {
     const T1: u64 = 20;
     const T2: u64 = T1 * 2;
     const T3: u64 = T1 * 3;
-    const MAX_ELAPSED: u64 = T1 + 10;
+    const MAX_ELAPSED: u64 = T1 + MARGIN_MS;
 
     const TIMEOUTS: [[u64; 3]; 6] = [
         [T1, T2, T3],
@@ -137,7 +140,7 @@ fn multiple_deadlines_same_deadline() {
         poll.add_deadline(EventedId(token), deadline).unwrap();
     }
 
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(20), vec![
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
         Event::new(EventedId(0), Ready::TIMER),
         Event::new(EventedId(1), Ready::TIMER),
         Event::new(EventedId(2), Ready::TIMER),
@@ -150,11 +153,11 @@ fn poll_timeout() {
 
     let timeouts = [
         // Should not block.
-        (Duration::from_millis(0), Duration::from_millis(5)),
+        (Duration::from_millis(0), Duration::from_millis(MARGIN_MS)),
         // Should set timeout to 20 milliseconds.
-        (Duration::from_millis(20), Duration::from_millis(30)),
+        (Duration::from_millis(20), Duration::from_millis(20 + MARGIN_MS)),
         // Should keep the original 50 milliseconds timeout.
-        (Duration::from_millis(100), Duration::from_millis(60)),
+        (Duration::from_millis(100), Duration::from_millis(50 + MARGIN_MS)),
     ];
 
     for &(timeout, max_elapsed) in &timeouts {
