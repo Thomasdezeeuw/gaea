@@ -243,7 +243,7 @@ fn stream_poll_opt() {
 
     // What events we've seen so far.
     let mut seen_level = false;
-    let mut seen_edge = Ready::empty();
+    let mut seen_edge = false;
     let mut seen_oneshot = false;
 
     let mut another_loop: isize = 3;
@@ -259,11 +259,7 @@ fn stream_poll_opt() {
                     seen_level_loop = true;
                 },
                 EDGE_ID => {
-                    if seen_edge.intersects(event.readiness()) {
-                        panic!("got an event with readiness value with poll option");
-                    } else {
-                        seen_edge.insert(event.readiness());
-                    }
+                    seen_edge = true;
                 },
                 ONESHOT_ID => {
                     if seen_oneshot {
@@ -278,7 +274,7 @@ fn stream_poll_opt() {
 
         assert!(seen_level_loop, "didn't see level event this iteration");
 
-        if seen_level && !seen_edge.is_empty() && seen_oneshot {
+        if seen_level && seen_edge && seen_oneshot {
             // We we're done we still run another iteration to make sure we get
             // another event for the level stream.
             another_loop -= 1;
