@@ -112,6 +112,11 @@ fn listener_poll_opt() {
                 EDGE_ID => {
                     edge_listener.accept().unwrap();
                     seen_edge += 1;
+                    match edge_listener.accept() {
+                        Ok(_) => seen_edge += 1,
+                        Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {},
+                        Err(err) => panic!("unexpected error: {}", err),
+                    }
                 },
                 ONESHOT_ID => {
                     if seen_oneshot {
