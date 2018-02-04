@@ -24,7 +24,7 @@ fn within_margin(got: Instant, expected: Instant, margin: Duration) {
 }
 
 /// Allowed margin for `Poll.poll` to return
-const MARGIN_MS: u64 = 5;
+const MARGIN_MS: u64 = 10;
 
 #[test]
 fn invalid_id() {
