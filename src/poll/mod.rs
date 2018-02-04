@@ -420,6 +420,12 @@ impl Poll {
     /// deregistered; however, it must be passed back to the **same** `Poll`
     /// instance.
     ///
+    /// # Notes
+    ///
+    /// Calling `reregister` after `deregister` may be work on some platforms
+    /// but not all. To properly re-register a handle after deregistering use
+    /// `register`, this works on all platforms.
+    ///
     /// [`oneshot`]: enum.PollOpt.html#variant.Oneshot
     ///
     /// # Examples

@@ -6,7 +6,6 @@ use mio_st::poll::{Ready, PollOpt};
 
 use {expect_events, init_with_poll};
 
-
 #[test]
 fn registering_deregistering() {
     let (mut poll, mut events) = init_with_poll(8);
@@ -54,10 +53,10 @@ fn registering_deregistering_registering() {
 
     poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOpt::Edge).unwrap();
     poll.deregister(&mut stream).unwrap();
-    poll.reregister(&mut stream, EventedId(1), Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut stream, EventedId(1), Ready::WRITABLE, PollOpt::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
-        Event::new(EventedId(1), Ready::READABLE),
+        Event::new(EventedId(1), Ready::WRITABLE),
     ]);
 }
 
