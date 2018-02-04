@@ -2,7 +2,6 @@
 
 use std::{cmp, io, ptr};
 
-use sys;
 use poll::{Poll, PollOpt, Ready, PollCalled};
 
 /// A value that may be registered with `Poll`.
@@ -195,7 +194,7 @@ pub trait Evented {
 /// use mio_st::poll::{Poll, PollOpt, Ready};
 ///
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(128, 128);
+/// let mut events = Events::with_capacity(128);
 ///
 /// // Register `Evented` handles with `poll` here.
 ///
@@ -216,101 +215,88 @@ pub trait Evented {
 /// ```
 #[derive(Debug)]
 pub struct Events {
-    /// System events created by the system selector.
-    sys_events: sys::Events,
-    /// User space events created by `Poll` internally, this including timers.
-    user_events: Vec<Event>,
-    /// The position is used for both the system and user events. If `pos` >=
-    /// `sys_events.len()`, then `pos - sys_events.len()` is used to index
-    /// `user_events`.
+    events: Vec<Event>,
+    /// The current position of the iterator.
     pos: usize,
 }
 
 impl Events {
-    /// Create a new `Events` collection, this is split in capacity for system
-    /// events (coming from epoll, kqueue etc.) and one coming from user space
-    /// events (coming from user [`Registration`]s and deadlines).
+    /// Create a new `Events` collection.
     ///
-    /// [`Registration`]: ../registration/struct.Registration.html
-    pub fn with_capacity(system_capacity: usize, user_capacity: usize) -> Events {
-        debug_assert!(system_capacity != 0 && user_capacity != 0,
-                      "`Events` can't created with a capacity of 0");
+    /// # Notes
+    ///
+    /// Internally there is *currently* a maximum capacity of 512 for system
+    /// events, thus increasing the capacity beyond while only receiving only
+    /// systems events is currenly pointless.
+    pub fn with_capacity(capacity: usize) -> Events {
+        debug_assert!(capacity != 0, "`Events` can't created with a capacity of 0");
         Events {
-            sys_events: sys::Events::with_capacity(system_capacity),
-            user_events: Vec::with_capacity(user_capacity),
+            events: Vec::with_capacity(capacity),
             pos: 0,
         }
     }
 
     /// Returns the number of events in this iteration.
     pub fn len(&self) -> usize {
-        self.sys_events.len() + self.user_events.len()
+        self.events.len()
     }
 
     /// Whether or not this iteration is empty.
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.events.is_empty()
     }
 
     /// Reset the events to allow it to be filled again.
     pub(crate) fn reset(&mut self) {
-        self.sys_events.clear();
-        self.user_events.clear();
+        // This is safe because `Event` doesn't implement `Drop`.
+        unsafe { self.events.set_len(0); }
         self.pos = 0;
     }
 
-    /// Get a mutable reference to the internal system events.
-    pub(crate) fn system_events_mut(&mut self) -> &mut sys::Events {
-        &mut self.sys_events
+    /// Returns the capacity.
+    pub(crate) fn capacity(&self) -> usize {
+        self.events.capacity()
     }
 
     /// Add an user space event.
     pub(crate) fn push(&mut self, event: Event) -> bool {
-        if self.user_capacity_left() >= 1 {
-            self.user_events.push(event);
+        if self.capacity_left() >= 1 {
+            self.events.push(event);
             true
         } else {
             false
         }
     }
 
-    /// Extend the user space events.
+    /// Extend the events, returns the number of events added.
     pub(crate) fn extend_events(&mut self, events: &[Event]) -> usize {
-        let count = cmp::min(self.user_capacity_left(), events.len());
+        let count = cmp::min(self.capacity_left(), events.len());
         if count == 0 {
             return 0;
         }
 
-        let len = self.user_events.len();
+        let len = self.len();
         unsafe {
-            let dst = self.user_events.as_mut_ptr().offset(len as isize);
+            let dst = self.events.as_mut_ptr().offset(len as isize);
             ptr::copy_nonoverlapping(events.as_ptr(), dst, count);
-            self.user_events.set_len(len + count);
+            self.events.set_len(len + count);
         }
 
         count
     }
 
-    /// Returns the leftover space in the user space events.
-    pub(crate) fn user_capacity_left(&self) -> usize {
-        self.user_events.capacity() - self.user_events.len()
-    }
-
-    fn user_pos(&self) -> usize {
-        self.pos - self.sys_events.len()
+    /// Returns the leftover capacity.
+    pub(crate) fn capacity_left(&self) -> usize {
+        self.events.capacity() - self.events.len()
     }
 }
 
 impl<'a> Iterator for &'a mut Events {
     type Item = Event;
     fn next(&mut self) -> Option<Event> {
-        // First try the system events, the user space events.
-        let ret = match self.sys_events.get(self.pos) {
-            Some(event) => Some(event),
-            None => self.user_events.get(self.user_pos()).cloned(),
-        };
+        let ret = self.events.get(self.pos);
         self.pos += 1;
-        ret
+        ret.map(|event| *event)
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.len();

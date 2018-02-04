@@ -39,7 +39,7 @@
 //!
 //! // Create our poll and events.
 //! let mut poll = Poll::new()?;
-//! let mut events = Events::with_capacity(128, 128);
+//! let mut events = Events::with_capacity(128);
 //!
 //! // Create a new user space registration and register it with `poll`.
 //! let (mut registration, mut notifier) = Registration::new();
@@ -146,7 +146,7 @@ impl Evented for Registration {
 ///
 /// // Create our poll, events and registration.
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(128, 128);
+/// let mut events = Events::with_capacity(128);
 /// let (mut registration, mut notifier) = Registration::new();
 ///
 /// // Next we'll try to notify our registration, but it's not registered yet so

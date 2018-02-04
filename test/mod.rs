@@ -21,7 +21,7 @@ pub fn init() {
 pub fn init_with_poll(events_capacity: usize) -> (Poll, Events) {
     init();
     let poll = Poll::new().expect("unable to create Poll instance");
-    let events = Events::with_capacity(events_capacity, events_capacity);
+    let events = Events::with_capacity(events_capacity);
     (poll, events)
 }
 

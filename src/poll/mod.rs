@@ -221,7 +221,7 @@ impl Poll {
     /// let mut poll = Poll::new()?;
     ///
     /// // Create a structure to receive polled events
-    /// let mut events = Events::with_capacity(512, 512);
+    /// let mut events = Events::with_capacity(512);
     ///
     /// // Wait for events, but none will be received because no `Evented`
     /// // handles have been registered with this `Poll` instance.
@@ -307,7 +307,7 @@ impl Poll {
     ///
     /// // Create a new `Poll` instance as well a containers for the vents.
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(128, 128);
+    /// let mut events = Events::with_capacity(128);
     ///
     /// // Create a TCP connection.
     /// let address = "216.58.193.100:80".parse()?;
@@ -440,7 +440,7 @@ impl Poll {
     /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(128, 128);
+    /// let mut events = Events::with_capacity(128);
     ///
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
@@ -513,7 +513,7 @@ impl Poll {
         loop {
             let start = Instant::now();
             // Get the selector events.
-            match self.selector.select(events.system_events_mut(), timeout) {
+            match self.selector.select(events, timeout) {
                 Ok(()) => break,
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
                     // Interrupted by a signal; update timeout if necessary and
@@ -613,7 +613,7 @@ impl Poll {
     /// use mio_st::event::{Event, Events, EventedId};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(8, 8);
+    /// let mut events = Events::with_capacity(8);
     ///
     /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
     /// poll.add_timeout(EventedId(0), Duration::from_millis(10));
@@ -681,7 +681,7 @@ impl Poll {
     fn poll_deadlines(&mut self, events: &mut Events) {
         let now = Instant::now();
 
-        for _ in 0..events.user_capacity_left() {
+        for _ in 0..events.capacity_left() {
             match self.deadlines.peek().cloned() {
                 Some(deadline) if deadline.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap();

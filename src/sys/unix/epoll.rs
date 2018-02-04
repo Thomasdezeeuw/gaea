@@ -1,11 +1,12 @@
-use std::{cmp, fmt, io, ptr};
+use std::{cmp, mem, io, ptr};
 use std::os::unix::io::RawFd;
 use std::time::Duration;
 
 use libc;
 
-use event::{Event, EventedId};
+use event::{Event, Events, EventedId};
 use poll::{PollOpt, Ready};
+use super::EVENTS_CAP;
 
 #[derive(Debug)]
 pub struct Selector {
@@ -23,11 +24,13 @@ impl Selector {
     }
 
     pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
+        let mut ep_events: [libc::epoll_event; EVENTS_CAP] = unsafe { mem::uninitialized() };
+        let events_cap = cmp::min(events.capacity(), EVENTS_CAP) as libc::c_int;
+
         let timeout_ms = timeout.map(duration_to_millis).unwrap_or(-1);
 
         let n_events = unsafe {
-            libc::epoll_wait(self.epfd, events.inner.as_mut_ptr(),
-                events.inner.capacity() as libc::c_int, timeout_ms)
+            libc::epoll_wait(self.epfd, ep_events.as_mut_ptr(), events_cap, timeout_ms)
         };
         match n_events {
             -1 => {
@@ -40,8 +43,11 @@ impl Selector {
             },
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
-                // Got some events.
-                unsafe { events.inner.set_len(n as usize) };
+                for ep_event in ep_events.iter().take(n as usize) {
+                    let event = ep_event_to_event(ep_event);
+                    let r = events.push(event);
+                    debug_assert!(r, "tried to expand events");
+                }
                 Ok(())
             },
         }
@@ -70,6 +76,37 @@ pub fn duration_to_millis(duration: Duration) -> libc::c_int {
     let millis = duration.as_secs().saturating_mul(MILLIS_PER_SEC)
         .saturating_add((duration.subsec_nanos() as u64 / NANOS_PER_MILLI) + 1);
     cmp::min(millis, libc::c_int::max_value() as u64) as libc::c_int
+}
+
+/// Convert a `epoll_event` into an `Event`.
+fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
+    let id = EventedId(ep_event.u64 as usize);
+    let epoll = ep_event.events;
+    let mut readiness = Ready::empty();
+
+    if contains(epoll, libc::EPOLLIN) || contains(epoll, libc::EPOLLPRI) {
+        readiness = readiness | Ready::READABLE;
+    }
+
+    if contains(epoll, libc::EPOLLOUT) {
+        readiness = readiness | Ready::WRITABLE;
+    }
+
+    if contains(epoll, libc::EPOLLPRI) || contains(epoll, libc::EPOLLERR){
+        readiness = readiness | Ready::ERROR;
+    }
+
+    if contains(epoll, libc::EPOLLRDHUP) || contains(epoll, libc::EPOLLHUP) {
+        readiness = readiness | Ready::HUP;
+    }
+
+    Event::new(id, readiness)
+}
+
+/// Whether or not the provided `flags` contains the provided `flag`.
+fn contains(flags: libc::uint32_t, flag: libc::c_int) -> bool {
+    let flag = flag as libc::uint32_t;
+    (flags & flag) == flag
 }
 
 /// Create a new `epoll_event`.
@@ -134,68 +171,5 @@ impl Drop for Selector {
             let err = io::Error::last_os_error();
             error!("error closing epoll: {}", err);
         }
-    }
-}
-
-pub struct Events {
-    inner: Vec<libc::epoll_event>,
-}
-
-impl Events {
-    pub fn with_capacity(capacity: usize) -> Events {
-        Events {
-            inner: Vec::with_capacity(capacity)
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    pub fn clear(&mut self) {
-        self.inner.clear();
-    }
-
-    pub fn get(&self, index: usize) -> Option<Event> {
-        let event = match self.inner.get(index) {
-            Some(event) => event,
-            None => return None,
-        };
-
-        let id = EventedId(event.u64 as usize);
-        let epoll = event.events;
-        let mut readiness = Ready::empty();
-
-        if contains(epoll, libc::EPOLLIN) || contains(epoll, libc::EPOLLPRI) {
-            readiness = readiness | Ready::READABLE;
-        }
-
-        if contains(epoll, libc::EPOLLOUT) {
-            readiness = readiness | Ready::WRITABLE;
-        }
-
-        if contains(epoll, libc::EPOLLPRI) || contains(epoll, libc::EPOLLERR){
-            readiness = readiness | Ready::ERROR;
-        }
-
-        if contains(epoll, libc::EPOLLRDHUP) || contains(epoll, libc::EPOLLHUP) {
-            readiness = readiness | Ready::HUP;
-        }
-
-        Some(Event::new(id, readiness))
-    }
-}
-
-/// Whether or not the provided `flags` contains the provided `flag`.
-fn contains(flags: libc::uint32_t, flag: libc::c_int) -> bool {
-    let flag = flag as libc::uint32_t;
-    (flags & flag) == flag
-}
-
-impl fmt::Debug for Events {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Events")
-            .field("len", &self.inner.len())
-            .finish()
     }
 }

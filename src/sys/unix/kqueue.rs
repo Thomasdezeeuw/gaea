@@ -1,11 +1,12 @@
-use std::{cmp, fmt, mem, io, ptr};
+use std::{cmp, mem, io, ptr};
 use std::os::unix::io::RawFd;
 use std::time::Duration;
 
 use libc;
 
-use event::{Event, EventedId, INVALID_EVENTED_ID};
+use event::{Event, Events, EventedId, INVALID_EVENTED_ID};
 use poll::{PollOpt, Ready};
+use super::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types
 // in the `kevent` structure, which requires conversions, hence the type
@@ -73,8 +74,8 @@ impl Selector {
     }
 
     pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
-        let events_ptr = events.inner.as_mut_ptr();
-        let events_cap = events.inner.capacity() as nchanges_t;
+        let mut kevents: [libc::kevent; EVENTS_CAP] = unsafe { mem::uninitialized() };
+        let events_cap = cmp::min(events.capacity(), EVENTS_CAP) as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
         #[allow(trivial_casts)]
@@ -84,7 +85,7 @@ impl Selector {
 
         let n_events = unsafe {
             libc::kevent(self.kq, ptr::null(), 0,
-                events_ptr, events_cap, timespec_ptr)
+                kevents.as_mut_ptr(), events_cap, timespec_ptr)
         };
         match n_events {
             -1 => {
@@ -97,8 +98,11 @@ impl Selector {
             },
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
-                // Got some events.
-                unsafe { events.inner.set_len(n as usize) };
+                for kevent in kevents.iter().take(n as usize) {
+                    let event = kevent_to_event(kevent);
+                    let r = events.push(event);
+                    debug_assert!(r, "tried to expand events");
+                }
                 Ok(())
             },
         }
@@ -158,12 +162,52 @@ impl Selector {
     }
 }
 
-/// Create a `libc::timespec` from a duration.
+/// Create a `timespec` from a duration.
 fn timespec_from_duration(duration: Duration) -> libc::timespec {
     libc::timespec {
         tv_sec: cmp::min(duration.as_secs(), libc::time_t::max_value() as u64) as libc::time_t,
         tv_nsec: duration.subsec_nanos() as libc::c_long,
     }
+}
+
+/// Convert a `kevent` into an `Event`.
+fn kevent_to_event(kevent: &libc::kevent) -> Event {
+    let id = EventedId(kevent.udata as usize);
+    let mut readiness = Ready::empty();
+
+    if kevent.flags & libc::EV_ERROR != 0 {
+        // The actual error is stored in `kevent.data`, but we can't pass it
+        // to the user from here. So the user need to try and retrieve the
+        // error themselves.
+        readiness.insert(Ready::ERROR);
+    }
+
+    if kevent.flags & libc::EV_EOF != 0 {
+        readiness.insert(Ready::HUP);
+
+        // When the read end of the socket is closed, EV_EOF is set on
+        // flags, and fflags contains the error if there is one.
+        if kevent.fflags != 0 {
+            readiness.insert(Ready::ERROR);
+        }
+    }
+
+    if kevent.filter == libc::EVFILT_READ {
+        readiness.insert(Ready::READABLE);
+    } else if kevent.filter == libc::EVFILT_WRITE {
+        readiness.insert(Ready::WRITABLE);
+    }
+
+    // Even though the MacOS and NetBSD manuals says `EVFILT_AIO` is
+    // currently not supported, it might be added in the future, so it
+    // doesn't hurt to have it here.
+    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))] {
+        if kevent.filter == libc::EVFILT_AIO {
+            readiness.insert(Ready::AIO);
+        }
+    }
+
+    Event::new(id, readiness)
 }
 
 /// Convert poll options into `kevent` flags.
@@ -248,75 +292,5 @@ impl Drop for Selector {
             let err = io::Error::last_os_error();
             error!("error closing kqueue: {}", err);
         }
-    }
-}
-
-pub struct Events {
-    inner: Vec<libc::kevent>,
-}
-
-impl Events {
-    pub fn with_capacity(cap: usize) -> Events {
-        Events { inner: Vec::with_capacity(cap) }
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    pub fn clear(&mut self) {
-        self.inner.clear();
-    }
-
-    pub fn get(&self, index: usize) -> Option<Event> {
-        let kevent = match self.inner.get(index) {
-            Some(kevent) => kevent,
-            None => return None,
-        };
-
-        let id = EventedId(kevent.udata as usize);
-        let mut readiness = Ready::empty();
-
-        if kevent.flags & libc::EV_ERROR != 0 {
-            // The actual error is stored in `kevent.data`, but we can't pass it
-            // to the user from here. So the user need to try and retrieve the
-            // error themselves.
-            readiness.insert(Ready::ERROR);
-        }
-
-        if kevent.flags & libc::EV_EOF != 0 {
-            readiness.insert(Ready::HUP);
-
-            // When the read end of the socket is closed, EV_EOF is set on
-            // flags, and fflags contains the error if there is one.
-            if kevent.fflags != 0 {
-                readiness.insert(Ready::ERROR);
-            }
-        }
-
-        if kevent.filter == libc::EVFILT_READ {
-            readiness.insert(Ready::READABLE);
-        } else if kevent.filter == libc::EVFILT_WRITE {
-            readiness.insert(Ready::WRITABLE);
-        }
-
-        // Even though the MacOS and NetBSD manuals says `EVFILT_AIO` is
-        // currently not supported, it might be added in the future, so it
-        // doesn't hurt to have it here.
-        #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))] {
-            if kevent.filter == libc::EVFILT_AIO {
-                readiness.insert(Ready::AIO);
-            }
-        }
-
-        Some(Event::new(id, readiness))
-    }
-}
-
-impl fmt::Debug for Events {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Events")
-            .field("len", &self.inner.len())
-            .finish()
     }
 }
