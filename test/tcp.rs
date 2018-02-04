@@ -173,7 +173,9 @@ fn stream() {
     let mut stream = TcpStream::connect(addr).unwrap();
     poll.register(&mut stream, EventedId(0), Ready::all(), PollOpt::Level).unwrap();
 
-    thread::sleep(Duration::from_millis(10));
+    // Give the writing thread a chance to run.
+    thread::yield_now();
+
     expect_events(&mut poll, &mut events, 2, vec![
         Event::new(EventedId(0), Ready::READABLE),
     ]);
