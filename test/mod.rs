@@ -33,6 +33,7 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
         debug!(target: "expect_events", "polling");
         poll.poll(events, Some(timeout)).expect("unable to poll");
 
+        debug!(target: "expect_events", "got {} events", events.len());
         for event in &mut *events {
             debug!(target: "expect_events", "got event: {:?}", event);
 
