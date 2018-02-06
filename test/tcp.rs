@@ -174,7 +174,7 @@ fn stream() {
     poll.register(&mut stream, EventedId(0), Ready::all(), PollOpt::Level).unwrap();
 
     // Give the writing thread a chance to run.
-    thread::yield_now();
+    thread::sleep(Duration::from_millis(100));
 
     expect_events(&mut poll, &mut events, 2, vec![
         Event::new(EventedId(0), Ready::READABLE),
