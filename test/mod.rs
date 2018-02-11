@@ -68,4 +68,5 @@ mod poll;
 mod registering;
 mod tcp;
 mod timer;
+mod udp;
 mod userspace_registration;
