@@ -236,9 +236,8 @@ impl Poll {
     pub fn new() -> io::Result<Poll> {
         Ok(Poll {
             selector: sys::Selector::new()?,
-            // TODO: try to get rid of this allocation.
-            userspace_events: Vec::with_capacity(512),
-            deadlines: BinaryHeap::new(),
+            userspace_events: Vec::with_capacity(128),
+            deadlines: BinaryHeap::with_capacity(128),
         })
     }
 
