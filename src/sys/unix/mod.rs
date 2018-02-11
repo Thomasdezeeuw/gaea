@@ -25,5 +25,5 @@ pub use self::kqueue::Selector;
 
 pub use self::eventedfd::EventedFd;
 pub use self::eventedio::EventedIo;
-pub use self::tcp::{TcpStream, TcpListener};
+pub use self::tcp::{TcpListener, TcpStream};
 pub use self::udp::UdpSocket;

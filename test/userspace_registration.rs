@@ -1,6 +1,6 @@
 use mio_st::event::{Event, EventedId};
 use mio_st::poll::{PollOpt, Ready};
-use mio_st::registration::{Registration, RegistrationGone, NotifyError};
+use mio_st::registration::{NotifyError, Registration, RegistrationGone};
 
 use {expect_events, init_with_poll};
 

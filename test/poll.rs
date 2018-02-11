@@ -34,7 +34,7 @@ fn polling_dont_expand_events() {
 
         assert_eq!(events.len(), EVENTS_SIZE);
         match n {
-            0 ... 2 => {
+            0...2 => {
                 let id = n + 1;
                 assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(id), Ready::TIMER));
             },

@@ -71,8 +71,8 @@ use std::cell::Cell;
 use std::error::Error;
 use std::rc::{Rc, Weak};
 
-use event::{Event, EventedId, Evented, INVALID_EVENTED_ID};
-use poll::{Poll, PollOpt, Ready, PollCalled};
+use event::{Event, Evented, EventedId, INVALID_EVENTED_ID};
+use poll::{Poll, PollCalled, PollOpt, Ready};
 
 /// Handle to a user space registration.
 ///
@@ -298,7 +298,7 @@ struct RegistrationInner {
 
 impl RegistrationInner {
     fn new() -> RegistrationInner {
-        RegistrationInner{
+        RegistrationInner {
             id: Cell::new(INVALID_EVENTED_ID),
             interests: Cell::new(Ready::empty()),
         }

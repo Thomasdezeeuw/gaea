@@ -1,10 +1,10 @@
-use std::{cmp, mem, io, ptr};
+use std::{cmp, io, mem, ptr};
 use std::os::unix::io::RawFd;
 use std::time::Duration;
 
 use libc;
 
-use event::{Event, Events, EventedId};
+use event::{Event, EventedId, Events};
 use poll::{PollOpt, Ready};
 use super::EVENTS_CAP;
 
@@ -91,7 +91,7 @@ fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
         readiness = readiness | Ready::WRITABLE;
     }
 
-    if contains(epoll, libc::EPOLLPRI) || contains(epoll, libc::EPOLLERR){
+    if contains(epoll, libc::EPOLLPRI) || contains(epoll, libc::EPOLLERR) {
         readiness = readiness | Ready::ERROR;
     }
 

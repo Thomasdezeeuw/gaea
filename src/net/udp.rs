@@ -1,11 +1,11 @@
 use std::io;
 use std::net::{self, SocketAddr};
 #[cfg(unix)]
-use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
+use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use sys;
-use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready, PollCalled};
+use event::{Evented, EventedId};
+use poll::{Poll, PollCalled, PollOpt, Ready};
 
 /// A User Datagram Protocol socket.
 ///

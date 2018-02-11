@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use mio_st::event::{Event, EventedId};
-use mio_st::poll::{Ready, PollOpt};
-use mio_st::registration::{Registration, NotifyError};
+use mio_st::poll::{PollOpt, Ready};
+use mio_st::registration::{NotifyError, Registration};
 
 use {expect_events, init_with_poll};
 

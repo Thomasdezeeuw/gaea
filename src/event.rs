@@ -2,7 +2,7 @@
 
 use std::{cmp, io, ptr};
 
-use poll::{Poll, PollOpt, Ready, PollCalled};
+use poll::{Poll, PollCalled, PollOpt, Ready};
 
 /// A value that may be registered with `Poll`.
 ///

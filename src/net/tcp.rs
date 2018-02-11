@@ -1,14 +1,14 @@
 use std::io::{self, Read, Write};
 use std::net::{self, Shutdown, SocketAddr};
 #[cfg(unix)]
-use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
+use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::time::Duration;
 
 use net2::TcpBuilder;
 
 use sys;
-use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready, PollCalled};
+use event::{Evented, EventedId};
+use poll::{Poll, PollCalled, PollOpt, Ready};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///

@@ -1,11 +1,11 @@
 use std::mem;
 use std::io::{self, Read, Write};
-use std::os::unix::io::{RawFd, AsRawFd, FromRawFd, IntoRawFd};
+use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use libc;
 
-use event::{EventedId, Evented};
-use poll::{Poll, PollOpt, Ready, PollCalled};
+use event::{Evented, EventedId};
+use poll::{Poll, PollCalled, PollOpt, Ready};
 use unix::EventedIo;
 
 /// Create a new non-blocking unix pipe.

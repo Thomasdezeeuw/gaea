@@ -1,10 +1,10 @@
-use std::{cmp, mem, io, ptr};
+use std::{cmp, io, mem, ptr};
 use std::os::unix::io::RawFd;
 use std::time::Duration;
 
 use libc;
 
-use event::{Event, Events, EventedId, INVALID_EVENTED_ID};
+use event::{Event, EventedId, Events, INVALID_EVENTED_ID};
 use poll::{PollOpt, Ready};
 use super::EVENTS_CAP;
 
@@ -79,7 +79,8 @@ impl Selector {
 
         let timespec = timeout.map(timespec_from_duration);
         #[allow(trivial_casts)]
-        let timespec_ptr = timespec.as_ref()
+        let timespec_ptr = timespec
+            .as_ref()
             .map(|t| t as *const libc::timespec)
             .unwrap_or(ptr::null());
 
@@ -200,7 +201,8 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
     // Even though the MacOS and NetBSD manuals says `EVFILT_AIO` is
     // currently not supported, it might be added in the future, so it
     // doesn't hurt to have it here.
-    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))] {
+    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
+    {
         if kevent.filter == libc::EVFILT_AIO {
             readiness.insert(Ready::AIO);
         }

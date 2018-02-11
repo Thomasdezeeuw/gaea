@@ -12,7 +12,7 @@ use std::time::{Duration, Instant};
 use std::collections::BinaryHeap;
 
 use sys;
-use event::{Event, EventedId, Events, Evented};
+use event::{Event, Evented, EventedId, Events};
 
 mod opt;
 mod ready;
@@ -463,7 +463,8 @@ impl Poll {
     /// # }
     /// ```
     pub fn deregister<E>(&mut self, handle: &mut E) -> io::Result<()>
-        where E: Evented + ?Sized
+    where
+        E: Evented + ?Sized,
     {
         trace!("deregistering handle with poller");
         handle.deregister(self, PollCalled(()))

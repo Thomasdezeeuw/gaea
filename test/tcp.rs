@@ -1,6 +1,6 @@
 use std::thread;
 use std::io::{self, Read, Write};
-use std::net::{self, SocketAddr, Shutdown};
+use std::net::{self, Shutdown, SocketAddr};
 use std::time::Duration;
 use std::collections::HashMap;
 
