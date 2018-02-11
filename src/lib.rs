@@ -4,7 +4,7 @@
 //! # Goals
 //!
 //! * Fast - minimal overhead over the equivalent OS facilities (epoll, kqueue, etc.).
-//! * Zero allocations.
+//! * Zero allocations at runtime.
 //! * A scalable readiness-based API.
 //! * Provide utilities such as a timers.
 //!
