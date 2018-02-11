@@ -4,6 +4,7 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 
+use std::net::SocketAddr;
 use std::time::Duration;
 
 use mio_st::poll::Poll;
@@ -55,6 +56,11 @@ pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize
     }
 
     assert!(expected.is_empty(), "The following expected events were not found: {:?}", expected);
+}
+
+/// Bind to any port on localhost.
+pub fn any_port() -> SocketAddr {
+    "127.0.0.1:0".parse().unwrap()
 }
 
 mod event;

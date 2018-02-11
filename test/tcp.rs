@@ -8,7 +8,7 @@ use mio_st::event::{Event, EventedId};
 use mio_st::net::{TcpListener, TcpStream};
 use mio_st::poll::{Poll, PollOpt, Ready};
 
-use {expect_events, init_with_poll};
+use {any_port, expect_events, init_with_poll};
 
 // TODO: add tests for both TcpStream and TcpListener:
 // reregistering and
@@ -16,7 +16,7 @@ use {expect_events, init_with_poll};
 
 #[test]
 fn listener() {
-    let mut listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut listener = TcpListener::bind(any_port()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     // Fork before creating poll, because doing it after creating poll will
@@ -45,7 +45,7 @@ fn listener() {
 
 #[test]
 fn listener_bind_twice() {
-    let mut listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut listener = TcpListener::bind(any_port()).unwrap();
     let addr = listener.local_addr().unwrap();
     assert!(TcpListener::bind(addr).is_err());
 }
@@ -54,7 +54,7 @@ fn listener_bind_twice() {
 fn deregistered_listener() {
     let (mut poll, mut events) = init_with_poll(8);
 
-    let mut listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut listener = TcpListener::bind(any_port()).unwrap();
 
     poll.register(&mut listener, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
     poll.deregister(&mut listener).unwrap();
@@ -70,15 +70,15 @@ fn listener_poll_opt() {
     // Fork before creating poll, because doing it after creating poll will
     // result in undefined behaviour.
 
-    let mut level_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut level_listener = TcpListener::bind(any_port()).unwrap();
     let level_addr = level_listener.local_addr().unwrap();
     let t1 = thread::spawn(move || two_connections(level_addr));
 
-    let mut edge_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut edge_listener = TcpListener::bind(any_port()).unwrap();
     let edge_addr = edge_listener.local_addr().unwrap();
     let t2 = thread::spawn(move || two_connections(edge_addr));
 
-    let mut oneshot_listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut oneshot_listener = TcpListener::bind(any_port()).unwrap();
     let oneshot_addr = oneshot_listener.local_addr().unwrap();
     let t3 = thread::spawn(move || two_connections(oneshot_addr));
 
@@ -150,8 +150,7 @@ fn two_connections(addr: SocketAddr) {
 
 #[test]
 fn stream() {
-    let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let listener = net::TcpListener::bind(addr).unwrap();
+    let listener = net::TcpListener::bind(any_port()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     const MSG: &[u8; 11] = b"Hello world";
@@ -217,8 +216,7 @@ fn stream() {
 
 #[test]
 fn stream_poll_opt() {
-    let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let listener = net::TcpListener::bind(addr).unwrap();
+    let listener = net::TcpListener::bind(any_port()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     // Fork before creating poll, because doing it after creating poll will
@@ -299,7 +297,7 @@ fn listener_and_stream() {
     let mut connections = HashMap::with_capacity(4);
     let mut current_id = 1;
 
-    let mut listener = TcpListener::bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let mut listener = TcpListener::bind(any_port()).unwrap();
     let addr = listener.local_addr().unwrap();
 
     poll.register(&mut listener, LISTENER_ID, Ready::READABLE, PollOpt::Edge).unwrap();
