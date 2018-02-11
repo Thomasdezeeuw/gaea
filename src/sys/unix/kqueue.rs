@@ -100,8 +100,7 @@ impl Selector {
             n => {
                 for kevent in kevents.iter().take(n as usize) {
                     let event = kevent_to_event(kevent);
-                    let r = events.push(event);
-                    debug_assert!(r, "tried to expand events");
+                    events.push(event);
                 }
                 Ok(())
             },

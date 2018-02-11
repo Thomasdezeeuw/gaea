@@ -45,8 +45,7 @@ impl Selector {
             n => {
                 for ep_event in ep_events.iter().take(n as usize) {
                     let event = ep_event_to_event(ep_event);
-                    let r = events.push(event);
-                    debug_assert!(r, "tried to expand events");
+                    events.push(event);
                 }
                 Ok(())
             },

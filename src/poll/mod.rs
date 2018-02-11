@@ -685,8 +685,7 @@ impl Poll {
             match self.deadlines.peek().cloned() {
                 Some(deadline) if deadline.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap();
-                    let r = events.push(Event::new(deadline.id, Ready::TIMER));
-                    debug_assert!(r, "tried to expand events");
+                    events.push(Event::new(deadline.id, Ready::TIMER));
                 },
                 _ => return,
             }

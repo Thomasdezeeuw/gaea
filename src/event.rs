@@ -216,7 +216,6 @@ pub trait Evented {
 #[derive(Debug)]
 pub struct Events {
     events: Vec<Event>,
-    /// The current position of the iterator.
     pos: usize,
 }
 
@@ -259,13 +258,8 @@ impl Events {
     }
 
     /// Add an user space event.
-    pub(crate) fn push(&mut self, event: Event) -> bool {
-        if self.capacity_left() >= 1 {
-            self.events.push(event);
-            true
-        } else {
-            false
-        }
+    pub(crate) fn push(&mut self, event: Event) {
+        self.events.push(event);
     }
 
     /// Extend the events, returns the number of events added.
@@ -294,9 +288,10 @@ impl Events {
 impl<'a> Iterator for &'a mut Events {
     type Item = Event;
     fn next(&mut self) -> Option<Event> {
-        let ret = self.events.get(self.pos);
+        let ret = self.events.get(self.pos)
+            .map(|event| *event);
         self.pos += 1;
-        ret.map(|event| *event)
+        ret
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.len();
