@@ -142,7 +142,7 @@ impl UdpSocket {
     }
 
     /// Connects the UDP socket by setting the default destination and limiting
-    /// packets that are read, writen and peeked to the address specified in
+    /// packets that are read, written and peeked to the address specified in
     /// `addr`.
     ///
     /// See [`ConnectedUdpSocket`] for more information.

@@ -618,7 +618,7 @@ impl Poll {
     /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
     /// poll.add_timeout(EventedId(0), Duration::from_millis(10));
     ///
-    /// // Eventhough we don't provide a timeout to poll this will return in
+    /// // Even though we don't provide a timeout to poll this will return in
     /// // roughly 10 milliseconds and return an event with our deadline.
     /// poll.poll(&mut events, None)?;
     ///

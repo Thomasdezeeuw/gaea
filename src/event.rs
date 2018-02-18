@@ -226,7 +226,7 @@ impl Events {
     ///
     /// Internally there is *currently* a maximum capacity of 512 for system
     /// events, thus increasing the capacity beyond while only receiving only
-    /// systems events is currenly pointless.
+    /// systems events is currently pointless.
     pub fn with_capacity(capacity: usize) -> Events {
         debug_assert!(capacity != 0, "`Events` can't created with a capacity of 0");
         Events {
