@@ -288,8 +288,7 @@ impl Events {
 impl<'a> Iterator for &'a mut Events {
     type Item = Event;
     fn next(&mut self) -> Option<Event> {
-        let ret = self.events.get(self.pos)
-            .map(|event| *event);
+        let ret = self.events.get(self.pos).cloned();
         self.pos += 1;
         ret
     }
