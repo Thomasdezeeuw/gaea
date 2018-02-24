@@ -6,8 +6,8 @@
 //! [`Poll`]: struct.Poll.html
 //! [root of the crate]: ../index.html
 
-use std::{io, mem, ops, ptr};
-use std::cmp::Ordering;
+use std::{io, mem, ptr};
+use std::cmp::Reverse;
 use std::time::{Duration, Instant};
 use std::collections::BinaryHeap;
 
@@ -184,7 +184,7 @@ pub use self::ready::Ready;
 pub struct Poll {
     selector: sys::Selector,
     userspace_events: Vec<Event>,
-    deadlines: BinaryHeap<ReverseOrder<Deadline>>,
+    deadlines: BinaryHeap<Reverse<Deadline>>,
 }
 
 /// A type to check if `Evented` handles are called via a `Poll` instance.
@@ -550,13 +550,13 @@ impl Poll {
             return Some(Duration::from_millis(0));
         } else if let Some(deadline) = self.deadlines.peek() {
             let now = Instant::now();
-            if deadline.deadline <= now {
+            if deadline.0.deadline <= now {
                 // Deadline has already expired, so no blocking.
                 return Some(Duration::from_millis(0));
             }
 
             // Determine the timeout for the next deadline.
-            let deadline_timeout = deadline.deadline.duration_since(now);
+            let deadline_timeout = deadline.0.deadline.duration_since(now);
             match timeout {
                 // The provided timeout is before the deadline timeout, so we'll
                 // keep the original timeout.
@@ -635,7 +635,7 @@ impl Poll {
     pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
         trace!("adding deadline: id: {:?}, deadline: {:?}", id, deadline);
         validate_args(id, Ready::TIMER)
-            .map(|()| self.deadlines.push(ReverseOrder(Deadline { id, deadline })))
+            .map(|()| self.deadlines.push(Reverse(Deadline { id, deadline })))
     }
 
     /// Add a new timeout to Poll.
@@ -662,16 +662,16 @@ impl Poll {
         trace!("removing deadline: id: {:?}", id);
         // TODO: optimize this.
         let index = self.deadlines.iter()
-            .position(|deadline| deadline.id == id);
+            .position(|deadline| deadline.0.id == id);
 
         if let Some(index) = index {
             let deadlines = mem::replace(&mut self.deadlines, BinaryHeap::new());
             let mut deadlines_vec = deadlines.into_vec();
-            debug_assert_eq!(deadlines_vec[index].id, id,
+            debug_assert_eq!(deadlines_vec[index].0.id, id,
                              "remove_deadline: removing an incorrect deadline");
             let deadline = deadlines_vec.remove(index);
             drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
-            Some(deadline.deadline)
+            Some(deadline.0.deadline)
         } else {
             None
         }
@@ -682,9 +682,9 @@ impl Poll {
         let now = Instant::now();
 
         for _ in 0..events.capacity_left() {
-            match self.deadlines.peek().cloned() {
+            match self.deadlines.peek().map(|deadline| deadline.0) {
                 Some(deadline) if deadline.deadline <= now => {
-                    let deadline = self.deadlines.pop().unwrap();
+                    let _ = self.deadlines.pop().unwrap();
                     events.push(Event::new(deadline.id, Ready::TIMER));
                 },
                 _ => return,
@@ -718,27 +718,4 @@ fn validate_args(id: EventedId, interests: Ready) -> io::Result<()> {
 struct Deadline {
     deadline: Instant,
     id: EventedId,
-}
-
-/// Reverses the order of the comparing arguments.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-struct ReverseOrder<T>(T);
-
-impl<T: Ord> Ord for ReverseOrder<T> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        other.0.cmp(&self.0)
-    }
-}
-
-impl<T: PartialOrd> PartialOrd for ReverseOrder<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        other.0.partial_cmp(&self.0)
-    }
-}
-
-impl<T> ops::Deref for ReverseOrder<T> {
-    type Target = T;
-    fn deref(&self) -> &T {
-        &self.0
-    }
 }
