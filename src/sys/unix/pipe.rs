@@ -34,7 +34,7 @@ use unix::EventedIo;
 ///
 /// // Create a `Poll` instance and the events container.
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(512);
+/// let mut events = Events::new();
 ///
 /// // Create a new pipe.
 /// let (mut receiver, mut sender) = new_pipe()?;

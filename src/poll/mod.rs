@@ -221,7 +221,7 @@ impl Poll {
     /// let mut poll = Poll::new()?;
     ///
     /// // Create a structure to receive polled events
-    /// let mut events = Events::with_capacity(512);
+    /// let mut events = Events::new();
     ///
     /// // Wait for events, but none will be received because no `Evented`
     /// // handles have been registered with this `Poll` instance.
@@ -306,7 +306,7 @@ impl Poll {
     ///
     /// // Create a new `Poll` instance as well a containers for the vents.
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(128);
+    /// let mut events = Events::new();
     ///
     /// // Create a TCP connection.
     /// let address = "216.58.193.100:80".parse()?;
@@ -439,7 +439,7 @@ impl Poll {
     /// use mio_st::poll::{Poll, Ready, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(128);
+    /// let mut events = Events::new();
     ///
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
@@ -613,7 +613,7 @@ impl Poll {
     /// use mio_st::event::{Event, Events, EventedId};
     ///
     /// let mut poll = Poll::new()?;
-    /// let mut events = Events::with_capacity(8);
+    /// let mut events = Events::new();
     ///
     /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
     /// poll.add_timeout(EventedId(0), Duration::from_millis(10));

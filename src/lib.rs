@@ -49,9 +49,8 @@
 //!
 //! // Create a `Poll` instance.
 //! let mut poll = Poll::new()?;
-//! // Also create a container for all events, using a capacity of 512 events
-//! // for system events and 128 for user space events.
-//! let mut events = Events::with_capacity(512);
+//! // Also create a container for all events.
+//! let mut events = Events::new();
 //!
 //! // Setup the server listener.
 //! let addr = "127.0.0.1:12345".parse()?;

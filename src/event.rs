@@ -196,7 +196,7 @@ pub trait Evented {
 /// use mio_st::poll::{Poll, PollOpt, Ready};
 ///
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(128);
+/// let mut events = Events::new();
 ///
 /// // Register `Evented` handles with `poll` here.
 ///

@@ -54,7 +54,7 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 ///
 /// // As always create our poll and events.
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(16);
+/// let mut events = Events::new();
 ///
 /// // Register our sockets
 /// poll.register(&mut sender_socket, SENDER_ID, Ready::WRITABLE, PollOpt::Level)?;
@@ -358,7 +358,7 @@ impl FromRawFd for UdpSocket {
 ///
 /// // Create our poll instance and events container.
 /// let mut poll = Poll::new()?;
-/// let mut events = Events::with_capacity(16);
+/// let mut events = Events::new();
 ///
 /// // Register our echoer and sender.
 /// poll.register(&mut echoer, ECHOER_ID, Ready::READABLE, PollOpt::Level)?;
