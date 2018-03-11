@@ -234,11 +234,6 @@ impl Events {
         Events { events: ArrayVec::new(), pos: 0 }
     }
 
-    // TODO: remove, use `Events::new()`
-    pub fn with_capacity(_: usize) -> Events {
-        Events::new()
-    }
-
     /// Returns the number of events in this iteration.
     pub fn len(&self) -> usize {
         self.events.len()
