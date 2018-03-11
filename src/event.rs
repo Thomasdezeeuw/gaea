@@ -284,6 +284,12 @@ impl Events {
     }
 }
 
+impl Default for Events {
+    fn default() -> Events {
+        Events::new()
+    }
+}
+
 impl<'a> Iterator for &'a mut Events {
     type Item = Event;
     fn next(&mut self) -> Option<Event> {
