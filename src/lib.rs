@@ -142,6 +142,7 @@
         unused_results,
 )]
 
+extern crate arrayvec;
 #[macro_use]
 extern crate bitflags;
 #[macro_use]

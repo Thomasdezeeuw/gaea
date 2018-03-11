@@ -2,6 +2,8 @@
 
 use std::{cmp, io, ptr};
 
+use arrayvec::ArrayVec;
+
 use poll::{Poll, PollCalled, PollOpt, Ready};
 
 /// A value that may be registered with `Poll`.
@@ -215,7 +217,9 @@ pub trait Evented {
 /// ```
 #[derive(Debug)]
 pub struct Events {
-    events: Vec<Event>,
+    /// Stack allocted events.
+    events: ArrayVec<[Event; 1024]>,
+    /// Position of the iterator.
     pos: usize,
 }
 
@@ -224,15 +228,15 @@ impl Events {
     ///
     /// # Notes
     ///
-    /// Internally there is *currently* a maximum capacity of 512 for system
-    /// events, thus increasing the capacity beyond while only receiving only
-    /// systems events is currently pointless.
-    pub fn with_capacity(capacity: usize) -> Events {
-        debug_assert!(capacity != 0, "`Events` can't created with a capacity of 0");
-        Events {
-            events: Vec::with_capacity(capacity),
-            pos: 0,
-        }
+    /// Internally there is *currently* a maximum capacity of 1024 events. At
+    /// most 512 events will be used for system events.
+    pub fn new() -> Events {
+        Events { events: ArrayVec::new(), pos: 0 }
+    }
+
+    // TODO: remove, use `Events::new()`
+    pub fn with_capacity(_: usize) -> Events {
+        Events::new()
     }
 
     /// Returns the number of events in this iteration.

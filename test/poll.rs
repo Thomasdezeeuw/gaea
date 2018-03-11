@@ -10,35 +10,49 @@ use init_with_poll;
 // reregistering and
 // deregistering.
 
+// Keep in sync the actual size in `Events`.
+const EVENTS_CAP: usize = 1024;
+
 #[test]
-fn polling_dont_expand_events() {
-    const EVENTS_SIZE: usize = 1;
-    let (mut poll, mut events) = init_with_poll(EVENTS_SIZE);
+fn polling_userspace_dont_expand_events() {
+    let (mut poll, mut events) = init_with_poll(EVENTS_CAP);
 
     let (mut registration, mut notifier) = Registration::new();
-
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
 
-    notifier.notify(&mut poll, Ready::READABLE).unwrap();
-    notifier.notify(&mut poll, Ready::READABLE).unwrap();
-    notifier.notify(&mut poll, Ready::READABLE).unwrap();
-
-    poll.add_deadline(EventedId(1), Instant::now()).unwrap();
-    poll.add_deadline(EventedId(2), Instant::now()).unwrap();
-    poll.add_deadline(EventedId(3), Instant::now()).unwrap();
-
-    // Since we created events with a capacity of 1, it shouldn't expand that
-    // capacity.
-    for n in 0..6 {
-        poll.poll(&mut events, None).unwrap();
-
-        assert_eq!(events.len(), EVENTS_SIZE);
-        match n {
-            0...2 => {
-                let id = n + 1;
-                assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(id), Ready::TIMER));
-            },
-            _ => assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(0), Ready::READABLE)),
-        }
+    for _ in 0..EVENTS_CAP + 1 {
+        notifier.notify(&mut poll, Ready::READABLE).unwrap();
     }
+
+    let mut check = |length| {
+        poll.poll(&mut events, None).unwrap();
+        assert_eq!(events.len(), length);
+        for event in &mut events {
+            assert_eq!(event, Event::new(EventedId(0), Ready::READABLE));
+        }
+    };
+
+    check(EVENTS_CAP);
+    check(1);
+}
+
+#[test]
+fn polling_deadlines_dont_expand_events() {
+    let (mut poll, mut events) = init_with_poll(EVENTS_CAP);
+
+    let deadline = Instant::now();
+    for _ in 0..EVENTS_CAP + 1 {
+        poll.add_deadline(EventedId(0), deadline).unwrap();
+    }
+
+    let mut check = |length| {
+        poll.poll(&mut events, None).unwrap();
+        assert_eq!(events.len(), length);
+        for event in &mut events {
+            assert_eq!(event, Event::new(EventedId(0), Ready::TIMER));
+        }
+    };
+
+    check(EVENTS_CAP);
+    check(1);
 }

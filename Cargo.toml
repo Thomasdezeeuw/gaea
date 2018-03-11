@@ -15,6 +15,10 @@ bitflags = "1.0.1"
 log      = "0.4.1"
 net2     = "0.2.31"
 
+[dependencies.arrayvec]
+version = "0.4.7"
+features = ["use_union"]
+
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.36"
 
