@@ -26,7 +26,7 @@ fn listener() {
         drop(stream);
     });
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     poll.register(&mut listener, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
 
@@ -52,7 +52,7 @@ fn listener_bind_twice() {
 
 #[test]
 fn deregistered_listener() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     let mut listener = TcpListener::bind(any_port()).unwrap();
 
@@ -82,7 +82,7 @@ fn listener_poll_opt() {
     let oneshot_addr = oneshot_listener.local_addr().unwrap();
     let t3 = thread::spawn(move || two_connections(oneshot_addr));
 
-    let (mut poll, mut events) = init_with_poll(16);
+    let (mut poll, mut events) = init_with_poll();
 
     const LEVEL_ID: EventedId = EventedId(0);
     const EDGE_ID: EventedId = EventedId(1);
@@ -167,7 +167,7 @@ fn stream() {
         assert_eq!(&buf[0..n], &*MSG);
     });
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     let mut stream = TcpStream::connect(addr).unwrap();
     poll.register(&mut stream, EventedId(0), Ready::all(), PollOpt::Level).unwrap();
@@ -233,7 +233,7 @@ fn stream_poll_opt() {
         }
     });
 
-    let (mut poll, mut events) = init_with_poll(16);
+    let (mut poll, mut events) = init_with_poll();
 
     const LEVEL_ID: EventedId = EventedId(0);
     const EDGE_ID: EventedId = EventedId(1);
@@ -291,7 +291,7 @@ fn stream_poll_opt() {
 
 #[test]
 fn listener_and_stream() {
-    let (mut poll, mut events) = init_with_poll(16);
+    let (mut poll, mut events) = init_with_poll();
 
     const LISTENER_ID: EventedId = EventedId(0);
     let mut connections = HashMap::with_capacity(4);

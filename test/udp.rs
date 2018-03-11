@@ -29,7 +29,7 @@ fn socket_send_to() {
     let mut socket = UdpSocket::bind(any_port()).unwrap();
     let local_addr = socket.local_addr().unwrap();
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     poll.register(&mut socket, EventedId(0), Ready::WRITABLE, PollOpt::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
@@ -57,7 +57,7 @@ fn socket_peek_and_receive_from() {
         std_socket.local_addr().unwrap()
     });
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
@@ -101,7 +101,7 @@ fn socket_reregister() {
 
     let mut socket = UdpSocket::bind(any_port()).unwrap();
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOpt::Edge).unwrap();
 
     // Reregister the socket.
@@ -131,7 +131,7 @@ fn socket_deregister() {
         assert_eq!(n, 11);
     });
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     let mut socket = UdpSocket::bind(any_port()).unwrap();
 
@@ -164,7 +164,7 @@ fn connected_socket_send() {
     let mut socket = ConnectedUdpSocket::connect(any_port(), peer_addr).unwrap();
     let local_addr = socket.local_addr().unwrap();
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     poll.register(&mut socket, EventedId(0), Ready::WRITABLE, PollOpt::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
@@ -193,7 +193,7 @@ fn connected_socket_peek_and_receive() {
         assert_eq!(n, 11);
     });
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
@@ -236,7 +236,7 @@ fn connected_socket_reregister() {
 
     let mut socket = ConnectedUdpSocket::connect(any_port(), peer_addr).unwrap();
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOpt::Edge).unwrap();
 
     // Reregister the socket.
@@ -267,7 +267,7 @@ fn connected_socket_deregister() {
         assert_eq!(n, 11);
     });
 
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     // Register and deregister the socket.
     poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOpt::Edge).unwrap();

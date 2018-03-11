@@ -28,7 +28,7 @@ const MARGIN_MS: u64 = 10;
 
 #[test]
 fn invalid_id() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     let result = poll.add_deadline(EventedId(usize::max_value()), Instant::now());
     assert!(result.is_err());
@@ -39,7 +39,7 @@ fn invalid_id() {
 
 #[test]
 fn add_deadline() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     poll.add_deadline(EventedId(0), Instant::now()).unwrap();
 
@@ -50,7 +50,7 @@ fn add_deadline() {
 
 #[test]
 fn add_timeout() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     poll.add_timeout(EventedId(0), Duration::from_millis(20)).unwrap();
     poll.add_timeout(EventedId(1), Duration::from_millis(10)).unwrap();
@@ -68,7 +68,7 @@ fn add_timeout() {
 
 #[test]
 fn remove_deadline() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     assert!(poll.remove_deadline(EventedId(0)).is_none());
 
@@ -81,7 +81,7 @@ fn remove_deadline() {
 
 #[test]
 fn multiple_deadlines() {
-    let (mut poll, mut events) = init_with_poll(64);
+    let (mut poll, mut events) = init_with_poll();
 
     const T1: u64 = 20;
     const T2: u64 = T1 * 2;
@@ -133,7 +133,7 @@ fn multiple_deadlines() {
 
 #[test]
 fn multiple_deadlines_same_deadline() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     let deadline = Instant::now() + Duration::from_millis(10);
     for token in 0..3 {
@@ -149,7 +149,7 @@ fn multiple_deadlines_same_deadline() {
 
 #[test]
 fn poll_timeout() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
 
     let timeouts = [
         // Should not block.

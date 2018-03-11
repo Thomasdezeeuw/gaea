@@ -19,10 +19,10 @@ pub fn init() {
 
 /// Initializate the test setup (same as init) and create a Poll instance and
 /// events.
-pub fn init_with_poll(events_capacity: usize) -> (Poll, Events) {
+pub fn init_with_poll() -> (Poll, Events) {
     init();
     let poll = Poll::new().expect("unable to create Poll instance");
-    let events = Events::with_capacity(events_capacity);
+    let events = Events::new();
     (poll, events)
 }
 

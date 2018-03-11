@@ -15,7 +15,7 @@ const EVENTS_CAP: usize = 1024;
 
 #[test]
 fn polling_userspace_dont_expand_events() {
-    let (mut poll, mut events) = init_with_poll(EVENTS_CAP);
+    let (mut poll, mut events) = init_with_poll();
 
     let (mut registration, mut notifier) = Registration::new();
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
@@ -38,7 +38,7 @@ fn polling_userspace_dont_expand_events() {
 
 #[test]
 fn polling_deadlines_dont_expand_events() {
-    let (mut poll, mut events) = init_with_poll(EVENTS_CAP);
+    let (mut poll, mut events) = init_with_poll();
 
     let deadline = Instant::now();
     for _ in 0..EVENTS_CAP + 1 {

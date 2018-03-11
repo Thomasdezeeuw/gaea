@@ -8,7 +8,7 @@ use {expect_events, init_with_poll};
 
 #[test]
 fn registering_deregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -20,7 +20,7 @@ fn registering_deregistering() {
 
 #[test]
 fn registering_reregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -34,7 +34,7 @@ fn registering_reregistering() {
 
 #[test]
 fn registering_reregistering_deregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -47,7 +47,7 @@ fn registering_reregistering_deregistering() {
 
 #[test]
 fn registering_deregistering_registering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -63,7 +63,7 @@ fn registering_deregistering_registering() {
 #[test]
 #[ignore = "currently possible, but shouldn't be"]
 fn reregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -77,7 +77,7 @@ fn reregistering() {
 #[test]
 #[ignore = "currently possible, but shouldn't be"]
 fn deregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -91,7 +91,7 @@ fn deregistering() {
 #[test]
 #[ignore = "currently possible, but shouldn't be"]
 fn registering_twice() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -107,7 +107,7 @@ fn registering_twice() {
 
 #[test]
 fn invalid_id() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
@@ -128,7 +128,7 @@ fn invalid_id() {
 
 #[test]
 fn empty_interests() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 

@@ -8,7 +8,7 @@ use {expect_events, init_with_poll};
 
 #[test]
 fn registering_deregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
@@ -21,7 +21,7 @@ fn registering_deregistering() {
 
 #[test]
 fn registering_reregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
@@ -37,7 +37,7 @@ fn registering_reregistering() {
 
 #[test]
 fn registering_reregistering_deregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
@@ -51,7 +51,7 @@ fn registering_reregistering_deregistering() {
 
 #[test]
 fn registering_deregistering_registering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
@@ -68,7 +68,7 @@ fn registering_deregistering_registering() {
 
 #[test]
 fn reregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     let result = poll.reregister(&mut registration, EventedId(1), Ready::WRITABLE, PollOpt::Edge);
@@ -82,7 +82,7 @@ fn reregistering() {
 
 #[test]
 fn deregistering() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     let result = poll.deregister(&mut registration);
@@ -96,7 +96,7 @@ fn deregistering() {
 
 #[test]
 fn registering_twice() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
@@ -113,7 +113,7 @@ fn registering_twice() {
 
 #[test]
 fn invalid_id() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, _) = Registration::new();
 
     let invalid_id = EventedId(usize::max_value());
@@ -133,7 +133,7 @@ fn invalid_id() {
 
 #[test]
 fn empty_interests() {
-    let (mut poll, mut events) = init_with_poll(8);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, _) = Registration::new();
 
     let result = poll.register(&mut registration, EventedId(0), Ready::empty(), PollOpt::Edge);

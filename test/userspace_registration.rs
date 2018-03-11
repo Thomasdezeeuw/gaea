@@ -6,7 +6,7 @@ use {expect_events, init_with_poll};
 
 #[test]
 fn no_notifications_before_registering() {
-    let (mut poll, mut events) = init_with_poll(2);
+    let (mut poll, mut events) = init_with_poll();
     let (mut _registration, mut notifier) = Registration::new();
 
     // Not notifications with registering first.
@@ -17,7 +17,7 @@ fn no_notifications_before_registering() {
 
 #[test]
 fn incorrect_readiness() {
-    let (mut poll, mut events) = init_with_poll(128);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
@@ -31,7 +31,7 @@ fn incorrect_readiness() {
 
 #[test]
 fn no_notifications_after_registration_dropped() {
-    let (mut poll, mut events) = init_with_poll(2);
+    let (mut poll, mut events) = init_with_poll();
     let (registration, mut notifier) = Registration::new();
 
     // No more notifications after it's dropped.
@@ -43,7 +43,7 @@ fn no_notifications_after_registration_dropped() {
 
 #[test]
 fn notifier_interests() {
-    let (mut poll, mut events) = init_with_poll(2);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     // Before registering this should be empty.
@@ -62,7 +62,7 @@ fn notifier_interests() {
 
 #[test]
 fn notify() {
-    let (mut poll, mut events) = init_with_poll(128);
+    let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
