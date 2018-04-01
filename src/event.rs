@@ -218,7 +218,7 @@ pub trait Evented {
 #[derive(Debug)]
 pub struct Events {
     /// Stack allocted events.
-    events: ArrayVec<[Event; 1024]>,
+    events: ArrayVec<[Event; 512]>,
     /// Position of the iterator.
     pos: usize,
 }
@@ -228,8 +228,8 @@ impl Events {
     ///
     /// # Notes
     ///
-    /// Internally there is *currently* a maximum capacity of 1024 events. At
-    /// most 512 events will be used for system events.
+    /// Internally there is *currently* a maximum capacity of 512 events. At
+    /// most 256 events will be used for system events.
     pub fn new() -> Events {
         Events { events: ArrayVec::new(), pos: 0 }
     }

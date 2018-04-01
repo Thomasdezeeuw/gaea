@@ -5,9 +5,7 @@ mod udp;
 
 pub mod pipe;
 
-/// Size of sack allocated events array, this is indepent from the user defined
-/// size of `Events`.
-const EVENTS_CAP: usize = 512;
+use super::EVENTS_CAP;
 
 #[cfg(target_os = "linux")]
 mod epoll;

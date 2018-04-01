@@ -11,7 +11,7 @@ use init_with_poll;
 // deregistering.
 
 // Keep in sync the actual size in `Events`.
-const EVENTS_CAP: usize = 1024;
+const EVENTS_CAP: usize = 512;
 
 #[test]
 fn polling_userspace_dont_expand_events() {
