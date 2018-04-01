@@ -92,6 +92,12 @@ impl Evented for TcpStream {
     }
 }
 
+impl Into<net::TcpStream> for TcpStream {
+    fn into(self) -> net::TcpStream {
+        self.stream
+    }
+}
+
 impl FromRawFd for TcpStream {
     unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
         TcpStream {

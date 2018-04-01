@@ -190,6 +190,12 @@ impl Evented for TcpStream {
     }
 }
 
+impl Into<net::TcpStream> for TcpStream {
+    fn into(self) -> net::TcpStream {
+        self.inner.into()
+    }
+}
+
 #[cfg(unix)]
 impl IntoRawFd for TcpStream {
     fn into_raw_fd(self) -> RawFd {
