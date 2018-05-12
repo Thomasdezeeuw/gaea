@@ -266,12 +266,11 @@ fn stream_poll_opt() {
                 EDGE_ID => {
                     seen_edge = true;
                 },
+                ONESHOT_ID if seen_oneshot => {
+                    panic!("got a second event with oneshot poll option")
+                },
                 ONESHOT_ID => {
-                    if seen_oneshot {
-                        panic!("got a second event with oneshot poll option");
-                    } else {
-                        seen_oneshot = true;
-                    }
+                    seen_oneshot = true;
                 },
                 _ => unreachable!(),
             }
