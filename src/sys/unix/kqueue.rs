@@ -10,7 +10,7 @@ use super::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types
 // in the `kevent` structure, which requires conversions, hence the type
-// definitons below.
+// definitions below.
 
 // Type of `nchanges` in the `kevent` system call.
 #[cfg(not(target_os = "netbsd"))]

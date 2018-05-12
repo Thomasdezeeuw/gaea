@@ -310,7 +310,7 @@ impl<'a> ExactSizeIterator for &'a mut Events {
     }
 }
 
-/// An readiness event.
+/// A readiness event.
 ///
 /// `Event` is a [readiness state] paired with a [`EventedId`]. It is returned by
 /// [`Poll.poll`].

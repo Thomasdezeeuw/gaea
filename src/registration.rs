@@ -84,7 +84,7 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 ///
 /// See the [module documentation] for more information.
 ///
-/// # Note
+/// # Notes
 ///
 /// The `PollOpt` provided to `register` and `reregister` are ignored, since
 /// user space controls the notifing of readiness.

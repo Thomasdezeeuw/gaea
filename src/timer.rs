@@ -25,15 +25,13 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 ///
 /// When (re)registering a `Timer` the interests must always be [`Ready::TIMER`]
 /// and the poll option [`PollOpt::Oneshot`], those methods will panic
-/// otherwise. This is required because are the only events `Timer`s can
+/// otherwise. This is required because those are the only events `Timer`s can
 /// currently create, allowing anything else would be confusing.
 ///
 /// [`Ready::TIMER`]: ../poll/struct.Ready.html#associatedconstant.TIMER
 /// [`PollOpt::Oneshot`]: ../poll/enum.PollOpt.html#variant.Oneshot
 ///
 /// # Notes
-///
-/// Dropping a `Timer` does **not** deregister it from `Poll`.
 ///
 /// Deregistering a `Timer` is a costly operation. For better performance it is
 /// advised to not bothering with deregistering and instead ignore the event
@@ -69,6 +67,7 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// // roughly 10 milliseconds and return an event with our deadline.
 /// poll.poll(&mut events, None)?;
 ///
+/// assert_eq!(events.len(), 1);
 /// for event in &mut events {
 ///     assert_eq!(event, Event::new(EventedId(0), Ready::TIMER));
 /// }
@@ -86,7 +85,7 @@ pub struct Timer {
 }
 
 impl Timer {
-    /// Create a new `Timer` based on deadline.
+    /// Create a new `Timer` based on a deadline.
     pub fn deadline(deadline: Instant) -> Timer {
         Timer { id: INVALID_EVENTED_ID, deadline }
     }
