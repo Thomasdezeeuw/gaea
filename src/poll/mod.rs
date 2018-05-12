@@ -7,9 +7,11 @@
 //! [root of the crate]: ../index.html
 
 use std::{io, mem, ptr};
+use std::cell::RefCell;
 use std::cmp::Reverse;
-use std::time::{Duration, Instant};
 use std::collections::BinaryHeap;
+use std::rc::{Rc, Weak};
+use std::time::{Duration, Instant};
 
 use sys;
 use event::{Event, Evented, EventedId, Events};
@@ -183,7 +185,9 @@ pub use self::ready::Ready;
 #[derive(Debug)]
 pub struct Poll {
     selector: sys::Selector,
-    userspace_events: Vec<Event>,
+    // This is shared with all user space registrations, they have a weak
+    // reference.
+    userspace_events: Rc<RefCell<Vec<Event>>>,
     deadlines: BinaryHeap<Reverse<Deadline>>,
 }
 
@@ -236,7 +240,7 @@ impl Poll {
     pub fn new() -> io::Result<Poll> {
         Ok(Poll {
             selector: sys::Selector::new()?,
-            userspace_events: Vec::with_capacity(128),
+            userspace_events: Rc::new(RefCell::new(Vec::with_capacity(128))),
             deadlines: BinaryHeap::with_capacity(128),
         })
     }
@@ -547,8 +551,8 @@ impl Poll {
     ///
     /// If we have any deadlines the first one will also cap the timeout.
     fn determine_timeout(&mut self, timeout: Option<Duration>) -> Option<Duration> {
-        if !self.userspace_events.is_empty() {
-            // Userspace queue has events, so no blocking.
+        if !self.userspace_events.borrow().is_empty() {
+            // User space queue has events, so no blocking.
             return Some(Duration::from_millis(0));
         } else if let Some(deadline) = self.deadlines.peek() {
             let now = Instant::now();
@@ -571,24 +575,24 @@ impl Poll {
         timeout
     }
 
-    /// Add a new user space event to the queue.
-    pub(crate) fn userspace_add_event(&mut self, event: Event) {
-        trace!("adding user space event: {:?}", event);
-        self.userspace_events.push(event)
+    /// Get a weak reference to the user space events.
+    pub(crate) fn get_userspace_events(&mut self) -> Weak<RefCell<Vec<Event>>> {
+        Rc::downgrade(&self.userspace_events)
     }
 
     /// Poll user space events.
     fn poll_userspace(&mut self, events: &mut Events) {
-        let n_copied = events.extend_events(&self.userspace_events);
-        let left = self.userspace_events.len() - n_copied;
+        let mut userspace_events = self.userspace_events.borrow_mut();
+        let n_copied = events.extend_events(&userspace_events);
+        let left = userspace_events.len() - n_copied;
         if left == 0 {
-            unsafe { self.userspace_events.set_len(0); }
+            unsafe { userspace_events.set_len(0); }
         } else {
             // Move all leftover elements to the beginning of the vector.
             unsafe {
-                let src = self.userspace_events.as_ptr().offset(n_copied as isize);
-                ptr::copy(src, self.userspace_events.as_mut_ptr(), left);
-                self.userspace_events.set_len(left);
+                let src = userspace_events.as_ptr().offset(n_copied as isize);
+                ptr::copy(src, userspace_events.as_mut_ptr(), left);
+                userspace_events.set_len(left);
             }
         }
     }

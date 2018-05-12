@@ -138,11 +138,11 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 ///
 /// impl<T> Sender<T> {
 ///     /// Send a new value across the channel.
-///     fn send(&mut self, poll: &mut Poll, value: T) {
+///     fn send(&mut self, value: T) {
 ///         // Send value etc.
 ///
 ///         // Notify the receiving end of a new value.
-///         self.notifier.notify(poll, Ready::READABLE);
+///         self.notifier.notify(Ready::READABLE);
 /// #       unimplemented!();
 ///     }
 /// }

@@ -10,7 +10,7 @@ fn no_notifications_before_registering() {
     let (mut _registration, mut notifier) = Registration::new();
 
     // Not notifications with registering first.
-    assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NotRegistered));
+    assert_eq!(notifier.notify(Ready::WRITABLE), Err(NotifyError::NotRegistered));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -23,8 +23,8 @@ fn incorrect_readiness() {
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
 
     // Incorrect readiness.
-    assert_eq!(notifier.notify(&mut poll, Ready::empty()), Err(NotifyError::EmptyReadiness));
-    assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NoInterest));
+    assert_eq!(notifier.notify(Ready::empty()), Err(NotifyError::EmptyReadiness));
+    assert_eq!(notifier.notify(Ready::WRITABLE), Err(NotifyError::NoInterest));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -36,7 +36,7 @@ fn no_notifications_after_registration_dropped() {
 
     // No more notifications after it's dropped.
     drop(registration);
-    assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::RegistrationGone));
+    assert_eq!(notifier.notify(Ready::READABLE), Err(NotifyError::RegistrationGone));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -68,11 +68,11 @@ fn notify() {
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
 
     // Ok.
-    notifier.notify(&mut poll, Ready::READABLE).unwrap();
+    notifier.notify(Ready::READABLE).unwrap();
 
     // Should become only readable.
-    notifier.notify(&mut poll, Ready::READABLE | Ready::WRITABLE).unwrap();
-    notifier.notify(&mut poll, Ready::all()).unwrap();
+    notifier.notify(Ready::READABLE | Ready::WRITABLE).unwrap();
+    notifier.notify(Ready::all()).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(0), Ready::READABLE),

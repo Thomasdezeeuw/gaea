@@ -14,7 +14,7 @@ fn registering_deregistering() {
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
     poll.deregister(&mut registration).unwrap();
 
-    assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::NotRegistered));
+    assert_eq!(notifier.notify(Ready::READABLE), Err(NotifyError::NotRegistered));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -27,8 +27,8 @@ fn registering_reregistering() {
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
     poll.reregister(&mut registration, EventedId(1), Ready::WRITABLE, PollOpt::Edge).unwrap();
 
-    assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::NoInterest));
-    notifier.notify(&mut poll, Ready::WRITABLE).unwrap();
+    assert_eq!(notifier.notify(Ready::READABLE), Err(NotifyError::NoInterest));
+    notifier.notify(Ready::WRITABLE).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(1), Ready::WRITABLE),
@@ -44,7 +44,7 @@ fn registering_reregistering_deregistering() {
     poll.reregister(&mut registration, EventedId(1), Ready::WRITABLE, PollOpt::Edge).unwrap();
     poll.deregister(&mut registration).unwrap();
 
-    assert_eq!(notifier.notify(&mut poll, Ready::WRITABLE), Err(NotifyError::NotRegistered));
+    assert_eq!(notifier.notify(Ready::WRITABLE), Err(NotifyError::NotRegistered));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -58,8 +58,8 @@ fn registering_deregistering_registering() {
     poll.deregister(&mut registration).unwrap();
     poll.reregister(&mut registration, EventedId(1), Ready::WRITABLE, PollOpt::Edge).unwrap();
 
-    assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::NoInterest));
-    notifier.notify(&mut poll, Ready::WRITABLE).unwrap();
+    assert_eq!(notifier.notify(Ready::READABLE), Err(NotifyError::NoInterest));
+    notifier.notify(Ready::WRITABLE).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(1), Ready::WRITABLE),
@@ -75,7 +75,7 @@ fn reregistering() {
     assert!(result.is_err());
     assert!(result.unwrap_err().description().contains("cannot reregister"));
 
-    assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::NotRegistered));
+    assert_eq!(notifier.notify(Ready::READABLE), Err(NotifyError::NotRegistered));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -89,7 +89,7 @@ fn deregistering() {
     assert!(result.is_err());
     assert!(result.unwrap_err().description().contains("cannot deregister"));
 
-    assert_eq!(notifier.notify(&mut poll, Ready::READABLE), Err(NotifyError::NotRegistered));
+    assert_eq!(notifier.notify(Ready::READABLE), Err(NotifyError::NotRegistered));
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
@@ -104,7 +104,7 @@ fn registering_twice() {
     assert!(result.is_err());
     assert!(result.unwrap_err().description().contains("cannot register"));
 
-    notifier.notify(&mut poll, Ready::READABLE).unwrap();
+    notifier.notify(Ready::READABLE).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(0), Ready::READABLE),

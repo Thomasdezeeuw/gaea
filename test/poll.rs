@@ -22,7 +22,7 @@ fn polling_userspace_dont_expand_events() {
     poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
 
     for _ in 0..EVENTS_CAP + 1 {
-        notifier.notify(&mut poll, Ready::READABLE).unwrap();
+        notifier.notify(Ready::READABLE).unwrap();
     }
 
     let mut check = |length| {
