@@ -37,9 +37,9 @@ bitflags! {
         const WRITABLE = 0b0000_0010;
         /// Error readiness.
         const ERROR    = 0b0000_0100;
-        /// Timer was triggered, see [`Poll.add_deadline`].
+        /// Timer was triggered, see [`Timer`].
         ///
-        /// [`Poll.add_deadline`]: struct.Poll.html#method.add_deadline
+        /// [`Timer`]: ../timer/struct.Timer.html
         const TIMER    = 0b0000_1000;
         /// Hup readiness, this signal is Unix specific.
         #[cfg(unix)]

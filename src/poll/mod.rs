@@ -303,6 +303,7 @@ impl Poll {
     /// use mio_st::event::{Events, EventedId};
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::timer::Timer;
     ///
     /// // Create a new `Poll` instance as well a containers for the vents.
     /// let mut poll = Poll::new()?;
@@ -316,7 +317,8 @@ impl Poll {
     /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
     ///
     /// // Add a timeout so we don't wait too long for the connection to setup.
-    /// poll.add_timeout(EventedId(0), Duration::from_millis(500));
+    /// let mut timer = Timer::timeout(Duration::from_millis(500));
+    /// poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot)?;
     ///
     /// // Start the event loop.
     /// loop {
@@ -592,74 +594,20 @@ impl Poll {
     }
 
     /// Add a new deadline to Poll.
-    ///
-    /// This will create a new timer that will trigger an [`Event`] after the
-    /// `deadline` has passed, which gets returned when [polling]. The `Event`
-    /// will always have [`TIMER`] as `Ready` value and the same `id` as
-    /// provided.
-    ///
-    /// [`Event`]: ../event/struct.Event.html
-    /// [polling]: #method.poll
-    /// [`TIMER`]: struct.Ready.html#associatedconstant.TIMER
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use std::time::Duration;
-    ///
-    /// use mio_st::poll::{Poll, Ready, PollOpt};
-    /// use mio_st::event::{Event, Events, EventedId};
-    ///
-    /// let mut poll = Poll::new()?;
-    /// let mut events = Events::new();
-    ///
-    /// // Add our timeout, this is shorthand for `Instant::now() + timeout`.
-    /// poll.add_timeout(EventedId(0), Duration::from_millis(10));
-    ///
-    /// // Even though we don't provide a timeout to poll this will return in
-    /// // roughly 10 milliseconds and return an event with our deadline.
-    /// poll.poll(&mut events, None)?;
-    ///
-    /// for event in &mut events {
-    ///     assert_eq!(event, Event::new(EventedId(0), Ready::TIMER));
-    /// }
-    /// #   Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     try_main().unwrap();
-    /// # }
-    /// ```
-    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
+    pub(crate) fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
         trace!("adding deadline: id: {:?}, deadline: {:?}", id, deadline);
         validate_args(id, Ready::TIMER)
             .map(|()| self.deadlines.push(Reverse(Deadline { id, deadline })))
     }
 
-    /// Add a new timeout to Poll.
-    ///
-    /// This is a shorthand for `poll.add_deadline(id, Instant::now() +
-    /// timeout)`, see [`add_deadline`].
-    ///
-    /// [`add_deadline`]: #method.add_deadline
-    pub fn add_timeout(&mut self, id: EventedId, timeout: Duration) -> io::Result<()> {
-        self.add_deadline(id, Instant::now() + timeout)
-    }
-
     /// Remove a previously added deadline.
     ///
-    /// It tries removes the deadline from Poll and returns it, if it hasn't
-    /// fired yet.
-    ///
-    /// # Note
-    ///
-    /// This function is not at all good for performance. If your code can deal
-    /// with timeouts firing after they're no longer needed, then you should not
-    /// use this function and let the timeout be fired and simply ignore it.
-    pub fn remove_deadline(&mut self, id: EventedId) -> Option<Instant> {
+    /// It tries removes the deadline from Poll. This return `Ok(())` even if
+    /// the deadline is not found.
+    pub(crate) fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
         trace!("removing deadline: id: {:?}", id);
+        validate_args(id, Ready::TIMER)?;
+
         // TODO: optimize this.
         let index = self.deadlines.iter()
             .position(|deadline| deadline.0.id == id);
@@ -669,12 +617,10 @@ impl Poll {
             let mut deadlines_vec = deadlines.into_vec();
             debug_assert_eq!(deadlines_vec[index].0.id, id,
                              "remove_deadline: removing an incorrect deadline");
-            let deadline = deadlines_vec.remove(index);
+            let _ = deadlines_vec.swap_remove(index);
             drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
-            Some(deadline.0.deadline)
-        } else {
-            None
         }
+        Ok(())
     }
 
     /// Add expired deadlines to the provided `events`.

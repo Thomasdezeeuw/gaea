@@ -2,7 +2,8 @@ use std::error::Error;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{Event, EventedId, Events};
-use mio_st::poll::{Poll, Ready};
+use mio_st::poll::{Poll, PollOpt, Ready};
+use mio_st::timer::Timer;
 
 use {expect_events, init_with_poll};
 
@@ -16,21 +17,18 @@ fn expect_events_elapsed(poll: &mut Poll, events: &mut Events, max_elapsed: Dura
             it returned after: {:?}", max_elapsed, elapsed);
 }
 
-/// It's hard to compare the actual deadline, so instead we make it is within a
-/// range of time.
-fn within_margin(got: Instant, expected: Instant, margin: Duration) {
-    assert!(got > (expected - margin), "expected {:?} to be after {:?}", got, (expected - margin));
-    assert!(got < (expected + margin), "expected {:?} to be before {:?}", got, (expected + margin));
-}
-
 /// Allowed margin for `Poll.poll` to return
 const MARGIN_MS: u64 = 10;
+
+// TODO: test panics using incorrect opt/interests. Deregister without
+// registering first.
 
 #[test]
 fn invalid_id() {
     let (mut poll, mut events) = init_with_poll();
 
-    let result = poll.add_deadline(EventedId(usize::max_value()), Instant::now());
+    let mut timer = Timer::deadline(Instant::now());
+    let result = poll.register(&mut timer, EventedId(usize::max_value()), Ready::TIMER, PollOpt::Oneshot);
     assert!(result.is_err());
     assert!(result.unwrap_err().description().contains("invalid evented id"));
 
@@ -38,10 +36,11 @@ fn invalid_id() {
 }
 
 #[test]
-fn add_deadline() {
+fn deadline() {
     let (mut poll, mut events) = init_with_poll();
 
-    poll.add_deadline(EventedId(0), Instant::now()).unwrap();
+    let mut timer = Timer::deadline(Instant::now());
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(MARGIN_MS), vec![
         Event::new(EventedId(0), Ready::TIMER),
@@ -49,38 +48,46 @@ fn add_deadline() {
 }
 
 #[test]
-fn add_timeout() {
+fn timeout() {
     let (mut poll, mut events) = init_with_poll();
 
-    poll.add_timeout(EventedId(0), Duration::from_millis(20)).unwrap();
-    poll.add_timeout(EventedId(1), Duration::from_millis(10)).unwrap();
-    // Same id and timeout should be ok.
-    poll.add_timeout(EventedId(0), Duration::from_millis(20)).unwrap();
+    let mut timer = Timer::timeout(Duration::from_millis(10));
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
-        Event::new(EventedId(1), Ready::TIMER),
-    ]);
-    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
-        Event::new(EventedId(0), Ready::TIMER),
         Event::new(EventedId(0), Ready::TIMER),
     ]);
 }
 
 #[test]
-fn remove_deadline() {
+fn deregistering() {
     let (mut poll, mut events) = init_with_poll();
 
-    assert!(poll.remove_deadline(EventedId(0)).is_none());
-
-    poll.add_timeout(EventedId(0), Duration::from_millis(10)).unwrap();
-    let deadline = poll.remove_deadline(EventedId(0)).unwrap();
-    within_margin(deadline, Instant::now() + Duration::from_millis(10), Duration::from_millis(5));
+    let mut timer = Timer::deadline(Instant::now());
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+    poll.deregister(&mut timer).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![]);
 }
 
 #[test]
-fn multiple_deadlines() {
+#[should_panic(expected = "trying to (re)register `Timer` with interests other then `TIMER`")]
+fn incorrect_readiness() {
+    let (mut poll, _) = init_with_poll();
+    let mut timer = Timer::deadline(Instant::now());
+    poll.register(&mut timer, EventedId(0), Ready::READABLE, PollOpt::Oneshot).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "trying to (re)register `Timer` with poll option other then `Oneshot`")]
+fn incorrect_poll_option() {
+    let (mut poll, _) = init_with_poll();
+    let mut timer = Timer::deadline(Instant::now());
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Level).unwrap();
+}
+
+#[test]
+fn multiple_timers() {
     let (mut poll, mut events) = init_with_poll();
 
     const T1: u64 = 20;
@@ -98,29 +105,25 @@ fn multiple_deadlines() {
     ];
 
     fn timeout_to_token(timeout: u64) -> EventedId {
-        if timeout == T1 {
-            EventedId(1)
-        } else if timeout == T2 {
-            EventedId(2)
-        } else if timeout == T3 {
-            EventedId(3)
-        } else {
-            unreachable!()
+        match timeout {
+            T1 => EventedId(1),
+            T2 => EventedId(2),
+            T3 => EventedId(3),
+            _ => unreachable!()
         }
     }
 
-    for timers in &TIMEOUTS {
-        for timeout_ms in timers.iter() {
+    for timeouts in &TIMEOUTS {
+        for timeout_ms in timeouts.iter() {
             let token = timeout_to_token(*timeout_ms);
             let first_token = EventedId(token.0 * 100);
 
-            let timeout = Duration::from_millis(*timeout_ms);
-            poll.add_timeout(first_token, timeout).unwrap();
+            let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
 
-            let got_deadline = poll.remove_deadline(first_token).unwrap();
-            within_margin(got_deadline, Instant::now() + timeout, Duration::from_millis(5));
+            poll.register(&mut timer, first_token, Ready::TIMER, PollOpt::Oneshot).unwrap();
+            poll.deregister(&mut timer).unwrap();
 
-            poll.add_timeout(token, timeout).unwrap();
+            poll.register(&mut timer, token, Ready::TIMER, PollOpt::Oneshot).unwrap();
         }
 
         for token in 1..4 {
@@ -132,12 +135,12 @@ fn multiple_deadlines() {
 }
 
 #[test]
-fn multiple_deadlines_same_deadline() {
+fn multiple_timers_same_deadline() {
     let (mut poll, mut events) = init_with_poll();
 
-    let deadline = Instant::now() + Duration::from_millis(10);
+    let mut timer = Timer::deadline(Instant::now());
     for token in 0..3 {
-        poll.add_deadline(EventedId(token), deadline).unwrap();
+        poll.register(&mut timer, EventedId(token), Ready::TIMER, PollOpt::Oneshot).unwrap();
     }
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
@@ -148,7 +151,25 @@ fn multiple_deadlines_same_deadline() {
 }
 
 #[test]
-fn poll_timeout() {
+fn multiple_timers_same_id() {
+    let (mut poll, mut events) = init_with_poll();
+
+    let mut timer1 = Timer::timeout(Duration::from_millis(20));
+    poll.register(&mut timer1, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+
+    let mut timer2 = Timer::timeout(Duration::from_millis(10));
+    poll.register(&mut timer2, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
+        Event::new(EventedId(0), Ready::TIMER),
+    ]);
+    expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
+        Event::new(EventedId(0), Ready::TIMER),
+    ]);
+}
+
+#[test]
+fn poll_should_set_timeout() {
     let (mut poll, mut events) = init_with_poll();
 
     let timeouts = [
@@ -161,7 +182,8 @@ fn poll_timeout() {
     ];
 
     for &(timeout, max_elapsed) in &timeouts {
-        poll.add_timeout(EventedId(0), timeout).unwrap();
+        let mut timer = Timer::timeout(timeout);
+        poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
 
         let start = Instant::now();
         poll.poll(&mut events, Some(Duration::from_millis(50))).unwrap();

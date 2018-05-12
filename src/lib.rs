@@ -157,6 +157,7 @@ pub mod event;
 pub mod net;
 pub mod poll;
 pub mod registration;
+pub mod timer;
 
 #[cfg(unix)]
 pub mod unix {
