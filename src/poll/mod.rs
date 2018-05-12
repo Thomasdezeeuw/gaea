@@ -23,7 +23,7 @@ pub use self::ready::Ready;
 // Poll uses three subsystems to bring a complete event system to the user.
 //
 // 1. Operating System specific event queue. This is currently kqueue or epoll.
-//    All the relavent code is in the `sys` module. This mainly deals with file
+//    All the relevant code is in the `sys` module. This mainly deals with file
 //    descriptor, e.g. for sockets.
 //
 // 2. User space events. This is simply a vector in the `Poll` instance. Adding
@@ -677,7 +677,7 @@ impl Poll {
         }
     }
 
-    /// Add expired deadlines to the the provided `events`.
+    /// Add expired deadlines to the provided `events`.
     fn poll_deadlines(&mut self, events: &mut Events) {
         let now = Instant::now();
 
