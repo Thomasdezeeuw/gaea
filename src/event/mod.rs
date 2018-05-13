@@ -1,14 +1,14 @@
 //! Readiness event types and utilities.
 
-use poll::Ready;
-
 mod evented;
 mod events;
 mod id;
+mod ready;
 
 pub use self::evented::Evented;
 pub use self::events::Events;
 pub use self::id::EventedId;
+pub use self::ready::Ready;
 
 pub(crate) use self::id::INVALID_EVENTED_ID;
 

@@ -17,10 +17,10 @@ use sys;
 use event::{Event, Evented, EventedId, Events};
 
 mod opt;
-mod ready;
 
 pub use self::opt::PollOpt;
-pub use self::ready::Ready;
+// TODO: remove this, but first change all references to it.
+pub use event::Ready;
 
 // Poll uses three subsystems to bring a complete event system to the user.
 //
