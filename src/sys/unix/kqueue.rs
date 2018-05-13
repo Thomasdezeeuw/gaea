@@ -198,16 +198,6 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
         readiness.insert(Ready::WRITABLE);
     }
 
-    // Even though the MacOS and NetBSD manuals says `EVFILT_AIO` is
-    // currently not supported, it might be added in the future, so it
-    // doesn't hurt to have it here.
-    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
-    {
-        if kevent.filter == libc::EVFILT_AIO {
-            readiness.insert(Ready::AIO);
-        }
-    }
-
     Event::new(id, readiness)
 }
 

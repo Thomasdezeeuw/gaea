@@ -44,10 +44,6 @@ bitflags! {
         /// Hup readiness, this signal is Unix specific.
         #[cfg(unix)]
         const HUP      = 0b0001_0000;
-        /// AIO completion readiness, this signal really only works on FreeBSD.
-        /// The other BSDs don't support this at the time of writing this.
-        #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
-        const AIO      = 0b0010_0000;
     }
 }
 
@@ -81,12 +77,5 @@ impl Ready {
     #[cfg(unix)]
     pub fn is_hup(&self) -> bool {
         self.contains(Ready::HUP)
-    }
-
-    /// Returns true if the value includes AIO completion readiness.
-    #[inline]
-    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
-    pub fn is_aio(&self) -> bool {
-        self.contains(Ready::AIO)
     }
 }
