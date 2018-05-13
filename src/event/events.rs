@@ -13,8 +13,8 @@ use event::Event;
 ///
 /// See [`Poll`] for more documentation on polling.
 ///
-/// [`Poll.poll`]: ../struct.Poll.html#method.poll
-/// [`Poll`]: ../struct.Poll.html
+/// [`Poll.poll`]: ../poll/struct.Poll.html#method.poll
+/// [`Poll`]: ../poll/struct.Poll.html
 ///
 /// # Examples
 ///
@@ -23,8 +23,8 @@ use event::Event;
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{EventedId, Events};
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{EventedId, Events, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::new();

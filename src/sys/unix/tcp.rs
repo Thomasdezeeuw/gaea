@@ -6,8 +6,8 @@ use std::time::Duration;
 use libc;
 use net2::TcpStreamExt;
 
-use event::{Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, EventedId, Ready};
+use poll::{Poll, PollCalled, PollOpt};
 use sys::unix::eventedfd::EventedFd;
 
 #[derive(Debug)]

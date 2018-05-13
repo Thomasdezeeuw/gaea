@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use event::{Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, Ready, EventedId};
+use poll::{Poll, PollCalled, PollOpt};
 use sys::unix::EventedFd;
 
 /// Managed adaptor for a `RawFd` providing an [`Evented`] implementation.
@@ -26,8 +26,8 @@ use sys::unix::EventedFd;
 /// use std::net::TcpListener;
 /// use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 ///
-/// use mio_st::event::{Evented, EventedId};
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 /// use mio_st::unix::EventedIo;
 ///
 /// // Bind a listener from the standard library.

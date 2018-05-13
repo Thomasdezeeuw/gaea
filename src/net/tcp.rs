@@ -7,8 +7,8 @@ use std::time::Duration;
 use net2::TcpBuilder;
 
 use sys;
-use event::{Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, EventedId, Ready};
+use poll::{Poll, PollCalled, PollOpt};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -25,9 +25,9 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 ///
 /// let address = "127.0.0.1:8888".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -236,9 +236,9 @@ impl FromRawFd for TcpStream {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::TcpListener;
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 ///
 /// let address = "127.0.0.1:7777".parse()?;
 /// let mut listener = TcpListener::bind(address)?;

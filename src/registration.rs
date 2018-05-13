@@ -33,8 +33,8 @@
 //! ```
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
-//! use mio_st::event::{EventedId, Events};
-//! use mio_st::poll::{Poll, PollOpt, Ready};
+//! use mio_st::event::{EventedId, Events, Ready};
+//! use mio_st::poll::{Poll, PollOpt};
 //! use mio_st::registration::Registration;
 //!
 //! // Create our poll and events.
@@ -71,8 +71,8 @@ use std::cell::{Cell, RefCell};
 use std::error::Error;
 use std::rc::{Rc, Weak};
 
-use event::{Event, Evented, EventedId, INVALID_EVENTED_ID};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Event, Evented, EventedId, Ready, INVALID_EVENTED_ID};
+use poll::{Poll, PollCalled, PollOpt};
 
 /// Handle to a user space registration.
 ///
@@ -140,8 +140,8 @@ impl Evented for Registration {
 /// ```
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio_st::event::{EventedId, Events};
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{EventedId, Events, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 /// use mio_st::registration::{NotifyError, Registration};
 ///
 /// // Create our poll, events and registration.
@@ -207,7 +207,7 @@ impl Notifier {
     /// This will return an error if the event can't be created, see the [error
     /// variants] for detailed possible error causes.
     ///
-    /// [empty]: ../poll/struct.Ready.html#method.empty
+    /// [empty]: ../event/struct.Ready.html#method.empty
     /// [error variants]: enum.NotifyError.html
     pub fn notify(&mut self, ready: Ready) -> Result<(), NotifyError> {
         self.inner.upgrade()
@@ -219,7 +219,7 @@ impl Notifier {
     /// [empty] if the `Registration` hasn't been registered yet, or has been
     /// deregistered, but not dropped.
     ///
-    /// [empty]: ../poll/struct.Ready.html#method.empty
+    /// [empty]: ../event/struct.Ready.html#method.empty
     pub fn interests(&mut self) -> Result<Ready, RegistrationGone> {
         self.inner.upgrade()
             .ok_or(RegistrationGone)

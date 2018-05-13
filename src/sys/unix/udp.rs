@@ -2,8 +2,8 @@ use std::io;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use event::{Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, EventedId, Ready};
+use poll::{Poll, PollCalled, PollOpt};
 use sys::unix::EventedFd;
 
 #[derive(Debug)]

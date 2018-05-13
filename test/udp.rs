@@ -2,9 +2,9 @@ use std::{io, thread};
 use std::net::{self, SocketAddr};
 use std::time::Duration;
 
-use mio_st::event::{Event, EventedId};
+use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-use mio_st::poll::{PollOpt, Ready};
+use mio_st::poll::PollOpt;
 
 use {any_port, expect_events, init_with_poll};
 

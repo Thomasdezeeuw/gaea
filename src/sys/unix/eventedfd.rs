@@ -1,8 +1,8 @@
 use std::io;
 use std::os::unix::io::RawFd;
 
-use event::{Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, Ready, EventedId};
+use poll::{Poll, PollCalled, PollOpt};
 
 /// Adapter for a `RawFd` providing an [`Evented`] implementation.
 ///
@@ -23,8 +23,8 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// For a owned, or managed, type see [`EventedIo`].
 ///
 /// [`Evented`]: ../event/trait.Evented.html
-/// [`Poll`]: ../struct.Poll.html
-/// [`Poll.register`]: ../struct.Poll.html#method.register
+/// [`Poll`]: ../poll/struct.Poll.html
+/// [`Poll.register`]: ../poll/struct.Poll.html#method.register
 /// [`EventedIo`]: struct.EventedIo.html
 ///
 /// # Examples
@@ -37,8 +37,8 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// use std::net::TcpListener;
 /// use std::os::unix::io::AsRawFd;
 ///
-/// use mio_st::event::{Evented, EventedId};
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 /// use mio_st::unix::EventedFd;
 ///
 /// // Bind a listener from the standard library.
@@ -62,8 +62,8 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// use std::io;
 /// use std::os::unix::io::RawFd;
 ///
-/// use mio_st::event::{Evented, EventedId};
-/// use mio_st::poll::{Poll, PollOpt, Ready, PollCalled};
+/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::poll::{Poll, PollOpt, PollCalled};
 /// use mio_st::unix::EventedFd;
 ///
 /// pub struct MyIo {

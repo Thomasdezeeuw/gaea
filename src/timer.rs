@@ -3,8 +3,8 @@
 use std::io;
 use std::time::{Duration, Instant};
 
-use event::{INVALID_EVENTED_ID, Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, EventedId, Ready, INVALID_EVENTED_ID};
+use poll::{Poll, PollCalled, PollOpt};
 
 /// A timer that can be registered with [`Poll`].
 ///
@@ -19,7 +19,7 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// [`timeout`]: #method.timeout
 /// [`Event`]: ../event/struct.Event.html
 /// [polling]: ../poll/struct.Poll.html#method.poll
-/// [`TIMER`]: ../poll/struct.Ready.html#associatedconstant.TIMER
+/// [`TIMER`]: ../event/struct.Ready.html#associatedconstant.TIMER
 ///
 /// # Panics
 ///
@@ -28,7 +28,7 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// otherwise. This is required because those are the only events `Timer`s can
 /// currently create, allowing anything else would be confusing.
 ///
-/// [`Ready::TIMER`]: ../poll/struct.Ready.html#associatedconstant.TIMER
+/// [`Ready::TIMER`]: ../event/struct.Ready.html#associatedconstant.TIMER
 /// [`PollOpt::Oneshot`]: ../poll/enum.PollOpt.html#variant.Oneshot
 ///
 /// # Notes
@@ -47,8 +47,8 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Event, Events, EventedId};
-/// use mio_st::poll::{Poll, Ready, PollOpt};
+/// use mio_st::event::{Event, Events, EventedId, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 /// use mio_st::timer::Timer;
 ///
 /// // Our `Poll` instance and events.

@@ -16,10 +16,10 @@
 /// is valid.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
-/// [`Poll.register`]: ../struct.Poll.html#method.register
-/// [`Poll.reregister`]: ../struct.Poll.html#method.reregister
+/// [`Poll.register`]: ../poll/struct.Poll.html#method.register
+/// [`Poll.reregister`]: ../poll/struct.Poll.html#method.reregister
 /// [`Event`]: ../event/struct.Event.html
-/// [`Poll`]: ../struct.Poll.html
+/// [`Poll`]: ../poll/struct.Poll.html
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct EventedId(pub usize);
 

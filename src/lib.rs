@@ -39,9 +39,9 @@
 //! use std::io;
 //! use std::collections::HashMap;
 //!
-//! use mio_st::event::{Events, EventedId};
+//! use mio_st::event::{Events, EventedId, Ready};
 //! use mio_st::net::{TcpListener, TcpStream};
-//! use mio_st::poll::{Poll, PollOpt, Ready};
+//! use mio_st::poll::{Poll, PollOpt};
 //!
 //! // An unique id to associate an event with a handle, in this case for our
 //! // TCP listener.

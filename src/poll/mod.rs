@@ -14,13 +14,11 @@ use std::rc::{Rc, Weak};
 use std::time::{Duration, Instant};
 
 use sys;
-use event::{Event, Evented, EventedId, Events};
+use event::{Event, Events, Evented, EventedId, Ready};
 
 mod opt;
 
 pub use self::opt::PollOpt;
-// TODO: remove this, but first change all references to it.
-pub use event::Ready;
 
 // Poll uses three subsystems to bring a complete event system to the user.
 //
@@ -58,11 +56,11 @@ pub use event::Ready;
 /// information.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
-/// [reading]: struct.Ready.html#associatedconstant.READABLE
-/// [writing]: struct.Ready.html#associatedconstant.WRITABLE
+/// [reading]: ../event/struct.Ready.html#associatedconstant.READABLE
+/// [writing]: ../event/struct.Ready.html#associatedconstant.WRITABLE
 /// [`register`]: #method.register
 /// [`EventedId`]: ../event/struct.EventedId.html
-/// [`Ready`]: struct.Ready.html
+/// [`Ready`]: ../event/struct.Ready.html
 /// [`PollOpt`]: enum.PollOpt.html
 ///
 /// # Portability
@@ -119,9 +117,9 @@ pub use event::Ready;
 /// use std::thread;
 /// use std::time::Duration;
 ///
-/// use mio_st::event::EventedId;
+/// use mio_st::event::{EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, Ready, PollOpt};
+/// use mio_st::poll::{Poll, PollOpt};
 ///
 /// let address = "216.58.193.100:80".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -144,11 +142,11 @@ pub use event::Ready;
 ///
 /// [`Poll.poll`]: struct.Poll.html#method.poll
 /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
-/// [readable]: struct.Ready.html#associatedconstant.READABLE
-/// [writable]: struct.Ready.html#associatedconstant.WRITABLE
-/// [error]: struct.Ready.html#associatedconstant.ERROR
-/// [timer]: struct.Ready.html#associatedconstant.TIMER
-/// [hup]: struct.Ready.html#associatedconstant.HUP
+/// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
+/// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
+/// [error]: ../event/struct.Ready.html#associatedconstant.ERROR
+/// [timer]: ../event/struct.Ready.html#associatedconstant.TIMER
+/// [hup]: ../event/struct.Ready.html#associatedconstant.HUP
 ///
 /// # Implementation notes
 ///
@@ -293,8 +291,8 @@ impl Poll {
     /// [`struct`]: #
     /// [`reregister`]: #method.reregister
     /// [`is_valid`]: ../event/struct.EventedId.html#method.is_valid
-    /// [readable]: struct.Ready.html#associatedconstant.READABLE
-    /// [timer]: struct.Ready.html#associatedconstant.TIMER
+    /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
+    /// [timer]: ../event/struct.Ready.html#associatedconstant.TIMER
     /// [`deregister`]: #method.deregister
     ///
     /// # Examples
@@ -304,9 +302,9 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use std::time::{Duration, Instant};
     ///
-    /// use mio_st::event::{Events, EventedId};
+    /// use mio_st::event::{Events, EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::poll::{Poll, PollOpt};
     /// use mio_st::timer::Timer;
     ///
     /// // Create a new `Poll` instance as well a containers for the vents.
@@ -373,8 +371,8 @@ impl Poll {
     /// arguments and see the [`struct`] docs for a high level overview of
     /// polling.
     ///
-    /// [readable]: struct.Ready.html#associatedconstant.READABLE
-    /// [writable]: struct.Ready.html#associatedconstant.WRITABLE
+    /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
+    /// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
     /// [`register`]: #method.register
     /// [`struct`]: #
     ///
@@ -383,9 +381,9 @@ impl Poll {
     /// ```
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
-    /// use mio_st::event::EventedId;
+    /// use mio_st::event::{EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::poll::{Poll, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
     ///
@@ -440,9 +438,9 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio_st::event::{Events, EventedId};
+    /// use mio_st::event::{Events, EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, Ready, PollOpt};
+    /// use mio_st::poll::{Poll, PollOpt};
     ///
     /// let mut poll = Poll::new()?;
     /// let mut events = Events::new();
@@ -507,8 +505,8 @@ impl Poll {
     /// See the [struct] level documentation for a higher level discussion of
     /// polling.
     ///
-    /// [readable]: struct.Ready.html#associatedconstant.READABLE
-    /// [writable]: struct.Ready.html#associatedconstant.WRITABLE
+    /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
+    /// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
         trace!("polling");

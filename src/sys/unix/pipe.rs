@@ -4,8 +4,8 @@ use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use libc;
 
-use event::{Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, EventedId, Ready};
+use poll::{Poll, PollCalled, PollOpt};
 use unix::EventedIo;
 
 /// Create a new non-blocking unix pipe.
@@ -25,8 +25,8 @@ use unix::EventedIo;
 /// use std::io::{self, Read, Write};
 ///
 /// use mio_st::unix::new_pipe;
-/// use mio_st::event::{Event, Events, EventedId};
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::event::{Event, Events, EventedId, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 ///
 /// // Unique ids for the two ends of the channel.
 /// const CHANNEL_RECV_ID: EventedId = EventedId(0);

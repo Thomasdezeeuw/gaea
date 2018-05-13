@@ -15,14 +15,14 @@ bitflags! {
     ///
     /// For high level documentation on polling and readiness, see [`Poll`].
     ///
-    /// [`Poll`]: struct.Poll.html
-    /// [`register`]: struct.Poll.html#method.register
-    /// [`reregister`]: struct.Poll.html#method.reregister
+    /// [`Poll`]: ../poll/struct.Poll.html
+    /// [`register`]: ../poll/struct.Poll.html#method.register
+    /// [`reregister`]: ../poll/struct.Poll.html#method.reregister
     ///
     /// # Examples
     ///
     /// ```
-    /// use mio_st::poll::Ready;
+    /// use mio_st::event::Ready;
     ///
     /// let ready = Ready::READABLE | Ready::WRITABLE;
     ///

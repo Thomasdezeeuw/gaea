@@ -1,7 +1,7 @@
 use std::io;
 
-use poll::{Poll, PollCalled, PollOpt, Ready};
-use event::EventedId;
+use poll::{Poll, PollCalled, PollOpt};
+use event::{EventedId, Ready};
 
 /// A value that may be registered with `Poll`.
 ///
@@ -46,9 +46,9 @@ use event::EventedId;
 /// ```
 /// use std::io;
 ///
-/// use mio_st::event::{Evented, EventedId};
+/// use mio_st::event::{Evented, EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOpt, Ready, PollCalled};
+/// use mio_st::poll::{Poll, PollOpt, PollCalled};
 ///
 /// pub struct MyEvented {
 ///     /// Our system handle that implements `Evented`.
@@ -80,8 +80,8 @@ use event::EventedId;
 /// use std::io;
 /// use std::marker::PhantomData;
 ///
-/// use mio_st::event::{Evented, EventedId};
-/// use mio_st::poll::{Poll, PollOpt, Ready, PollCalled};
+/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::poll::{Poll, PollOpt, PollCalled};
 /// use mio_st::registration::{Registration, Notifier};
 ///
 /// /// Create a new channel.

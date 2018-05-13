@@ -4,9 +4,9 @@ use std::net::{self, Shutdown, SocketAddr};
 use std::time::Duration;
 use std::collections::HashMap;
 
-use mio_st::event::{Event, EventedId};
+use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::{TcpListener, TcpStream};
-use mio_st::poll::{Poll, PollOpt, Ready};
+use mio_st::poll::{Poll, PollOpt};
 
 use {any_port, expect_events, init_with_poll};
 

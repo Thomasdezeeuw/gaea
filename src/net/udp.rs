@@ -4,8 +4,8 @@ use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use sys;
-use event::{Evented, EventedId};
-use poll::{Poll, PollCalled, PollOpt, Ready};
+use event::{Evented, EventedId, Ready};
+use poll::{Poll, PollCalled, PollOpt};
 
 /// A User Datagram Protocol socket.
 ///
@@ -32,9 +32,9 @@ use poll::{Poll, PollCalled, PollOpt, Ready};
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::UdpSocket;
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 ///
 /// // Unique ids and address for both the sender and echoer.
 /// const SENDER_ID: EventedId = EventedId(0);
@@ -341,9 +341,9 @@ impl FromRawFd for UdpSocket {
 /// # use std::error::Error;
 /// #
 /// # fn try_main() -> Result<(), Box<Error>> {
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-/// use mio_st::poll::{Poll, PollOpt, Ready};
+/// use mio_st::poll::{Poll, PollOpt};
 ///
 /// const ECHOER_ID: EventedId = EventedId(0);
 /// const SENDER_ID: EventedId = EventedId(1);

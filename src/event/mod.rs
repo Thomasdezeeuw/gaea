@@ -22,8 +22,7 @@ pub(crate) use self::id::INVALID_EVENTED_ID;
 /// # Examples
 ///
 /// ```
-/// use mio_st::poll::Ready;
-/// use mio_st::event::{Event, EventedId};
+/// use mio_st::event::{Event, EventedId, Ready};
 ///
 /// let event = Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE);
 ///
@@ -31,10 +30,10 @@ pub(crate) use self::id::INVALID_EVENTED_ID;
 /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// ```
 ///
-/// [readiness state]: ../struct.Ready.html
+/// [readiness state]: struct.Ready.html
 /// [`EventedId`]: struct.EventedId.html
-/// [`Poll.poll`]: ../struct.Poll.html#method.poll
-/// [`Poll`]: ../struct.Poll.html
+/// [`Poll.poll`]: ../poll/struct.Poll.html#method.poll
+/// [`Poll`]: ../poll/struct.Poll.html
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Event {
     id: EventedId,

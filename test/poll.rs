@@ -1,7 +1,7 @@
 use std::time::Instant;
 
-use mio_st::event::{Event, EventedId};
-use mio_st::poll::{PollOpt, Ready};
+use mio_st::event::{Event, EventedId, Ready};
+use mio_st::poll::PollOpt;
 use mio_st::registration::Registration;
 use mio_st::timer::Timer;
 

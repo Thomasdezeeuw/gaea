@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use mio_st::event::{Event, EventedId};
+use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::TcpStream;
-use mio_st::poll::{PollOpt, Ready};
+use mio_st::poll::PollOpt;
 
 use {expect_events, init_with_poll};
 
