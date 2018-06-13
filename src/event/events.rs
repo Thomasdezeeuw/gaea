@@ -1,4 +1,5 @@
 use std::{cmp, ptr};
+use std::iter::FusedIterator;
 
 use arrayvec::ArrayVec;
 
@@ -48,7 +49,7 @@ use event::Event;
 /// ```
 #[derive(Debug)]
 pub struct Events {
-    /// Stack allocted events.
+    /// Stack allocated events.
     events: ArrayVec<[Event; 512]>,
     /// Position of the iterator.
     pos: usize,
@@ -123,11 +124,13 @@ impl Default for Events {
 
 impl<'a> Iterator for &'a mut Events {
     type Item = Event;
+
     fn next(&mut self) -> Option<Event> {
         let ret = self.events.get(self.pos).cloned();
         self.pos += 1;
         ret
     }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.len();
         (len, Some(len))
@@ -140,3 +143,5 @@ impl<'a> ExactSizeIterator for &'a mut Events {
         (&**self).len()
     }
 }
+
+impl<'a> FusedIterator for &'a mut Events { }
