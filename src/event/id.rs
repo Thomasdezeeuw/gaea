@@ -1,3 +1,5 @@
+use std::fmt;
+
 /// Associates readiness notifications with [`Evented`] handles.
 ///
 /// `EventedId` is used as an argument to [`Poll.register`] and
@@ -44,5 +46,11 @@ impl From<usize> for EventedId {
 impl From<EventedId> for usize {
     fn from(val: EventedId) -> usize {
         val.0
+    }
+}
+
+impl fmt::Display for EventedId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
