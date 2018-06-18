@@ -365,7 +365,8 @@ impl RegistrationInner {
                 Some(userspace_events) => match userspace_events.upgrade() {
                     Some(userspace_events) => {
                         let event = Event::new(id, ready & interests);
-                        trace!("adding user space event: {:?}", event);
+                        trace!("adding user space event: id={}, readiness={:?}",
+                            event.id(), event.readiness());
                         userspace_events.borrow_mut().push(event);
                         Ok(())
                     },

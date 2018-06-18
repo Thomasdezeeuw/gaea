@@ -347,7 +347,7 @@ impl Poll {
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
-        trace!("registering with poller: id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
+        trace!("registering with poller: id={}, interests={:?}, opt={:?}", id, interests, opt);
         handle.register(self, id, interests, opt, PollCalled(()))
     }
 
@@ -408,7 +408,7 @@ impl Poll {
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
-        trace!("reregistering with poller: id: {:?}, interests: {:?}, opt: {:?}", id, interests, opt);
+        trace!("reregistering with poller: id={}, interests={:?}, opt={:?}", id, interests, opt);
         handle.reregister(self, id, interests, opt, PollCalled(()))
     }
 
@@ -470,7 +470,7 @@ impl Poll {
     where
         E: Evented + ?Sized,
     {
-        trace!("deregistering handle with poller");
+        trace!("deregistering with poller");
         handle.deregister(self, PollCalled(()))
     }
 
@@ -509,8 +509,9 @@ impl Poll {
     /// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
-        trace!("polling");
+        trace!("polling: timeout={:?}", timeout);
         let mut timeout = self.determine_timeout(timeout);
+        trace!("determined new timeout: timeout={:?}", timeout);
 
         // Clear any previously set events.
         events.reset();
@@ -520,6 +521,7 @@ impl Poll {
             match self.selector.select(events, timeout) {
                 Ok(()) => break,
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
+                    debug!("polling interrupted, trying again");
                     // Interrupted by a signal; update timeout if necessary and
                     // retry.
                     if let Some(to) = timeout {
@@ -580,6 +582,7 @@ impl Poll {
 
     /// Poll user space events.
     fn poll_userspace(&mut self, events: &mut Events) {
+        trace!("polling user space events");
         let mut userspace_events = self.userspace_events.borrow_mut();
         let n_copied = events.extend_events(&userspace_events);
         let left = userspace_events.len() - n_copied;
@@ -597,7 +600,7 @@ impl Poll {
 
     /// Add a new deadline to Poll.
     pub(crate) fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
-        trace!("adding deadline: id: {:?}, deadline: {:?}", id, deadline);
+        trace!("adding deadline: id={}, deadline={:?}", id, deadline);
         validate_args(id, Ready::TIMER)
             .map(|()| self.deadlines.push(Reverse(Deadline { id, deadline })))
     }
@@ -607,7 +610,7 @@ impl Poll {
     /// It tries removes the deadline from Poll. This return `Ok(())` even if
     /// the deadline is not found.
     pub(crate) fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
-        trace!("removing deadline: id: {:?}", id);
+        trace!("removing deadline: id={}", id);
         validate_args(id, Ready::TIMER)?;
 
         // TODO: optimize this.
@@ -627,6 +630,7 @@ impl Poll {
 
     /// Add expired deadlines to the provided `events`.
     fn poll_deadlines(&mut self, events: &mut Events) {
+        trace!("polling deadlines");
         let now = Instant::now();
 
         for _ in 0..events.capacity_left() {
