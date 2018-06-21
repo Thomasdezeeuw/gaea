@@ -32,8 +32,8 @@ pub(crate) const INVALID_EVENTED_ID: EventedId = EventedId(::std::usize::MAX);
 
 impl EventedId {
     /// Whether or not the `EventedId` is valid.
-    pub fn is_valid(&self) -> bool {
-        *self != INVALID_EVENTED_ID
+    pub fn is_valid(self) -> bool {
+        self != INVALID_EVENTED_ID
     }
 }
 

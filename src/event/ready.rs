@@ -50,32 +50,32 @@ bitflags! {
 impl Ready {
     /// Returns true if the value includes readable readiness.
     #[inline]
-    pub fn is_readable(&self) -> bool {
+    pub fn is_readable(self) -> bool {
         self.contains(Ready::READABLE)
     }
 
     /// Returns true if the value includes writable readiness.
     #[inline]
-    pub fn is_writable(&self) -> bool {
+    pub fn is_writable(self) -> bool {
         self.contains(Ready::WRITABLE)
     }
 
     /// Returns true if the value includes error readiness.
     #[inline]
-    pub fn is_error(&self) -> bool {
+    pub fn is_error(self) -> bool {
         self.contains(Ready::ERROR)
     }
 
     /// Returns true if the value includes an timer.
     #[inline]
-    pub fn is_timer(&self) -> bool {
+    pub fn is_timer(self) -> bool {
         self.contains(Ready::TIMER)
     }
 
     /// Returns true if the value includes HUP readiness.
     #[inline]
     #[cfg(unix)]
-    pub fn is_hup(&self) -> bool {
+    pub fn is_hup(self) -> bool {
         self.contains(Ready::HUP)
     }
 }
