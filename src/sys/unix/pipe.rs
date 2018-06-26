@@ -5,7 +5,7 @@ use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use libc;
 
 use event::{Evented, EventedId, Ready};
-use poll::{Poll, PollCalled, PollOpt};
+use poll::{Poll, PollCalled, PollOption};
 use unix::EventedIo;
 
 /// Create a new non-blocking unix pipe.
@@ -26,7 +26,7 @@ use unix::EventedIo;
 ///
 /// use mio_st::unix::new_pipe;
 /// use mio_st::event::{Event, Events, EventedId, Ready};
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 ///
 /// // Unique ids for the two ends of the channel.
 /// const CHANNEL_RECV_ID: EventedId = EventedId(0);
@@ -40,8 +40,8 @@ use unix::EventedIo;
 /// let (mut receiver, mut sender) = new_pipe()?;
 ///
 /// // Register both ends of the channel.
-/// poll.register(&mut receiver, CHANNEL_RECV_ID, Ready::READABLE, PollOpt::Level)?;
-/// poll.register(&mut sender, CHANNEL_SEND_ID, Ready::WRITABLE, PollOpt::Level)?;
+/// poll.register(&mut receiver, CHANNEL_RECV_ID, Ready::READABLE, PollOption::Level)?;
+/// poll.register(&mut sender, CHANNEL_SEND_ID, Ready::WRITABLE, PollOption::Level)?;
 ///
 /// loop {
 ///     // Check for new events.
@@ -94,12 +94,12 @@ pub struct Receiver {
 }
 
 impl Evented for Receiver {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
         self.inner.reregister(poll, id, interests, opt, p)
     }
@@ -138,12 +138,12 @@ pub struct Sender {
 }
 
 impl Evented for Sender {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
         self.inner.reregister(poll, id, interests, opt, p)
     }

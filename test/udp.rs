@@ -4,11 +4,11 @@ use std::time::Duration;
 
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-use mio_st::poll::PollOpt;
+use mio_st::poll::PollOption;
 
 use {any_port, expect_events, init_with_poll};
 
-// TODO: test the different `PollOpt`s.
+// TODO: test the different `PollOption`s.
 // TODO: test with both ends our UdpSockets.
 
 #[test]
@@ -30,7 +30,7 @@ fn socket_send_to() {
     let local_addr = socket.local_addr().unwrap();
 
     let (mut poll, mut events) = init_with_poll();
-    poll.register(&mut socket, EventedId(0), Ready::WRITABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::WRITABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -58,7 +58,7 @@ fn socket_peek_and_receive_from() {
     });
 
     let (mut poll, mut events) = init_with_poll();
-    poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(0), Ready::READABLE),
@@ -102,10 +102,10 @@ fn socket_reregister() {
     let mut socket = UdpSocket::bind(any_port()).unwrap();
 
     let (mut poll, mut events) = init_with_poll();
-    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOption::Edge).unwrap();
 
     // Reregister the socket.
-    poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOpt::Edge).unwrap();
+    poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(2), Ready::WRITABLE),
@@ -136,7 +136,7 @@ fn socket_deregister() {
     let mut socket = UdpSocket::bind(any_port()).unwrap();
 
     // Register and deregister the socket.
-    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOption::Edge).unwrap();
     poll.deregister(&mut socket).unwrap();
 
     // Now we shouldn't receive any events.
@@ -165,7 +165,7 @@ fn connected_socket_send() {
     let local_addr = socket.local_addr().unwrap();
 
     let (mut poll, mut events) = init_with_poll();
-    poll.register(&mut socket, EventedId(0), Ready::WRITABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::WRITABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -194,7 +194,7 @@ fn connected_socket_peek_and_receive() {
     });
 
     let (mut poll, mut events) = init_with_poll();
-    poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(0), Ready::READABLE),
@@ -237,10 +237,10 @@ fn connected_socket_reregister() {
     let mut socket = ConnectedUdpSocket::connect(any_port(), peer_addr).unwrap();
 
     let (mut poll, mut events) = init_with_poll();
-    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOption::Edge).unwrap();
 
     // Reregister the socket.
-    poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOpt::Edge).unwrap();
+    poll.reregister(&mut socket, EventedId(2), Ready::WRITABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(2), Ready::WRITABLE),
@@ -270,7 +270,7 @@ fn connected_socket_deregister() {
     let (mut poll, mut events) = init_with_poll();
 
     // Register and deregister the socket.
-    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut socket, EventedId(0), Ready::WRITABLE | Ready::READABLE, PollOption::Edge).unwrap();
     poll.deregister(&mut socket).unwrap();
 
     // Now we shouldn't receive any events.

@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::{TcpListener, TcpStream};
-use mio_st::poll::{Poll, PollOpt};
+use mio_st::poll::{Poll, PollOption};
 
 use {any_port, expect_events, init_with_poll};
 
@@ -28,7 +28,7 @@ fn listener() {
 
     let (mut poll, mut events) = init_with_poll();
 
-    poll.register(&mut listener, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut listener, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![
         Event::new(EventedId(0), Ready::READABLE),
@@ -56,7 +56,7 @@ fn deregistered_listener() {
 
     let mut listener = TcpListener::bind(any_port()).unwrap();
 
-    poll.register(&mut listener, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut listener, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
     poll.deregister(&mut listener).unwrap();
 
     poll.poll(&mut events, Some(Duration::from_secs(1))).unwrap();
@@ -88,9 +88,9 @@ fn listener_poll_opt() {
     const EDGE_ID: EventedId = EventedId(1);
     const ONESHOT_ID: EventedId = EventedId(2);
 
-    poll.register(&mut level_listener, LEVEL_ID, Ready::READABLE, PollOpt::Level).unwrap();
-    poll.register(&mut edge_listener, EDGE_ID, Ready::READABLE, PollOpt::Edge).unwrap();
-    poll.register(&mut oneshot_listener, ONESHOT_ID, Ready::READABLE, PollOpt::Oneshot).unwrap();
+    poll.register(&mut level_listener, LEVEL_ID, Ready::READABLE, PollOption::Level).unwrap();
+    poll.register(&mut edge_listener, EDGE_ID, Ready::READABLE, PollOption::Edge).unwrap();
+    poll.register(&mut oneshot_listener, ONESHOT_ID, Ready::READABLE, PollOption::Oneshot).unwrap();
 
     // What events we've seen so far.
     let mut seen_level = 0;
@@ -170,7 +170,7 @@ fn stream() {
     let (mut poll, mut events) = init_with_poll();
 
     let mut stream = TcpStream::connect(addr).unwrap();
-    poll.register(&mut stream, EventedId(0), Ready::all(), PollOpt::Level).unwrap();
+    poll.register(&mut stream, EventedId(0), Ready::all(), PollOption::Level).unwrap();
 
     // Give the writing thread a chance to run.
     thread::sleep(Duration::from_millis(100));
@@ -240,11 +240,11 @@ fn stream_poll_opt() {
     const ONESHOT_ID: EventedId = EventedId(2);
 
     let mut level_stream = TcpStream::connect(addr).unwrap();
-    poll.register(&mut level_stream, LEVEL_ID, Ready::all(), PollOpt::Level).unwrap();
+    poll.register(&mut level_stream, LEVEL_ID, Ready::all(), PollOption::Level).unwrap();
     let mut edge_stream = TcpStream::connect(addr).unwrap();
-    poll.register(&mut edge_stream, EDGE_ID, Ready::all(), PollOpt::Edge).unwrap();
+    poll.register(&mut edge_stream, EDGE_ID, Ready::all(), PollOption::Edge).unwrap();
     let mut oneshot_stream = TcpStream::connect(addr).unwrap();
-    poll.register(&mut oneshot_stream, ONESHOT_ID, Ready::all(), PollOpt::Oneshot).unwrap();
+    poll.register(&mut oneshot_stream, ONESHOT_ID, Ready::all(), PollOption::Oneshot).unwrap();
 
     // What events we've seen so far.
     let mut seen_level = false;
@@ -299,7 +299,7 @@ fn listener_and_stream() {
     let mut listener = TcpListener::bind(any_port()).unwrap();
     let addr = listener.local_addr().unwrap();
 
-    poll.register(&mut listener, LISTENER_ID, Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut listener, LISTENER_ID, Ready::READABLE, PollOption::Edge).unwrap();
 
     let stream1 = TcpStream::connect(addr).unwrap();
     add_connection(&mut connections, &mut poll, Connection::new(stream1, ConnectionType::Connected), &mut current_id);
@@ -413,7 +413,7 @@ fn is_would_block(err: &io::Error) -> bool {
 
 fn add_connection(connections: &mut HashMap<EventedId, Connection>, poll: &mut Poll, mut connection: Connection, current_id: &mut usize) {
     let id = EventedId(*current_id);
-    poll.register(&mut connection.stream, id, Ready::all(), PollOpt::Edge).unwrap();
+    poll.register(&mut connection.stream, id, Ready::all(), PollOption::Edge).unwrap();
     connections.insert(id, connection);
     *current_id += 1;
 }

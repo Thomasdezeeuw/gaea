@@ -16,9 +16,9 @@ use std::time::{Duration, Instant};
 use sys;
 use event::{Event, Events, Evented, EventedId, Ready};
 
-mod opt;
+mod option;
 
-pub use self::opt::PollOpt;
+pub use self::option::PollOption;
 
 // Poll uses three subsystems to bring a complete event system to the user.
 //
@@ -51,9 +51,9 @@ pub use self::opt::PollOpt;
 /// readiness interests and polling option. The associated id, or [`EventedId`],
 /// is used to associate an readiness event with an `Evented` handle. The
 /// readiness interests, or [`Ready`], tells `Poll` which specific operations on
-/// the handle to monitor for readiness. And the final argument, [`PollOpt`],
-/// tells `Poll` how to deliver the readiness events, see [`PollOpt`] for more
-/// information.
+/// the handle to monitor for readiness. And the final argument, [`PollOption`],
+/// tells `Poll` how to deliver the readiness events, see [`PollOption`] for
+/// more information.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
 /// [reading]: ../event/struct.Ready.html#associatedconstant.READABLE
@@ -61,7 +61,7 @@ pub use self::opt::PollOpt;
 /// [`register`]: #method.register
 /// [`EventedId`]: ../event/struct.EventedId.html
 /// [`Ready`]: ../event/struct.Ready.html
-/// [`PollOpt`]: enum.PollOpt.html
+/// [`PollOption`]: enum.PollOption.html
 ///
 /// # Portability
 ///
@@ -85,7 +85,7 @@ pub use self::opt::PollOpt;
 /// corresponding operation must be performed repeatedly until it returns
 /// [`WouldBlock`]. Unless this is done, there is no guarantee that another
 /// readiness event will be delivered, even if further data is received for the
-/// [`Evented`] handle. See [`PollOpt`] for more.
+/// [`Evented`] handle. See [`PollOption`] for more.
 ///
 /// ### Readiness operations
 ///
@@ -119,7 +119,7 @@ pub use self::opt::PollOpt;
 ///
 /// use mio_st::event::{EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 ///
 /// let address = "216.58.193.100:80".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -131,7 +131,7 @@ pub use self::opt::PollOpt;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point.
-/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
+/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// #
@@ -304,7 +304,7 @@ impl Poll {
     ///
     /// use mio_st::event::{Events, EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, PollOpt};
+    /// use mio_st::poll::{Poll, PollOption};
     /// use mio_st::timer::Timer;
     ///
     /// // Create a new `Poll` instance as well a containers for the vents.
@@ -316,11 +316,11 @@ impl Poll {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `poll`.
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
     ///
     /// // Add a timeout so we don't wait too long for the connection to setup.
     /// let mut timer = Timer::timeout(Duration::from_millis(500));
-    /// poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot)?;
+    /// poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot)?;
     ///
     /// // Start the event loop.
     /// loop {
@@ -343,7 +343,7 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()>
+    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
@@ -383,7 +383,7 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::event::{EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, PollOpt};
+    /// use mio_st::poll::{Poll, PollOption};
     ///
     /// let mut poll = Poll::new()?;
     ///
@@ -391,12 +391,12 @@ impl Poll {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poll`, only with readable interest.
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
     ///
     /// // Reregister the connection specifying a different id and write interest
-    /// // instead. `PollOpt::Edge` must be specified even though that value
+    /// // instead. `PollOption::Edge` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&mut stream, EventedId(2), Ready::WRITABLE, PollOpt::Edge)?;
+    /// poll.reregister(&mut stream, EventedId(2), Ready::WRITABLE, PollOption::Edge)?;
     /// #     Ok(())
     /// # }
     /// #
@@ -404,7 +404,7 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()>
+    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized
     {
         validate_args(id, interests)?;
@@ -429,7 +429,7 @@ impl Poll {
     /// but not all. To properly re-register a handle after deregistering use
     /// `register`, this works on all platforms.
     ///
-    /// [`oneshot`]: enum.PollOpt.html#variant.Oneshot
+    /// [`oneshot`]: enum.PollOption.html#variant.Oneshot
     ///
     /// # Examples
     ///
@@ -440,7 +440,7 @@ impl Poll {
     ///
     /// use mio_st::event::{Events, EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, PollOpt};
+    /// use mio_st::poll::{Poll, PollOption};
     ///
     /// let mut poll = Poll::new()?;
     /// let mut events = Events::new();
@@ -449,7 +449,7 @@ impl Poll {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poll`.
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
+    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
     ///
     /// // Do stuff with the connection etc.
     ///

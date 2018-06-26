@@ -5,7 +5,7 @@ use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use sys;
 use event::{Evented, EventedId, Ready};
-use poll::{Poll, PollCalled, PollOpt};
+use poll::{Poll, PollCalled, PollOption};
 
 /// A User Datagram Protocol socket.
 ///
@@ -34,7 +34,7 @@ use poll::{Poll, PollCalled, PollOpt};
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::UdpSocket;
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 ///
 /// // Unique ids and address for both the sender and echoer.
 /// const SENDER_ID: EventedId = EventedId(0);
@@ -57,8 +57,8 @@ use poll::{Poll, PollCalled, PollOpt};
 /// let mut events = Events::new();
 ///
 /// // Register our sockets
-/// poll.register(&mut sender_socket, SENDER_ID, Ready::WRITABLE, PollOpt::Level)?;
-/// poll.register(&mut echoer_socket, ECHOER_ID, Ready::READABLE, PollOpt::Level)?;
+/// poll.register(&mut sender_socket, SENDER_ID, Ready::WRITABLE, PollOption::Level)?;
+/// poll.register(&mut echoer_socket, ECHOER_ID, Ready::READABLE, PollOption::Level)?;
 ///
 /// // The message we'll send.
 /// const MSG_TO_SEND: &[u8; 11] = b"Hello world";
@@ -288,11 +288,11 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.socket.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.socket.reregister(poll, id, interests, opt, p)
     }
 
@@ -343,7 +343,7 @@ impl FromRawFd for UdpSocket {
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 ///
 /// const ECHOER_ID: EventedId = EventedId(0);
 /// const SENDER_ID: EventedId = EventedId(1);
@@ -361,8 +361,8 @@ impl FromRawFd for UdpSocket {
 /// let mut events = Events::new();
 ///
 /// // Register our echoer and sender.
-/// poll.register(&mut echoer, ECHOER_ID, Ready::READABLE, PollOpt::Level)?;
-/// poll.register(&mut sender, SENDER_ID, Ready::WRITABLE, PollOpt::Level)?;
+/// poll.register(&mut echoer, ECHOER_ID, Ready::READABLE, PollOption::Level)?;
+/// poll.register(&mut sender, SENDER_ID, Ready::WRITABLE, PollOption::Level)?;
 ///
 /// loop {
 ///     poll.poll(&mut events, None)?;
@@ -546,11 +546,11 @@ impl ConnectedUdpSocket {
 }
 
 impl Evented for ConnectedUdpSocket {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.socket.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.socket.reregister(poll, id, interests, opt, p)
     }
 

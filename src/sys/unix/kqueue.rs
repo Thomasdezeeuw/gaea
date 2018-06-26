@@ -5,7 +5,7 @@ use std::time::Duration;
 use libc;
 
 use event::{Event, Events, EventedId, Ready, INVALID_EVENTED_ID};
-use poll::PollOpt;
+use poll::PollOption;
 use super::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types
@@ -108,7 +108,7 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()> {
         let flags = opt_to_flags(opt) | libc::EV_ADD;
         // At most we need two changes, but maybe we only need 1.
         let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
@@ -129,7 +129,7 @@ impl Selector {
         kevent_register(self.kq, &mut changes[0..n_changes], &[])
     }
 
-    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOpt) -> io::Result<()> {
+    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()> {
         let flags = opt_to_flags(opt);
         let write_flags = if interests.is_writable() {
             flags | libc::EV_ADD
@@ -202,11 +202,11 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
 }
 
 /// Convert poll options into `kevent` flags.
-fn opt_to_flags(opt: PollOpt) -> kevent_flags_t {
+fn opt_to_flags(opt: PollOption) -> kevent_flags_t {
     libc::EV_RECEIPT | match opt {
-        PollOpt::Edge => libc::EV_CLEAR,
-        PollOpt::Level => 0, // Default.
-        PollOpt::Oneshot => libc::EV_ONESHOT,
+        PollOption::Edge => libc::EV_CLEAR,
+        PollOption::Level => 0, // Default.
+        PollOption::Oneshot => libc::EV_ONESHOT,
     }
 }
 

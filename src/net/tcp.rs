@@ -8,7 +8,7 @@ use net2::TcpBuilder;
 
 use sys;
 use event::{Evented, EventedId, Ready};
-use poll::{Poll, PollCalled, PollOpt};
+use poll::{Poll, PollCalled, PollOption};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -27,7 +27,7 @@ use poll::{Poll, PollCalled, PollOpt};
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 ///
 /// let address = "127.0.0.1:8888".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -36,7 +36,7 @@ use poll::{Poll, PollCalled, PollOpt};
 /// let mut events = Events::new();
 ///
 /// // Register the socket with `Poll`.
-/// poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOpt::Edge)?;
+/// poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
 ///
 /// poll.poll(&mut events, None)?;
 ///
@@ -177,11 +177,11 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests, opt, p)
     }
 
@@ -238,7 +238,7 @@ impl FromRawFd for TcpStream {
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::TcpListener;
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 ///
 /// let address = "127.0.0.1:7777".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
@@ -247,7 +247,7 @@ impl FromRawFd for TcpStream {
 /// let mut events = Events::new();
 ///
 /// // Register the socket with `Poll`
-/// poll.register(&mut listener, EventedId(0), Ready::WRITABLE, PollOpt::Edge)?;
+/// poll.register(&mut listener, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
 ///
 /// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
@@ -390,11 +390,11 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests, opt, p)
     }
 

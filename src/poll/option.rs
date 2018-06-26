@@ -1,6 +1,6 @@
 /// Options supplied when [registering] an `Evented` handle with `Poll`.
 ///
-/// `PollOpt` values can be combined together using the various bitwise
+/// `PollOption` values can be combined together using the various bitwise
 /// operators.
 ///
 /// For high level documentation on polling see [`Poll`].
@@ -84,7 +84,7 @@
 /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 /// [`reregister`]: struct.Poll.html#method.reregister
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
-pub enum PollOpt {
+pub enum PollOption {
     /// Edge-triggered notifications.
     Edge,
     /// Level-triggered notifications.

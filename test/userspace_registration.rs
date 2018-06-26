@@ -1,5 +1,5 @@
 use mio_st::event::{Event, EventedId, Ready};
-use mio_st::poll::PollOpt;
+use mio_st::poll::PollOption;
 use mio_st::registration::{NotifyError, Registration, RegistrationGone};
 
 use {expect_events, init_with_poll};
@@ -20,7 +20,7 @@ fn incorrect_readiness() {
     let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
-    poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
 
     // Incorrect readiness.
     assert_eq!(notifier.notify(Ready::empty()), Err(NotifyError::EmptyReadiness));
@@ -50,7 +50,7 @@ fn notifier_interests() {
     assert_eq!(notifier.interests(), Ok(Ready::empty()));
 
     // After registering it should be an actual value.
-    poll.register(&mut registration, EventedId(0), Ready::WRITABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut registration, EventedId(0), Ready::WRITABLE, PollOption::Edge).unwrap();
     assert_eq!(notifier.interests(), Ok(Ready::WRITABLE));
 
     // No point in getting interests after the registration is dropped.
@@ -65,7 +65,7 @@ fn notify() {
     let (mut poll, mut events) = init_with_poll();
     let (mut registration, mut notifier) = Registration::new();
 
-    poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge).unwrap();
+    poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
 
     // Ok.
     notifier.notify(Ready::READABLE).unwrap();

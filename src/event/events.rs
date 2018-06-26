@@ -25,7 +25,7 @@ use event::Event;
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{EventedId, Events, Ready};
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 ///
 /// let mut poll = Poll::new()?;
 /// let mut events = Events::new();

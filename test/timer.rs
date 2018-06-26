@@ -2,7 +2,7 @@ use std::error::Error;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{Event, EventedId, Events, Ready};
-use mio_st::poll::{Poll, PollOpt};
+use mio_st::poll::{Poll, PollOption};
 use mio_st::timer::Timer;
 
 use {expect_events, init_with_poll};
@@ -28,7 +28,7 @@ fn invalid_id() {
     let (mut poll, mut events) = init_with_poll();
 
     let mut timer = Timer::deadline(Instant::now());
-    let result = poll.register(&mut timer, EventedId(usize::max_value()), Ready::TIMER, PollOpt::Oneshot);
+    let result = poll.register(&mut timer, EventedId(usize::max_value()), Ready::TIMER, PollOption::Oneshot);
     assert!(result.is_err());
     assert!(result.unwrap_err().description().contains("invalid evented id"));
 
@@ -40,7 +40,7 @@ fn deadline() {
     let (mut poll, mut events) = init_with_poll();
 
     let mut timer = Timer::deadline(Instant::now());
-    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(MARGIN_MS), vec![
         Event::new(EventedId(0), Ready::TIMER),
@@ -52,7 +52,7 @@ fn timeout() {
     let (mut poll, mut events) = init_with_poll();
 
     let mut timer = Timer::timeout(Duration::from_millis(10));
-    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
         Event::new(EventedId(0), Ready::TIMER),
@@ -64,7 +64,7 @@ fn deregistering() {
     let (mut poll, mut events) = init_with_poll();
 
     let mut timer = Timer::deadline(Instant::now());
-    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot).unwrap();
     poll.deregister(&mut timer).unwrap();
 
     expect_events(&mut poll, &mut events, 1, vec![]);
@@ -75,7 +75,7 @@ fn deregistering() {
 fn incorrect_readiness() {
     let (mut poll, _) = init_with_poll();
     let mut timer = Timer::deadline(Instant::now());
-    poll.register(&mut timer, EventedId(0), Ready::READABLE, PollOpt::Oneshot).unwrap();
+    poll.register(&mut timer, EventedId(0), Ready::READABLE, PollOption::Oneshot).unwrap();
 }
 
 #[test]
@@ -83,7 +83,7 @@ fn incorrect_readiness() {
 fn incorrect_poll_option() {
     let (mut poll, _) = init_with_poll();
     let mut timer = Timer::deadline(Instant::now());
-    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Level).unwrap();
+    poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Level).unwrap();
 }
 
 #[test]
@@ -120,10 +120,10 @@ fn multiple_timers() {
 
             let mut timer = Timer::timeout(Duration::from_millis(*timeout_ms));
 
-            poll.register(&mut timer, first_token, Ready::TIMER, PollOpt::Oneshot).unwrap();
+            poll.register(&mut timer, first_token, Ready::TIMER, PollOption::Oneshot).unwrap();
             poll.deregister(&mut timer).unwrap();
 
-            poll.register(&mut timer, token, Ready::TIMER, PollOpt::Oneshot).unwrap();
+            poll.register(&mut timer, token, Ready::TIMER, PollOption::Oneshot).unwrap();
         }
 
         for token in 1..4 {
@@ -140,7 +140,7 @@ fn multiple_timers_same_deadline() {
 
     let mut timer = Timer::deadline(Instant::now());
     for token in 0..3 {
-        poll.register(&mut timer, EventedId(token), Ready::TIMER, PollOpt::Oneshot).unwrap();
+        poll.register(&mut timer, EventedId(token), Ready::TIMER, PollOption::Oneshot).unwrap();
     }
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
@@ -155,10 +155,10 @@ fn multiple_timers_same_id() {
     let (mut poll, mut events) = init_with_poll();
 
     let mut timer1 = Timer::timeout(Duration::from_millis(20));
-    poll.register(&mut timer1, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+    poll.register(&mut timer1, EventedId(0), Ready::TIMER, PollOption::Oneshot).unwrap();
 
     let mut timer2 = Timer::timeout(Duration::from_millis(10));
-    poll.register(&mut timer2, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+    poll.register(&mut timer2, EventedId(0), Ready::TIMER, PollOption::Oneshot).unwrap();
 
     expect_events_elapsed(&mut poll, &mut events, Duration::from_millis(10 + MARGIN_MS), vec![
         Event::new(EventedId(0), Ready::TIMER),
@@ -183,7 +183,7 @@ fn poll_should_set_timeout() {
 
     for &(timeout, max_elapsed) in &timeouts {
         let mut timer = Timer::timeout(timeout);
-        poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOpt::Oneshot).unwrap();
+        poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot).unwrap();
 
         let start = Instant::now();
         poll.poll(&mut events, Some(Duration::from_millis(50))).unwrap();

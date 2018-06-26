@@ -34,7 +34,7 @@
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
 //! use mio_st::event::{EventedId, Events, Ready};
-//! use mio_st::poll::{Poll, PollOpt};
+//! use mio_st::poll::{Poll, PollOption};
 //! use mio_st::registration::Registration;
 //!
 //! // Create our poll and events.
@@ -43,9 +43,9 @@
 //!
 //! // Create a new user space registration and register it with `poll`.
 //! let (mut registration, mut notifier) = Registration::new();
-//! // Note that `PollOpt` doesn't matter here since this is entirely user space
+//! // Note that `PollOption` doesn't matter here since this is entirely user space
 //! // driven and not in our control.
-//! poll.register(&mut registration, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOpt::Edge)?;
+//! poll.register(&mut registration, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
 //!
 //! // Notify the `registration` of a new, readable readiness event.
 //! notifier.notify(Ready::READABLE)?;
@@ -72,7 +72,7 @@ use std::error::Error;
 use std::rc::{Rc, Weak};
 
 use event::{Event, Evented, EventedId, Ready, INVALID_EVENTED_ID};
-use poll::{Poll, PollCalled, PollOpt};
+use poll::{Poll, PollCalled, PollOption};
 
 /// Handle to a user space registration.
 ///
@@ -86,7 +86,7 @@ use poll::{Poll, PollCalled, PollOpt};
 ///
 /// # Notes
 ///
-/// The `PollOpt` provided to `register` and `reregister` are ignored, since
+/// The `PollOption` provided to `register` and `reregister` are ignored, since
 /// user space controls the notifing of readiness.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
@@ -107,11 +107,11 @@ impl Registration {
 }
 
 impl Evented for Registration {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt, _: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, _: PollOption, _: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, _: PollOpt, _: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, _: PollOption, _: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests)
     }
 
@@ -141,7 +141,7 @@ impl Evented for Registration {
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use mio_st::event::{EventedId, Events, Ready};
-/// use mio_st::poll::{Poll, PollOpt};
+/// use mio_st::poll::{Poll, PollOption};
 /// use mio_st::registration::{NotifyError, Registration};
 ///
 /// // Create our poll, events and registration.
@@ -155,7 +155,7 @@ impl Evented for Registration {
 ///
 /// // So we'll register our registration. Take not of the readiness arguments,
 /// // they'll come back later.
-/// poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOpt::Edge)?;
+/// poll.register(&mut registration, EventedId(0), Ready::READABLE, PollOption::Edge)?;
 ///
 /// // Now we'll try to call notify again. But again an error is returned, this
 /// // time it indicate the accompanying `Registration` has no interest in the

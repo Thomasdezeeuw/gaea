@@ -7,7 +7,7 @@ use libc;
 use net2::TcpStreamExt;
 
 use event::{Evented, EventedId, Ready};
-use poll::{Poll, PollCalled, PollOpt};
+use poll::{Poll, PollCalled, PollOption};
 use sys::unix::eventedfd::EventedFd;
 
 #[derive(Debug)]
@@ -79,11 +79,11 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
     }
 
@@ -143,11 +143,11 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOpt, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
     }
 

@@ -41,7 +41,7 @@
 //!
 //! use mio_st::event::{Events, EventedId, Ready};
 //! use mio_st::net::{TcpListener, TcpStream};
-//! use mio_st::poll::{Poll, PollOpt};
+//! use mio_st::poll::{Poll, PollOption};
 //!
 //! // An unique id to associate an event with a handle, in this case for our
 //! // TCP listener.
@@ -58,7 +58,7 @@
 //!
 //! // Register our TCP listener with `Poll`, this allows us to receive
 //! // notifications about incoming connections.
-//! poll.register(&mut server, SERVER_ID, Ready::READABLE, PollOpt::Edge)?;
+//! poll.register(&mut server, SERVER_ID, Ready::READABLE, PollOption::Edge)?;
 //!
 //! // A hashmap with `EventedId` -> `TcpStream` connections.
 //! let mut connections = HashMap::with_capacity(512);
@@ -114,7 +114,7 @@
 //!         // Register the TCP connection so we can handle events for it as
 //!         // well.
 //!         let interests = Ready::READABLE | Ready::WRITABLE | Ready::ERROR;
-//!         poll.register(&mut connection, id, interests, PollOpt::Edge)?;
+//!         poll.register(&mut connection, id, interests, PollOption::Edge)?;
 //!
 //!         // Store our connection so we can access it later.
 //!         connections.insert(id, connection);
