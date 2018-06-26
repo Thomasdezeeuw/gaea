@@ -10,17 +10,17 @@
 //!
 //! # Usage
 //!
-//! Using mio starts by creating a [`Poll`], which used to poll events, both
+//! Using mio starts by creating a [`Poller`], which used to poll events, both
 //! from the OS (backed by epoll, kqueue, etc.) and from user space.
 //!
-//! For more detail, including supported platforms, see [`Poll`].
+//! For more detail, including supported platforms, see [`Poller`].
 //!
-//! [`Poll`]: poll/struct.Poll.html
+//! [`Poller`]: poll/struct.Poller.html
 //!
 //! # Undefined behaviour
 //!
-//! It is undefined how `Poll` will behave after a process is forked, if you
-//! need fork a process do it before creating a `Poll` instance.
+//! It is undefined how `Poller` will behave after a process is forked, if you
+//! need fork a process do it before creating a `Poller` instance.
 //!
 //! As this is the single threaded version of mio, no types implement [`Sync`]
 //! or [`Send`] and sharing these types across threads will result in undefined
@@ -41,14 +41,14 @@
 //!
 //! use mio_st::event::{Events, EventedId, Ready};
 //! use mio_st::net::{TcpListener, TcpStream};
-//! use mio_st::poll::{Poll, PollOption};
+//! use mio_st::poll::{Poller, PollOption};
 //!
 //! // An unique id to associate an event with a handle, in this case for our
 //! // TCP listener.
 //! const SERVER_ID: EventedId = EventedId(0);
 //!
-//! // Create a `Poll` instance.
-//! let mut poll = Poll::new()?;
+//! // Create a `Poller` instance.
+//! let mut poll = Poller::new()?;
 //! // Also create a container for all events.
 //! let mut events = Events::new();
 //!
@@ -56,7 +56,7 @@
 //! let addr = "127.0.0.1:12345".parse()?;
 //! let mut server = TcpListener::bind(addr)?;
 //!
-//! // Register our TCP listener with `Poll`, this allows us to receive
+//! // Register our TCP listener with `Poller`, this allows us to receive
 //! // notifications about incoming connections.
 //! poll.register(&mut server, SERVER_ID, Ready::READABLE, PollOption::Edge)?;
 //!
@@ -95,7 +95,7 @@
 //!     }
 //! }
 //!
-//! fn accept_connections(server: &mut TcpListener, poll: &mut Poll, connections: &mut HashMap<EventedId, TcpStream>, current_id: &mut EventedId) -> io::Result<()> {
+//! fn accept_connections(server: &mut TcpListener, poll: &mut Poller, connections: &mut HashMap<EventedId, TcpStream>, current_id: &mut EventedId) -> io::Result<()> {
 //!     // Since we registered with edge-triggered events for our server we need
 //!     // to accept connections until we hit a would block "error".
 //!     loop {

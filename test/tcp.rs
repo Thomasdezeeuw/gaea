@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::{TcpListener, TcpStream};
-use mio_st::poll::{Poll, PollOption};
+use mio_st::poll::{Poller, PollOption};
 
 use {any_port, expect_events, init_with_poll};
 
@@ -411,7 +411,7 @@ fn is_would_block(err: &io::Error) -> bool {
     err.kind() == io::ErrorKind::WouldBlock
 }
 
-fn add_connection(connections: &mut HashMap<EventedId, Connection>, poll: &mut Poll, mut connection: Connection, current_id: &mut usize) {
+fn add_connection(connections: &mut HashMap<EventedId, Connection>, poll: &mut Poller, mut connection: Connection, current_id: &mut usize) {
     let id = EventedId(*current_id);
     poll.register(&mut connection.stream, id, Ready::all(), PollOption::Edge).unwrap();
     connections.insert(id, connection);

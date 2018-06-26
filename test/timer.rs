@@ -2,14 +2,14 @@ use std::error::Error;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{Event, EventedId, Events, Ready};
-use mio_st::poll::{Poll, PollOption};
+use mio_st::poll::{Poller, PollOption};
 use mio_st::timer::Timer;
 
 use {expect_events, init_with_poll};
 
 /// A wrapper function around `expect_events` to check that elapsed time doesn't
 /// exceed `max_elapsed`, runs a single poll.
-fn expect_events_elapsed(poll: &mut Poll, events: &mut Events, max_elapsed: Duration, expected: Vec<Event>) {
+fn expect_events_elapsed(poll: &mut Poller, events: &mut Events, max_elapsed: Duration, expected: Vec<Event>) {
     let start = Instant::now();
     expect_events(poll, events, 1, expected);
     let elapsed = start.elapsed();
@@ -17,7 +17,7 @@ fn expect_events_elapsed(poll: &mut Poll, events: &mut Events, max_elapsed: Dura
             it returned after: {:?}", max_elapsed, elapsed);
 }
 
-/// Allowed margin for `Poll.poll` to return
+/// Allowed margin for `Poller.poll` to return
 const MARGIN_MS: u64 = 10;
 
 // TODO: test panics using incorrect opt/interests. Deregister without

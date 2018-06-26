@@ -3,7 +3,7 @@ use std::io::{self, Read, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use event::{Evented, Ready, EventedId};
-use poll::{Poll, PollCalled, PollOption};
+use poll::{Poller, PollCalled, PollOption};
 use sys::unix::EventedFd;
 
 /// Managed adaptor for a `RawFd` providing an [`Evented`] implementation.
@@ -27,7 +27,7 @@ use sys::unix::EventedFd;
 /// use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 ///
 /// use mio_st::event::{Evented, EventedId, Ready};
-/// use mio_st::poll::{Poll, PollOption};
+/// use mio_st::poll::{Poller, PollOption};
 /// use mio_st::unix::EventedIo;
 ///
 /// // Bind a listener from the standard library.
@@ -40,7 +40,7 @@ use sys::unix::EventedFd;
 /// // Now we can let `EventedIo` manage the lifetime for us.
 /// let mut evented_listener = unsafe { EventedIo::from_raw_fd(listener_fd) };
 ///
-/// let mut poll = Poll::new()?;
+/// let mut poll = Poller::new()?;
 ///
 /// // Register the listener using `EventedFd`.
 /// poll.register(&mut evented_listener, EventedId(0), Ready::READABLE, PollOption::Edge)?;
@@ -78,15 +78,15 @@ impl AsRawFd for EventedIo {
 }
 
 impl Evented for EventedIo {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).deregister(poll, p)
     }
 }

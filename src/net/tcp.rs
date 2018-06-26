@@ -8,7 +8,7 @@ use net2::TcpBuilder;
 
 use sys;
 use event::{Evented, EventedId, Ready};
-use poll::{Poll, PollCalled, PollOption};
+use poll::{Poller, PollCalled, PollOption};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -27,15 +27,15 @@ use poll::{Poll, PollCalled, PollOption};
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOption};
+/// use mio_st::poll::{Poller, PollOption};
 ///
 /// let address = "127.0.0.1:8888".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
 ///
-/// let mut poll = Poll::new()?;
+/// let mut poll = Poller::new()?;
 /// let mut events = Events::new();
 ///
-/// // Register the socket with `Poll`.
+/// // Register the socket with `Poller`.
 /// poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
 ///
 /// poll.poll(&mut events, None)?;
@@ -177,15 +177,15 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
         self.inner.deregister(poll, p)
     }
 }
@@ -238,15 +238,15 @@ impl FromRawFd for TcpStream {
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::TcpListener;
-/// use mio_st::poll::{Poll, PollOption};
+/// use mio_st::poll::{Poller, PollOption};
 ///
 /// let address = "127.0.0.1:7777".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
 ///
-/// let mut poll = Poll::new()?;
+/// let mut poll = Poller::new()?;
 /// let mut events = Events::new();
 ///
-/// // Register the socket with `Poll`
+/// // Register the socket with `Poller`
 /// poll.register(&mut listener, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
 ///
 /// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
@@ -343,7 +343,7 @@ impl TcpListener {
     ///
     /// This function will set the `listener` provided into nonblocking mode,
     /// and otherwise the listener will just be wrapped up in an mio listener
-    /// ready to accept new connections and become associated with `Poll`.
+    /// ready to accept new connections and become associated with `Poller`.
     pub fn from_std_listener(listener: net::TcpListener) -> io::Result<TcpListener> {
         sys::TcpListener::new(listener).map(|inner| TcpListener { inner })
     }
@@ -390,15 +390,15 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
         self.inner.deregister(poll, p)
     }
 }

@@ -15,9 +15,9 @@ pub(crate) use self::id::INVALID_EVENTED_ID;
 /// A readiness event.
 ///
 /// `Event` is a [readiness state] paired with a [`EventedId`]. It is returned by
-/// [`Poll.poll`].
+/// [`Poller.poll`].
 ///
-/// For more documentation on polling and events, see [`Poll`].
+/// For more documentation on polling and events, see [`Poller`].
 ///
 /// # Examples
 ///
@@ -32,8 +32,8 @@ pub(crate) use self::id::INVALID_EVENTED_ID;
 ///
 /// [readiness state]: struct.Ready.html
 /// [`EventedId`]: struct.EventedId.html
-/// [`Poll.poll`]: ../poll/struct.Poll.html#method.poll
-/// [`Poll`]: ../poll/struct.Poll.html
+/// [`Poller.poll`]: ../poll/struct.Poller.html#method.poll
+/// [`Poller`]: ../poll/struct.Poller.html
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Event {
     id: EventedId,

@@ -4,9 +4,9 @@ use std::io;
 use std::time::{Duration, Instant};
 
 use event::{Evented, EventedId, Ready, INVALID_EVENTED_ID};
-use poll::{Poll, PollCalled, PollOption};
+use poll::{Poller, PollCalled, PollOption};
 
-/// A timer that can be registered with [`Poll`].
+/// A timer that can be registered with [`Poller`].
 ///
 /// Timers can be created using a specific [`deadline`] or using a [`timeout`].
 /// When registering the timer it will trigger an [`Event`] after the deadline
@@ -14,11 +14,11 @@ use poll::{Poll, PollCalled, PollOption};
 /// [`TIMER`] as `Ready` value and the same `id` as provided when registering
 /// it.
 ///
-/// [`Poll`]: ../poll/struct.Poll.html
+/// [`Poller`]: ../poll/struct.Poller.html
 /// [`deadline`]: #method.deadline
 /// [`timeout`]: #method.timeout
 /// [`Event`]: ../event/struct.Event.html
-/// [polling]: ../poll/struct.Poll.html#method.poll
+/// [polling]: ../poll/struct.Poller.html#method.poll
 /// [`TIMER`]: ../event/struct.Ready.html#associatedconstant.TIMER
 ///
 /// # Panics
@@ -48,17 +48,17 @@ use poll::{Poll, PollCalled, PollOption};
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{Event, Events, EventedId, Ready};
-/// use mio_st::poll::{Poll, PollOption};
+/// use mio_st::poll::{Poller, PollOption};
 /// use mio_st::timer::Timer;
 ///
-/// // Our `Poll` instance and events.
-/// let mut poll = Poll::new()?;
+/// // Our `Poller` instance and events.
+/// let mut poll = Poller::new()?;
 /// let mut events = Events::new();
 ///
 /// // Create our timer, with a deadline 10 milliseconds from now.
 /// let mut timer = Timer::timeout(Duration::from_millis(10));
 ///
-/// // Register our timer with our `Poll` instance. Note that both
+/// // Register our timer with our `Poller` instance. Note that both
 /// // `Ready::TIMER` and `PollOption::Oneshot` are required when registering a
 /// // `Timer`. See Panics section above.
 /// poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot)?;
@@ -99,18 +99,18 @@ impl Timer {
 }
 
 impl Evented for Timer {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
         debug_assert_eq!(interests, Ready::TIMER, "trying to (re)register `Timer` with interests other then `TIMER`");
         debug_assert_eq!(opt, PollOption::Oneshot, "trying to (re)register `Timer` with poll option other then `Oneshot`");
         self.id = id;
         poll.add_deadline(id, self.deadline)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         self.register(poll, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poll, _: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, poll: &mut Poller, _: PollCalled) -> io::Result<()> {
         poll.remove_deadline(self.id)
     }
 }

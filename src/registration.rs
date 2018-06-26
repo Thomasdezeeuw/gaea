@@ -6,27 +6,27 @@
 //!
 //! A `Registration` / `Notifier` pair is created by calling
 //! [`Registration::new`]. At this point, the registration is not being
-//! monitored by a [`Poll`] instance, so calls to [`notify`] will not result in
-//! any events.
+//! monitored by a [`Poller`] instance, so calls to [`notify`] will not result
+//! in any events.
 //!
 //! When [`notify`] is called and the `Registration` is associated with a
-//! [`Poll`] instance, a readiness event will be created and returned by
-//! [`Poll.poll`].
+//! [`Poller`] instance, a readiness event will be created and returned by
+//! [`Poller.poll`].
 //!
-//! `Registration` implements [`Evented`], so it can be used with [`Poll`] using
-//! the same [`register`], [`reregister`], and [`deregister`] functions used
-//! with TCP, UDP, etc. types. Once registered with [`Poll`], readiness state
-//! changes result in readiness events being dispatched to the [`Poll`] instance
-//! with which `Registration` is registered.
+//! `Registration` implements [`Evented`], so it can be used with [`Poller`]
+//! using the same [`register`], [`reregister`], and [`deregister`] functions
+//! used with TCP, UDP, etc. types. Once registered with [`Poller`], readiness
+//! state changes result in readiness events being dispatched to the [`Poller`]
+//! instance with which `Registration` is registered.
 //!
 //! [`Evented`]: ../event/trait.Evented.html
 //! [`Registration::new`]: struct.Registration.html#method.new
-//! [`Poll`]: ../poll/struct.Poll.html
-//! [`Poll.poll`]: ../poll/struct.Poll.html#method.poll
+//! [`Poller`]: ../poll/struct.Poller.html
+//! [`Poller.poll`]: ../poll/struct.Poller.html#method.poll
 //! [`notify`]: struct.Notifier.html#method.notify
-//! [`register`]: ../poll/struct.Poll.html#method.register
-//! [`reregister`]: ../poll/struct.Poll.html#method.reregister
-//! [`deregister`]: ../poll/struct.Poll.html#method.deregister
+//! [`register`]: ../poll/struct.Poller.html#method.register
+//! [`reregister`]: ../poll/struct.Poller.html#method.reregister
+//! [`deregister`]: ../poll/struct.Poller.html#method.deregister
 //!
 //! # Examples
 //!
@@ -34,11 +34,11 @@
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<Error>> {
 //! use mio_st::event::{EventedId, Events, Ready};
-//! use mio_st::poll::{Poll, PollOption};
+//! use mio_st::poll::{Poller, PollOption};
 //! use mio_st::registration::Registration;
 //!
 //! // Create our poll and events.
-//! let mut poll = Poll::new()?;
+//! let mut poll = Poller::new()?;
 //! let mut events = Events::new();
 //!
 //! // Create a new user space registration and register it with `poll`.
@@ -72,7 +72,7 @@ use std::error::Error;
 use std::rc::{Rc, Weak};
 
 use event::{Event, Evented, EventedId, Ready, INVALID_EVENTED_ID};
-use poll::{Poll, PollCalled, PollOption};
+use poll::{Poller, PollCalled, PollOption};
 
 /// Handle to a user space registration.
 ///
@@ -107,15 +107,15 @@ impl Registration {
 }
 
 impl Evented for Registration {
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, _: PollOption, _: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, _: PollOption, _: PollCalled) -> io::Result<()> {
         self.inner.register(poll, id, interests)
     }
 
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, _: PollOption, _: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, _: PollOption, _: PollCalled) -> io::Result<()> {
         self.inner.reregister(poll, id, interests)
     }
 
-    fn deregister(&mut self, _: &mut Poll, _: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, _: &mut Poller, _: PollCalled) -> io::Result<()> {
         self.inner.deregister()
     }
 }
@@ -141,11 +141,11 @@ impl Evented for Registration {
 /// # use std::error::Error;
 /// # fn try_main() -> Result<(), Box<Error>> {
 /// use mio_st::event::{EventedId, Events, Ready};
-/// use mio_st::poll::{Poll, PollOption};
+/// use mio_st::poll::{Poller, PollOption};
 /// use mio_st::registration::{NotifyError, Registration};
 ///
 /// // Create our poll, events and registration.
-/// let mut poll = Poll::new()?;
+/// let mut poll = Poller::new()?;
 /// let mut events = Events::new();
 /// let (mut registration, mut notifier) = Registration::new();
 ///
@@ -296,7 +296,7 @@ impl Error for RegistrationGone {
 struct RegistrationInner {
     id: Cell<EventedId>,
     interests: Cell<Ready>,
-    // A weak reference to the user space events of a `Poll` instance. This will
+    // A weak reference to the user space events of a `Poller` instance. This will
     // be set once register is called.
     userspace_events_ref: Cell<Option<Weak<RefCell<Vec<Event>>>>>,
 }
@@ -310,7 +310,7 @@ impl RegistrationInner {
         }
     }
 
-    fn register(&self, poll: &mut Poll, id: EventedId, interests: Ready) -> io::Result<()> {
+    fn register(&self, poll: &mut Poller, id: EventedId, interests: Ready) -> io::Result<()> {
         if self.id.get().is_valid() {
             Err(io::Error::new(io::ErrorKind::Other, "cannot register \
                                `Registration` twice without deregistering first, \
@@ -323,7 +323,7 @@ impl RegistrationInner {
         }
     }
 
-    fn reregister(&self, poll: &mut Poll, id: EventedId, interests: Ready) -> io::Result<()> {
+    fn reregister(&self, poll: &mut Poller, id: EventedId, interests: Ready) -> io::Result<()> {
         // The registration must be registered first, before it can be
         // reregistered. However it is allowed to deregister it before
         // reregistering. To allow for these combinations deregister only resets

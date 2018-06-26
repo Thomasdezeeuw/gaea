@@ -1,15 +1,15 @@
 use std::io;
 
-use poll::{Poll, PollCalled, PollOption};
+use poll::{Poller, PollCalled, PollOption};
 use event::{EventedId, Ready};
 
-/// A value that may be registered with `Poll`.
+/// A value that may be registered with `Poller`.
 ///
-/// Values that implement `Evented` can be registered with [`Poll`]. The methods
-/// on the trait cannot be called directly, instead the equivalent methods must
-/// be called on a [`Poll`] instance.
+/// Values that implement `Evented` can be registered with [`Poller`]. The
+/// methods on the trait cannot be called directly, instead the equivalent
+/// methods must be called on a [`Poller`] instance.
 ///
-/// See [`Poll`] for more details.
+/// See [`Poller`] for more details.
 ///
 /// # Implementing `Evented`
 ///
@@ -24,7 +24,7 @@ use event::{EventedId, Ready};
 ///   [`Registration`] and [`Notifier`]. In this case, the implementer takes
 ///   responsibility for driving the readiness state changes.
 ///
-/// [`Poll`]: ../poll/struct.Poll.html
+/// [`Poller`]: ../poll/struct.Poller.html
 /// [`Registration`]: ../registration/struct.Registration.html
 /// [`Notifier`]: ../registration/struct.Notifier.html
 /// [`TcpStream`]: ../net/struct.TcpStream.html
@@ -36,7 +36,7 @@ use event::{EventedId, Ready};
 /// before being dropped for them to not leak resources. This goes against the
 /// normal drop behaviour of types in Rust which cleanup after themselves, e.g.
 /// a `File` will close itself. However since deregistering needs mutable access
-/// to `Poll` this cannot be done while being dropped.
+/// to `Poller` this cannot be done while being dropped.
 ///
 /// # Examples
 ///
@@ -48,7 +48,7 @@ use event::{EventedId, Ready};
 ///
 /// use mio_st::event::{Evented, EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOption, PollCalled};
+/// use mio_st::poll::{Poller, PollOption, PollCalled};
 ///
 /// pub struct MyEvented {
 ///     /// Our system handle that implements `Evented`.
@@ -56,17 +56,17 @@ use event::{EventedId, Ready};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`
 ///         self.socket.register(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`
 ///         self.socket.reregister(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
+///     fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
 ///         // Delegate the `deregister` call to `socket`
 ///         self.socket.deregister(poll, p)
 ///     }
@@ -81,7 +81,7 @@ use event::{EventedId, Ready};
 /// use std::marker::PhantomData;
 ///
 /// use mio_st::event::{Evented, EventedId, Ready};
-/// use mio_st::poll::{Poll, PollOption, PollCalled};
+/// use mio_st::poll::{Poller, PollOption, PollCalled};
 /// use mio_st::registration::{Registration, Notifier};
 ///
 /// /// Create a new channel.
@@ -114,15 +114,15 @@ use event::{EventedId, Ready};
 ///
 /// // Deligate the Evented registration to the user space registration.
 /// impl<T> Evented for Receiver<T> {
-///     fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///     fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
 ///         self.registration.register(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///     fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
 ///         self.registration.reregister(poll, id, interests, opt, p)
 ///     }
 ///
-///     fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()> {
+///     fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
 ///         self.registration.deregister(poll, p)
 ///     }
 /// }
@@ -145,27 +145,27 @@ use event::{EventedId, Ready};
 /// }
 /// ```
 pub trait Evented {
-    /// Register `self` with the given `Poll` instance.
+    /// Register `self` with the given `Poller` instance.
     ///
-    /// This function should not be called directly, use [`Poll.register`]
+    /// This function should not be called directly, use [`Poller.register`]
     /// instead.
     ///
-    /// [`Poll.register`]: ../poll/struct.Poll.html#method.register
-    fn register(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
+    /// [`Poller.register`]: ../poll/struct.Poller.html#method.register
+    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
 
-    /// Reregister `self` with the given `Poll` instance.
+    /// Reregister `self` with the given `Poller` instance.
     ///
-    /// This function should not be called directly, use [`Poll.reregister`]
+    /// This function should not be called directly, use [`Poller.reregister`]
     /// instead.
     ///
-    /// [`Poll.reregister`]: ../poll/struct.Poll.html#method.reregister
-    fn reregister(&mut self, poll: &mut Poll, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
+    /// [`Poller.reregister`]: ../poll/struct.Poller.html#method.reregister
+    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
 
-    /// Deregister `self` from the given `Poll` instance
+    /// Deregister `self` from the given `Poller` instance
     ///
-    /// This function should not be called directly, use [`Poll.deregister`]
+    /// This function should not be called directly, use [`Poller.deregister`]
     /// instead.
     ///
-    /// [`Poll.deregister`]: ../poll/struct.Poll.html#method.deregister
-    fn deregister(&mut self, poll: &mut Poll, p: PollCalled) -> io::Result<()>;
+    /// [`Poller.deregister`]: ../poll/struct.Poller.html#method.deregister
+    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()>;
 }

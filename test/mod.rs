@@ -7,7 +7,7 @@ extern crate log;
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use mio_st::poll::Poll;
+use mio_st::poll::Poller;
 use mio_st::event::{Event, Events};
 
 /// Initializate the test setup.
@@ -17,17 +17,17 @@ pub fn init() {
     drop(env_logger::try_init_from_env(env));
 }
 
-/// Initializate the test setup (same as init) and create a Poll instance and
+/// Initializate the test setup (same as init) and create a Poller instance and
 /// events.
-pub fn init_with_poll() -> (Poll, Events) {
+pub fn init_with_poll() -> (Poller, Events) {
     init();
-    let poll = Poll::new().expect("unable to create Poll instance");
+    let poll = Poller::new().expect("unable to create Poller instance");
     let events = Events::new();
     (poll, events)
 }
 
-/// Poll `poll` and compare the retrieved events with the `expected` ones.
-pub fn expect_events(poll: &mut Poll, events: &mut Events, poll_try_count: usize, mut expected: Vec<Event>) {
+/// Poller `poll` and compare the retrieved events with the `expected` ones.
+pub fn expect_events(poll: &mut Poller, events: &mut Events, poll_try_count: usize, mut expected: Vec<Event>) {
     let timeout = Duration::from_millis(1_000);
 
     for _ in 0..poll_try_count {

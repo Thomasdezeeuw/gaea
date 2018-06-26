@@ -1,9 +1,9 @@
 //! Types related to polling.
 //!
-//! The main type is [`Poll`], see it as well as the [root of the crate] for
+//! The main type is [`Poller`], see it as well as the [root of the crate] for
 //! examples.
 //!
-//! [`Poll`]: struct.Poll.html
+//! [`Poller`]: struct.Poller.html
 //! [root of the crate]: ../index.html
 
 use std::{io, mem, ptr};
@@ -20,40 +20,40 @@ mod option;
 
 pub use self::option::PollOption;
 
-// Poll uses three subsystems to bring a complete event system to the user.
+// Poller uses three subsystems to bring a complete event system to the user.
 //
 // 1. Operating System specific event queue. This is currently kqueue or epoll.
 //    All the relevant code is in the `sys` module. This mainly deals with file
 //    descriptor, e.g. for sockets.
 //
-// 2. User space events. This is simply a vector in the `Poll` instance. Adding
+// 2. User space events. This is simply a vector in the `Poller` instance. Adding
 //    an new events is a simple a push it onto the vector. `events::Events` hold
-//    both the system events and user space events. Each call to `Poll.poll`
+//    both the system events and user space events. Each call to `Poller.poll`
 //    simply flushes all user space events to the provided `events::Events`.
 //
 // 3. Deadline system. The third system is used for deadlines and timeout. Each
 //    deadline is a pair of `Instant` and `EventedId` in a binary heap. Each
-//    call to `Poll.poll` will get the first deadline, if any, and use it as a
+//    call to `Poller.poll` will get the first deadline, if any, and use it as a
 //    timeout to the system selector. Then after the system selector returns
 //    exceeded deadlines are popped and converted into Events and added to the
 //    user space events.
 
 /// Polls for readiness events on all registered handles.
 ///
-/// `Poll` allows a program to monitor a large number of [`Evented`] handles,
+/// `Poller` allows a program to monitor a large number of [`Evented`] handles,
 /// waiting until one or more become "ready" for some class of operations; e.g.
 /// [reading] or [writing]. An `Evented` type is considered ready if it is
 /// possible to immediately perform a corresponding operation; e.g. read or
 /// write.
 ///
-/// To use `Poll` an `Evented` handle must first be registered with the `Poll`
-/// instance using the [`register`] method, supplying an associated id,
+/// To use `Poller` an `Evented` handle must first be registered with the
+/// `Poller` instance using the [`register`] method, supplying an associated id,
 /// readiness interests and polling option. The associated id, or [`EventedId`],
 /// is used to associate an readiness event with an `Evented` handle. The
-/// readiness interests, or [`Ready`], tells `Poll` which specific operations on
-/// the handle to monitor for readiness. And the final argument, [`PollOption`],
-/// tells `Poll` how to deliver the readiness events, see [`PollOption`] for
-/// more information.
+/// readiness interests, or [`Ready`], tells `Poller` which specific operations
+/// on the handle to monitor for readiness. And the final argument,
+/// [`PollOption`], tells `Poller` how to deliver the readiness events, see
+/// [`PollOption`] for more information.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
 /// [reading]: ../event/struct.Ready.html#associatedconstant.READABLE
@@ -65,19 +65,19 @@ pub use self::option::PollOption;
 ///
 /// # Portability
 ///
-/// Using `Poll` provides a portable interface across supported platforms as
+/// Using `Poller` provides a portable interface across supported platforms as
 /// long as the caller takes the following into consideration:
 ///
 /// ### Spurious events
 ///
-/// [`Poll.poll`] may return readiness events even if the associated
+/// [`Poller.poll`] may return readiness events even if the associated
 /// [`Evented`] handle is not actually ready. Given the same code, this may
 /// happen more on some platforms than others. It is important to never assume
 /// that, just because a readiness notification was received, that the
 /// associated operation will as well.
 ///
-/// If operation fails with a [`WouldBlock`] error, then the caller should not treat
-/// this as an error and wait until another readiness event is received.
+/// If operation fails with a [`WouldBlock`] error, then the caller should not
+/// treat this as an error and wait until another readiness event is received.
 ///
 /// ### Draining readiness
 ///
@@ -107,7 +107,7 @@ pub use self::option::PollOption;
 /// ### Registering handles
 ///
 /// Unless otherwise noted, it should be assumed that types implementing
-/// [`Evented`] will never become ready unless they are registered with `Poll`.
+/// [`Evented`] will never become ready unless they are registered with `Poller`.
 ///
 /// For example:
 ///
@@ -119,7 +119,7 @@ pub use self::option::PollOption;
 ///
 /// use mio_st::event::{EventedId, Ready};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poll, PollOption};
+/// use mio_st::poll::{Poller, PollOption};
 ///
 /// let address = "216.58.193.100:80".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -127,7 +127,7 @@ pub use self::option::PollOption;
 /// // This actually does nothing.
 /// thread::sleep(Duration::from_secs(1));
 ///
-/// let mut poll = Poll::new()?;
+/// let mut poll = Poller::new()?;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point.
@@ -140,7 +140,7 @@ pub use self::option::PollOption;
 /// # }
 /// ```
 ///
-/// [`Poll.poll`]: struct.Poll.html#method.poll
+/// [`Poller.poll`]: struct.Poller.html#method.poll
 /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
 /// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
@@ -150,7 +150,7 @@ pub use self::option::PollOption;
 ///
 /// # Implementation notes
 ///
-/// `Poll` is backed by the selector provided by the operating system.
+/// `Poller` is backed by the selector provided by the operating system.
 ///
 /// | OS      | Selector |
 /// |---------|----------|
@@ -164,13 +164,13 @@ pub use self::option::PollOption;
 /// selector. Platform specific extensions (e.g. [`EventedFd`]) allow accessing
 /// other features provided by individual system selectors. For example Linux's
 /// [`signalfd`] feature can be used by registering the file descriptor with
-/// `Poll` via [`EventedFd`].
+/// `Poller` via [`EventedFd`].
 ///
-/// On all platforms a call to [`Poll.poll`] is mostly just a direct call to the
+/// On all platforms a call to [`Poller.poll`] is mostly just a direct call to the
 /// system selector, but it also adds user space and timer events. Notifications
 /// generated by user space registration ([`Registration`] and [`Notifier`]) are
 /// handled by an internal readiness queue. Deadlines and timers use the same
-/// queue. A single call to [`Poll.poll`] will collect events from both from the
+/// queue. A single call to [`Poller.poll`] will collect events from both from the
 /// system selector and the internal readiness queue.
 ///
 /// `Events` itself is split among system events and user space events,
@@ -181,7 +181,7 @@ pub use self::option::PollOption;
 /// [`Registration`]: ../registration/struct.Registration.html
 /// [`Notifier`]: ../registration/struct.Notifier.html
 #[derive(Debug)]
-pub struct Poll {
+pub struct Poller {
     selector: sys::Selector,
     // This is shared with all user space registrations, they have a weak
     // reference.
@@ -189,26 +189,26 @@ pub struct Poll {
     deadlines: BinaryHeap<Reverse<Deadline>>,
 }
 
-/// A type to check if `Evented` handles are called via a `Poll` instance.
+/// A type to check if `Evented` handles are called via a `Poller` instance.
 ///
 /// This struct is used in the [`Evented`] trait. Since it can only created from
 /// within the poll module it forces all calls to `Evented` handles to go via a
-/// `Poll` instance.
+/// `Poller` instance.
 ///
 /// [`Evented`]: ../event/trait.Evented.html
 #[derive(Debug)]
 pub struct PollCalled(());
 
-impl Poll {
-    /// Return a new `Poll` handle.
+impl Poller {
+    /// Return a new `Poller` handle.
     ///
     /// This function will make a syscall to the operating system to create the
-    /// system selector. If this syscall fails, `Poll::new` will return with the
-    /// error.
+    /// system selector. If this syscall fails, `Poller::new` will return with
+    /// the error.
     ///
     /// See [struct] level docs for more details.
     ///
-    /// [struct]: struct.Poll.html
+    /// [struct]: struct.Poller.html
     ///
     /// # Examples
     ///
@@ -218,15 +218,15 @@ impl Poll {
     /// use std::time::Duration;
     ///
     /// use mio_st::event::Events;
-    /// use mio_st::poll::Poll;
+    /// use mio_st::poll::Poller;
     ///
-    /// let mut poll = Poll::new()?;
+    /// let mut poll = Poller::new()?;
     ///
     /// // Create a structure to receive polled events
     /// let mut events = Events::new();
     ///
     /// // Wait for events, but none will be received because no `Evented`
-    /// // handles have been registered with this `Poll` instance.
+    /// // handles have been registered with this `Poller` instance.
     /// poll.poll(&mut events, Some(Duration::from_millis(500)))?;
     /// #     Ok(())
     /// # }
@@ -235,26 +235,26 @@ impl Poll {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    pub fn new() -> io::Result<Poll> {
-        Ok(Poll {
+    pub fn new() -> io::Result<Poller> {
+        Ok(Poller {
             selector: sys::Selector::new()?,
             userspace_events: Rc::new(RefCell::new(Vec::with_capacity(128))),
             deadlines: BinaryHeap::with_capacity(128),
         })
     }
 
-    /// Register an `Evented` handle with the `Poll` instance.
+    /// Register an `Evented` handle with the `Poller` instance.
     ///
-    /// Once registered, the `Poll` instance will monitor the [`Evented`] handle
-    /// for readiness state changes. When it notices a state change, it will
-    /// return a readiness event for the handle the next time [`poll`] is
+    /// Once registered, the `Poller` instance will monitor the [`Evented`]
+    /// handle for readiness state changes. When it notices a state change, it
+    /// will return a readiness event for the handle the next time [`poll`] is
     /// called.
     ///
     /// See the [`struct`] docs for a high level overview.
     ///
     /// # Arguments
     ///
-    /// `handle`: This is the handle that the `Poll` instance should monitor for
+    /// `handle`: This is the handle that the `Poller` instance should monitor for
     /// readiness state changes.
     ///
     /// `id`: The caller picks a id to associate with the handle. When [`poll`]
@@ -264,8 +264,8 @@ impl Poll {
     /// Note that `id` may not be invalid, see [`is_valid`], and will return an
     /// error if it is.
     ///
-    /// `interests`: Specifies which operations `Poll` should monitor for
-    /// readiness. `Poll` will only return readiness events for operations
+    /// `interests`: Specifies which operations `Poller` should monitor for
+    /// readiness. `Poller` will only return readiness events for operations
     /// specified by this argument. If a socket is registered with [readable]
     /// interests and the socket becomes writable, no event will be returned
     /// from [`poll`]. The readiness interests for an `Evented` handle can be
@@ -281,8 +281,8 @@ impl Poll {
     /// # Notes
     ///
     /// Unless otherwise specified, the caller should assume that once an
-    /// `Evented` handle is registered with a `Poll` instance, it is bound to
-    /// that `Poll` instance for the lifetime of the `Evented` handle. This
+    /// `Evented` handle is registered with a `Poller` instance, it is bound to
+    /// that `Poller` instance for the lifetime of the `Evented` handle. This
     /// remains true even if the `Evented` handle is deregistered from the poll
     /// instance using [`deregister`].
     ///
@@ -304,11 +304,11 @@ impl Poll {
     ///
     /// use mio_st::event::{Events, EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, PollOption};
+    /// use mio_st::poll::{Poller, PollOption};
     /// use mio_st::timer::Timer;
     ///
-    /// // Create a new `Poll` instance as well a containers for the vents.
-    /// let mut poll = Poll::new()?;
+    /// // Create a new `Poller` instance as well a containers for the vents.
+    /// let mut poll = Poller::new()?;
     /// let mut events = Events::new();
     ///
     /// // Create a TCP connection.
@@ -351,7 +351,7 @@ impl Poll {
         handle.register(self, id, interests, opt, PollCalled(()))
     }
 
-    /// Re-register an `Evented` handle with the `Poll` instance.
+    /// Re-register an `Evented` handle with the `Poller` instance.
     ///
     /// Re-registering an `Evented` handle allows changing the details of the
     /// registration. Specifically, it allows updating the associated `id`,
@@ -364,7 +364,7 @@ impl Poll {
     /// longer requested for the handle.
     ///
     /// The `Evented` handle must have previously been registered with this
-    /// instance of `Poll` otherwise the call to `reregister` will return with
+    /// instance of `Poller` otherwise the call to `reregister` will return with
     /// an error.
     ///
     /// See the [`register`] documentation for details about the function
@@ -383,14 +383,14 @@ impl Poll {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::event::{EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, PollOption};
+    /// use mio_st::poll::{Poller, PollOption};
     ///
-    /// let mut poll = Poll::new()?;
+    /// let mut poll = Poller::new()?;
     ///
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
     ///
-    /// // Register the connection with `Poll`, only with readable interest.
+    /// // Register the connection with `Poller`, only with readable interest.
     /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
     ///
     /// // Reregister the connection specifying a different id and write interest
@@ -412,15 +412,15 @@ impl Poll {
         handle.reregister(self, id, interests, opt, PollCalled(()))
     }
 
-    /// Deregister an `Evented` handle with the `Poll` instance.
+    /// Deregister an `Evented` handle with the `Poller` instance.
     ///
-    /// When an `Evented` handle is deregistered, the `Poll` instance will no
+    /// When an `Evented` handle is deregistered, the `Poller` instance will no
     /// longer monitor it for readiness state changes. Unlike disabling handles
     /// with [`oneshot`], deregistering clears up any internal resources needed
     /// to track the handle.
     ///
     /// A handle can be passed back to `register` after it has been
-    /// deregistered; however, it must be passed back to the **same** `Poll`
+    /// deregistered; however, it must be passed back to the **same** `Poller`
     /// instance.
     ///
     /// # Notes
@@ -440,15 +440,15 @@ impl Poll {
     ///
     /// use mio_st::event::{Events, EventedId, Ready};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poll, PollOption};
+    /// use mio_st::poll::{Poller, PollOption};
     ///
-    /// let mut poll = Poll::new()?;
+    /// let mut poll = Poller::new()?;
     /// let mut events = Events::new();
     ///
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
     ///
-    /// // Register the connection with `Poll`.
+    /// // Register the connection with `Poller`.
     /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
     ///
     /// // Do stuff with the connection etc.
@@ -474,10 +474,10 @@ impl Poll {
         handle.deregister(self, PollCalled(()))
     }
 
-    /// Poll for readiness events.
+    /// Poller for readiness events.
     ///
     /// Blocks the current thread and waits for readiness events for any of the
-    /// `Evented` handles that have been registered with this `Poll` instance
+    /// `Evented` handles that have been registered with this `Poller` instance
     /// previously.
     ///
     /// The function will block until either;
@@ -539,7 +539,7 @@ impl Poll {
 
         // Then poll deadlines.
         self.poll_deadlines(events);
-        // Poll user space events.
+        // Poller user space events.
         self.poll_userspace(events);
         Ok(())
     }
@@ -580,7 +580,7 @@ impl Poll {
         Rc::downgrade(&self.userspace_events)
     }
 
-    /// Poll user space events.
+    /// Poller user space events.
     fn poll_userspace(&mut self, events: &mut Events) {
         trace!("polling user space events");
         let mut userspace_events = self.userspace_events.borrow_mut();
@@ -598,7 +598,7 @@ impl Poll {
         }
     }
 
-    /// Add a new deadline to Poll.
+    /// Add a new deadline to Poller.
     pub(crate) fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
         trace!("adding deadline: id={}, deadline={:?}", id, deadline);
         validate_args(id, Ready::TIMER)
@@ -607,7 +607,7 @@ impl Poll {
 
     /// Remove a previously added deadline.
     ///
-    /// It tries removes the deadline from Poll. This return `Ok(())` even if
+    /// It tries removes the deadline from Poller. This return `Ok(())` even if
     /// the deadline is not found.
     pub(crate) fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
         trace!("removing deadline: id={}", id);
@@ -663,7 +663,7 @@ fn validate_args(id: EventedId, interests: Ready) -> io::Result<()> {
     }
 }
 
-/// A deadline in `Poll`.
+/// A deadline in `Poller`.
 ///
 /// This must be ordered by `deadline`, then `id`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]

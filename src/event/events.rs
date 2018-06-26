@@ -7,15 +7,15 @@ use event::Event;
 
 /// An iterator over a collection of readiness events.
 ///
-/// `Events` is passed as an argument to [`Poll.poll`] and will be used to
+/// `Events` is passed as an argument to [`Poller.poll`] and will be used to
 /// receive any new readiness events received since the last poll. Usually, a
-/// single `Events` instance is created at the same time as a [`Poll`] and
-/// reused on each call to [`Poll.poll`].
+/// single `Events` instance is created at the same time as a [`Poller`] and
+/// reused on each call to [`Poller.poll`].
 ///
-/// See [`Poll`] for more documentation on polling.
+/// See [`Poller`] for more documentation on polling.
 ///
-/// [`Poll.poll`]: ../poll/struct.Poll.html#method.poll
-/// [`Poll`]: ../poll/struct.Poll.html
+/// [`Poller.poll`]: ../poll/struct.Poller.html#method.poll
+/// [`Poller`]: ../poll/struct.Poller.html
 ///
 /// # Examples
 ///
@@ -25,9 +25,9 @@ use event::Event;
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{EventedId, Events, Ready};
-/// use mio_st::poll::{Poll, PollOption};
+/// use mio_st::poll::{Poller, PollOption};
 ///
-/// let mut poll = Poll::new()?;
+/// let mut poll = Poller::new()?;
 /// let mut events = Events::new();
 ///
 /// // Register `Evented` handles with `poll` here.
