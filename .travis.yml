@@ -11,7 +11,4 @@ rust:
   - beta
   - nightly
 script:
-  - cargo --version
-  - rustc --version
-  - cargo build --verbose
-  - cargo test --verbose
+  - make test-ci
