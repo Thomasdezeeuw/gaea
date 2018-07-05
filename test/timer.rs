@@ -18,7 +18,10 @@ fn expect_events_elapsed(poll: &mut Poller, events: &mut Events, max_elapsed: Du
 }
 
 /// Allowed margin for `Poller.poll` to return
+#[cfg(not(feature = "test_extended_time_margin"))]
 const MARGIN_MS: u64 = 10;
+#[cfg(feature = "test_extended_time_margin")]
+const MARGIN_MS: u64 = 50;
 
 // TODO: test panics using incorrect opt/interests. Deregister without
 // registering first.
