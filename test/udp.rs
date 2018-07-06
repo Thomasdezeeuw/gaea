@@ -1,5 +1,4 @@
-use std::{io, thread};
-use std::net::{self, SocketAddr};
+use std::{io, thread, net};
 use std::time::Duration;
 
 use mio_st::event::{Event, EventedId, Ready};
