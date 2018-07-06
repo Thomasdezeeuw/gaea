@@ -23,12 +23,13 @@ use std::fmt;
 /// [`Event`]: ../event/struct.Event.html
 /// [`Poller`]: ../poll/struct.Poller.html
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(transparent)]
 pub struct EventedId(pub usize);
 
 /// The only invalid evented id.
 ///
 /// [`EventedId.is_valid`] can be used to determine if the id is valid.
-pub(crate) const INVALID_EVENTED_ID: EventedId = EventedId(::std::usize::MAX);
+pub const INVALID_EVENTED_ID: EventedId = EventedId(::std::usize::MAX);
 
 impl EventedId {
     /// Whether or not the `EventedId` is valid.
