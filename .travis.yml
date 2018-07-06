@@ -5,6 +5,10 @@ os:
   - osx
 env:
   - RUST_BACKTRACE=1
+matrix:
+  fast_finish: true
+  allow_failures:
+    - os: osx
 language: rust
 rust:
   - stable
