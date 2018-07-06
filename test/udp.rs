@@ -1,4 +1,4 @@
-use std::{io, thread, net};
+use std::{io, net, thread};
 use std::time::Duration;
 
 use mio_st::event::{Event, EventedId, Ready};

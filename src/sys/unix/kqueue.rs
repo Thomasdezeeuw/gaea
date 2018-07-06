@@ -4,8 +4,9 @@ use std::time::Duration;
 
 use libc;
 
-use event::{Event, Events, EventedId, Ready, INVALID_EVENTED_ID};
+use event::{Event, EventedId, Events, Ready, INVALID_EVENTED_ID};
 use poll::PollOption;
+
 use super::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types

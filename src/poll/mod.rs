@@ -14,7 +14,7 @@ use std::rc::{Rc, Weak};
 use std::time::{Duration, Instant};
 
 use sys;
-use event::{Event, Events, Evented, EventedId, Ready};
+use event::{Event, Evented, EventedId, Events, Ready};
 
 mod option;
 

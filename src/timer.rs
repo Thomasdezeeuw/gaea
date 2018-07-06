@@ -4,7 +4,7 @@ use std::io;
 use std::time::{Duration, Instant};
 
 use event::{Evented, EventedId, Ready, INVALID_EVENTED_ID};
-use poll::{Poller, PollCalled, PollOption};
+use poll::{PollCalled, PollOption, Poller};
 
 /// A timer that can be registered with [`Poller`].
 ///

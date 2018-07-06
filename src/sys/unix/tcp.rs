@@ -7,7 +7,7 @@ use libc;
 use net2::TcpStreamExt;
 
 use event::{Evented, EventedId, Ready};
-use poll::{Poller, PollCalled, PollOption};
+use poll::{PollCalled, PollOption, Poller};
 use sys::unix::eventedfd::EventedFd;
 
 #[derive(Debug)]

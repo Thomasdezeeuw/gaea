@@ -3,7 +3,7 @@ use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use event::{Evented, EventedId, Ready};
-use poll::{Poller, PollCalled, PollOption};
+use poll::{PollCalled, PollOption, Poller};
 use sys::unix::EventedFd;
 
 #[derive(Debug)]

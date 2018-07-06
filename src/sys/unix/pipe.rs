@@ -5,7 +5,7 @@ use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use libc;
 
 use event::{Evented, EventedId, Ready};
-use poll::{Poller, PollCalled, PollOption};
+use poll::{PollCalled, PollOption, Poller};
 use unix::EventedIo;
 
 /// Create a new non-blocking unix pipe.
@@ -74,7 +74,7 @@ pub fn new_pipe() -> io::Result<(Receiver, Sender)> {
     } else {
         for fd in &fds {
             if unsafe { libc::fcntl(*fd, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
-                return Err(io::Error::last_os_error())
+                return Err(io::Error::last_os_error());
             }
         }
         let r = Receiver { inner: unsafe { EventedIo::from_raw_fd(fds[0]) } };

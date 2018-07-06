@@ -72,7 +72,7 @@ use std::error::Error;
 use std::rc::{Rc, Weak};
 
 use event::{Event, Evented, EventedId, Ready, INVALID_EVENTED_ID};
-use poll::{Poller, PollCalled, PollOption};
+use poll::{PollCalled, PollOption, Poller};
 
 /// Handle to a user space registration.
 ///
@@ -264,7 +264,7 @@ impl Error for NotifyError {
             NotifyError::EmptyReadiness => "readiness is empty",
             NotifyError::NoInterest => "accompanying registration has no interest in the event",
             NotifyError::RegistrationGone => RegistrationGone.description(),
-            NotifyError::PollGone => "poll instance registered to is gone"
+            NotifyError::PollGone => "poll instance registered to is gone",
         }
     }
 }
@@ -391,7 +391,7 @@ impl fmt::Debug for RegistrationInner {
         f.debug_struct("RegistrationInner")
             .field("id", &self.id)
             .field("interests", &self.interests)
-            .field("userspace_events_ref", self.userspace_events_ref() )
+            .field("userspace_events_ref", self.userspace_events_ref())
             .finish()
     }
 }

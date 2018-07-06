@@ -7,8 +7,8 @@ extern crate log;
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use mio_st::poll::Poller;
 use mio_st::event::{Event, Events};
+use mio_st::poll::Poller;
 
 /// Initializate the test setup.
 pub fn init() {

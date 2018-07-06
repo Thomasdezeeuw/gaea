@@ -2,7 +2,7 @@ use std::error::Error;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{Event, EventedId, Events, Ready};
-use mio_st::poll::{Poller, PollOption};
+use mio_st::poll::{PollOption, Poller};
 use mio_st::timer::Timer;
 
 use {expect_events, init_with_poll};

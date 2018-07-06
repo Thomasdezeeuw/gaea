@@ -4,8 +4,9 @@ use std::time::Duration;
 
 use libc;
 
-use event::{Event, Events, Ready, EventedId};
+use event::{Event, EventedId, Events, Ready};
 use poll::PollOption;
+
 use super::EVENTS_CAP;
 
 #[derive(Debug)]

@@ -1,7 +1,7 @@
 use std::io;
 
-use poll::{Poller, PollCalled, PollOption};
 use event::{EventedId, Ready};
+use poll::{PollCalled, PollOption, Poller};
 
 /// A value that may be registered with `Poller`.
 ///
