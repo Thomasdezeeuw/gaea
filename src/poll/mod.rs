@@ -238,8 +238,8 @@ impl Poller {
     pub fn new() -> io::Result<Poller> {
         Ok(Poller {
             selector: sys::Selector::new()?,
-            userspace_events: Rc::new(RefCell::new(Vec::with_capacity(128))),
-            deadlines: BinaryHeap::with_capacity(128),
+            userspace_events: Rc::new(RefCell::new(Vec::new())),
+            deadlines: BinaryHeap::new(),
         })
     }
 
