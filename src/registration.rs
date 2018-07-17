@@ -296,9 +296,9 @@ impl Error for RegistrationGone {
 struct RegistrationInner {
     id: Cell<EventedId>,
     interests: Cell<Ready>,
-    // A weak reference to the user space events of a `Poller` instance. This will
-    // be set once register is called.
-    userspace_events_ref: Cell<Option<Weak<RefCell<Vec<Event>>>>>,
+    // A weak reference to the user space events of a `Poller` instance. This
+    // will be set once register is called.
+    userspace_events: RefCell<Weak<RefCell<Vec<Event>>>>,
 }
 
 impl RegistrationInner {
@@ -306,7 +306,7 @@ impl RegistrationInner {
         RegistrationInner {
             id: Cell::new(INVALID_EVENTED_ID),
             interests: Cell::new(Ready::empty()),
-            userspace_events_ref: Cell::new(None),
+            userspace_events: RefCell::new(Weak::new()),
         }
     }
 
@@ -318,7 +318,7 @@ impl RegistrationInner {
         } else {
             self.id.set(id);
             self.interests.set(interests);
-            self.userspace_events_ref.set(Some(poll.get_userspace_events()));
+            let _ = self.userspace_events.replace(poll.get_userspace_events());
             Ok(())
         }
     }
@@ -335,7 +335,7 @@ impl RegistrationInner {
         } else {
             self.id.set(id);
             self.interests.set(interests);
-            self.userspace_events_ref.set(Some(poll.get_userspace_events()));
+            let _ = self.userspace_events.replace(poll.get_userspace_events());
             Ok(())
         }
     }
@@ -346,6 +346,7 @@ impl RegistrationInner {
                                `Registration` before registering first"))
         } else {
             self.id.set(INVALID_EVENTED_ID);
+            let _ = self.userspace_events.replace(Weak::new());
             // Leave interests as is, see `reregister`.
             Ok(())
         }
@@ -361,24 +362,17 @@ impl RegistrationInner {
         } else if !interests.intersects(ready) {
             Err(NotifyError::NoInterest)
         } else {
-            match self.userspace_events_ref() {
-                Some(userspace_events) => match userspace_events.upgrade() {
-                    Some(userspace_events) => {
-                        let event = Event::new(id, ready & interests);
-                        trace!("adding user space event: id={}, readiness={:?}",
-                            event.id(), event.readiness());
-                        userspace_events.borrow_mut().push(event);
-                        Ok(())
-                    },
-                    None => Err(NotifyError::NotRegistered),
+            match self.userspace_events.borrow().upgrade() {
+                Some(userspace_events) => {
+                    let event = Event::new(id, ready & interests);
+                    trace!("adding user space event: id={}, readiness={:?}",
+                        event.id(), event.readiness());
+                    userspace_events.borrow_mut().push(event);
+                    Ok(())
                 },
                 None => Err(NotifyError::NotRegistered),
             }
         }
-    }
-
-    fn userspace_events_ref(&self) -> &Option<Weak<RefCell<Vec<Event>>>> {
-        unsafe { &*self.userspace_events_ref.as_ptr() }
     }
 
     fn interests(&self) -> Ready {
