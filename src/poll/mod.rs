@@ -535,9 +535,26 @@ impl Poller {
             }
         }
 
+        self.poll_userspace_internal(events);
         self.poll_deadlines(events);
-        self.poll_userspace(events);
         Ok(())
+    }
+
+    /// Poll for user space readiness events.
+    ///
+    /// The regular call to [`poll`] uses a system call to read readiness events
+    /// for system resource such as sockets. This method **does not** do that,
+    /// it will only read user space readiness events, including deadlines.
+    ///
+    /// Because no system call is used the method is faster then calling `poll`,
+    /// even with a 0 ms timeout, and does not block.
+    ///
+    /// [`poll`]: #method.poll
+    pub fn poll_userspace(&mut self, events: &mut Events) {
+        trace!("polling user space only");
+        events.clear();
+        self.poll_userspace_internal(events);
+        self.poll_deadlines(events);
     }
 
     /// Compute the timeout value passed to the system selector. If the
@@ -578,8 +595,8 @@ impl Poller {
         Rc::downgrade(&self.userspace_events)
     }
 
-    /// Poller user space events.
-    fn poll_userspace(&mut self, events: &mut Events) {
+    /// Poll user space events.
+    fn poll_userspace_internal(&mut self, events: &mut Events) {
         trace!("polling user space events");
         let mut userspace_events = self.userspace_events.borrow_mut();
         let n = events.extend_events(&userspace_events);
