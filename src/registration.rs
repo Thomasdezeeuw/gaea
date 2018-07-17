@@ -391,7 +391,6 @@ impl fmt::Debug for RegistrationInner {
         f.debug_struct("RegistrationInner")
             .field("id", &self.id)
             .field("interests", &self.interests)
-            .field("userspace_events_ref", self.userspace_events_ref())
             .finish()
     }
 }
