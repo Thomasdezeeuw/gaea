@@ -513,8 +513,7 @@ impl Poller {
         let mut timeout = self.determine_timeout(timeout);
         trace!("determined new timeout: timeout={:?}", timeout);
 
-        // Clear any previously set events.
-        events.reset();
+        events.clear();
         loop {
             let start = Instant::now();
             // Get the selector events.
