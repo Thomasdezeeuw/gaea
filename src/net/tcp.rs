@@ -280,7 +280,7 @@ impl FromRawFd for TcpStream {
 ///
 /// // Bind the tcp socket and start listening, this will return a
 /// // `std::net::TcpListener`.
-/// let addr: SocketAddr = "127.0.0.1:12345".parse()?;
+/// let addr: SocketAddr = "127.0.0.1:6789".parse()?;
 /// let std_listener = builder.bind(addr)?.listen(128)?;
 ///
 /// // Convert the listener into an mio listener.
