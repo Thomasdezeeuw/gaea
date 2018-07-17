@@ -11,9 +11,9 @@ keywords      = ["io", "async", "non-blocking"]
 categories    = ["asynchronous"]
 
 [dependencies]
-bitflags = "1.0.1"
-log      = "0.4.1"
-net2     = "0.2.31"
+bitflags = "1.0.3"
+log      = "0.4.3"
+net2     = "0.2.33"
 
 [dependencies.arrayvec]
 version = "0.4.7"
@@ -21,10 +21,10 @@ default-features = false
 features = ["use_union"]
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.36"
+libc = "0.2.42"
 
 [dev-dependencies]
-env_logger = "0.5.3"
+env_logger = "0.5.10"
 
 [[test]]
 name = "test"
