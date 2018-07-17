@@ -26,17 +26,17 @@ pub use self::option::PollOption;
 //    All the relevant code is in the `sys` module. This mainly deals with file
 //    descriptor, e.g. for sockets.
 //
-// 2. User space events. This is simply a vector in the `Poller` instance. Adding
-//    an new events is a simple a push it onto the vector. `events::Events` hold
-//    both the system events and user space events. Each call to `Poller.poll`
-//    simply flushes all user space events to the provided `events::Events`.
+// 2. User space events. This is simply a vector in the `Poller` instance,
+//    adding an new event is a simple push onto it. `Events` hold both the
+//    system events and user space events. Each call to `Poller.poll` simply
+//    flushes all user space events to the provided `Events`.
 //
-// 3. Deadline system. The third system is used for deadlines and timeout. Each
-//    deadline is a pair of `Instant` and `EventedId` in a binary heap. Each
-//    call to `Poller.poll` will get the first deadline, if any, and use it as a
-//    timeout to the system selector. Then after the system selector returns
-//    exceeded deadlines are popped and converted into Events and added to the
-//    user space events.
+// 3. Deadline system. The third subsystem is used for deadlines and timeouts.
+//    Each deadline is a pair of `Instant` and `EventedId` in a binary heap.
+//    Each call to `Poller.poll` will get the first deadline, if any, and use it
+//    as a timeout to the system selector. Then after the system selector
+//    returns exceeded deadlines are popped and converted into `Event`s and
+//    added to the provided `Events`.
 
 /// Polls for readiness events on all registered handles.
 ///
@@ -254,8 +254,8 @@ impl Poller {
     ///
     /// # Arguments
     ///
-    /// `handle`: This is the handle that the `Poller` instance should monitor for
-    /// readiness state changes.
+    /// `handle`: This is the handle that the `Poller` instance should monitor
+    /// for readiness state changes.
     ///
     /// `id`: The caller picks a id to associate with the handle. When [`poll`]
     /// returns an event for the handle, this id is included. This allows the
@@ -474,7 +474,7 @@ impl Poller {
         handle.deregister(self, PollCalled(()))
     }
 
-    /// Poller for readiness events.
+    /// Poll for readiness events.
     ///
     /// Blocks the current thread and waits for readiness events for any of the
     /// `Evented` handles that have been registered with this `Poller` instance
@@ -511,7 +511,6 @@ impl Poller {
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
         trace!("polling: timeout={:?}", timeout);
         let mut timeout = self.determine_timeout(timeout);
-        trace!("determined new timeout: timeout={:?}", timeout);
 
         events.clear();
         loop {
@@ -536,9 +535,7 @@ impl Poller {
             }
         }
 
-        // Then poll deadlines.
         self.poll_deadlines(events);
-        // Poller user space events.
         self.poll_userspace(events);
         Ok(())
     }
@@ -575,6 +572,8 @@ impl Poller {
     }
 
     /// Get a weak reference to the user space events.
+    ///
+    /// Used by `Registration`.
     pub(crate) fn get_userspace_events(&mut self) -> Weak<RefCell<Vec<Event>>> {
         Rc::downgrade(&self.userspace_events)
     }
