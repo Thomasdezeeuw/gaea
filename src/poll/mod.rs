@@ -6,7 +6,7 @@
 //! [`Poller`]: struct.Poller.html
 //! [root of the crate]: ../index.html
 
-use std::{io, mem, ptr};
+use std::{io, mem};
 use std::cell::RefCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -582,17 +582,11 @@ impl Poller {
     fn poll_userspace(&mut self, events: &mut Events) {
         trace!("polling user space events");
         let mut userspace_events = self.userspace_events.borrow_mut();
-        let n_copied = events.extend_events(&userspace_events);
-        let left = userspace_events.len() - n_copied;
-        if left == 0 {
-            unsafe { userspace_events.set_len(0); }
+        let n = events.extend_events(&userspace_events);
+        if userspace_events.len() - n == 0 {
+            userspace_events.clear();
         } else {
-            // Move all leftover elements to the beginning of the vector.
-            unsafe {
-                let src = userspace_events.as_ptr().offset(n_copied as isize);
-                ptr::copy(src, userspace_events.as_mut_ptr(), left);
-                userspace_events.set_len(left);
-            }
+            drop(userspace_events.drain(..n));
         }
     }
 
