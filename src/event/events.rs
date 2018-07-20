@@ -50,7 +50,7 @@ use event::Event;
 #[derive(Debug)]
 pub struct Events {
     /// Stack allocated events.
-    events: ArrayVec<[Event; 512]>,
+    events: ArrayVec<[Event; 256]>,
     /// Position of the iterator.
     pos: usize,
 }
