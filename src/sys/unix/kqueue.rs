@@ -10,8 +10,7 @@ use poll::PollOption;
 use super::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types
-// in the `kevent` structure, which requires conversions, hence the type
-// definitions below.
+// in the `kevent` structure, hence the type definitions below.
 
 // Type of `nchanges` in the `kevent` system call.
 #[cfg(not(target_os = "netbsd"))]
@@ -178,14 +177,14 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
     let id = EventedId(kevent.udata as usize);
     let mut readiness = Ready::empty();
 
-    if kevent.flags & libc::EV_ERROR != 0 {
+    if contains_flag(kevent.flags, libc::EV_ERROR)  {
         // The actual error is stored in `kevent.data`, but we can't pass it
         // to the user from here. So the user need to try and retrieve the
         // error themselves.
         readiness.insert(Ready::ERROR);
     }
 
-    if kevent.flags & libc::EV_EOF != 0 {
+    if contains_flag(kevent.flags, libc::EV_EOF) {
         readiness.insert(Ready::HUP);
 
         // When the read end of the socket is closed, EV_EOF is set on
@@ -219,7 +218,7 @@ fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_fla
         ident, filter, flags,
         fflags: 0,
         data: 0,
-        udata: usize::from(id) as kevent_udata_t,
+        udata: id.0 as kevent_udata_t,
     }
 }
 
@@ -260,7 +259,7 @@ fn check_errors(events: &[libc::kevent], ignored_errors: &[kevent_data_t]) -> io
     for event in &*events {
         // Check for the error flag, the actual error will be in the `data`
         // field.
-        if contains(event.flags, libc::EV_ERROR) && event.data != 0 &&
+        if contains_flag(event.flags, libc::EV_ERROR) && event.data != 0 &&
             // Make sure the error is not one to ignore.
             !ignored_errors.contains(&event.data)
         {
@@ -271,8 +270,8 @@ fn check_errors(events: &[libc::kevent], ignored_errors: &[kevent_data_t]) -> io
 }
 
 /// Whether or not the provided `flags` contains the provided `flag`.
-fn contains(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
-    (flags & flag) == flag
+fn contains_flag(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
+    (flags & flag) != 0
 }
 
 impl Drop for Selector {

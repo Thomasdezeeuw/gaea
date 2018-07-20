@@ -86,29 +86,28 @@ fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
     let epoll = ep_event.events;
     let mut readiness = Ready::empty();
 
-    if contains(epoll, libc::EPOLLIN) || contains(epoll, libc::EPOLLPRI) {
-        readiness = readiness | Ready::READABLE;
+    if contains_flag(epoll, libc::EPOLLIN) || contains_flag(epoll, libc::EPOLLPRI) {
+        readiness.insert(Ready::READABLE);
     }
 
-    if contains(epoll, libc::EPOLLOUT) {
-        readiness = readiness | Ready::WRITABLE;
+    if contains_flag(epoll, libc::EPOLLOUT) {
+        readiness.insert(Ready::WRITABLE);
     }
 
-    if contains(epoll, libc::EPOLLPRI) || contains(epoll, libc::EPOLLERR) {
-        readiness = readiness | Ready::ERROR;
+    if contains_flag(epoll, libc::EPOLLPRI) || contains_flag(epoll, libc::EPOLLERR) {
+        readiness.insert(Ready::ERROR);
     }
 
-    if contains(epoll, libc::EPOLLRDHUP) || contains(epoll, libc::EPOLLHUP) {
-        readiness = readiness | Ready::HUP;
+    if contains_flag(epoll, libc::EPOLLRDHUP) || contains_flag(epoll, libc::EPOLLHUP) {
+        readiness.insert(Ready::HUP);
     }
 
     Event::new(id, readiness)
 }
 
 /// Whether or not the provided `flags` contains the provided `flag`.
-fn contains(flags: libc::uint32_t, flag: libc::c_int) -> bool {
-    let flag = flag as libc::uint32_t;
-    (flags & flag) == flag
+fn contains_flag(flags: libc::uint32_t, flag: libc::c_int) -> bool {
+    (flags & flag as libc::uint32_t) != 0
 }
 
 /// Create a new `epoll_event`.
