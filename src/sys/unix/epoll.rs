@@ -38,6 +38,8 @@ impl Selector {
                 let err = io::Error::last_os_error();
                 match err.raw_os_error() {
                     // The call was interrupted, try again.
+                    // FIXME: the timeout should be reduced here, since time has
+                    // passed.
                     Some(libc::EINTR) => self.select(events, timeout),
                     _ => Err(err),
                 }
