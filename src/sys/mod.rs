@@ -14,4 +14,4 @@ mod unix;
 pub use self::unix::*;
 
 /// Size of sack allocated system events array.
-const EVENTS_CAP: usize = 256;
+const EVENTS_CAP: usize = 128;
