@@ -10,6 +10,12 @@ repository    = "https://github.com/Thomasdezeeuw/mio-st"
 keywords      = ["io", "async", "non-blocking"]
 categories    = ["asynchronous"]
 
+[features]
+default = []
+
+# This is only used in testing timeout. Currently only used in Travis for macOS.
+test_extended_time_margin = []
+
 [dependencies]
 bitflags = "1.0.3"
 log      = "0.4.3"
