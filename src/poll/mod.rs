@@ -305,7 +305,6 @@ impl Poller {
     /// use mio_st::event::{Events, EventedId, Ready};
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
-    /// use mio_st::timer::Timer;
     ///
     /// // Create a new `Poller` instance as well a containers for the vents.
     /// let mut poll = Poller::new()?;
@@ -318,21 +317,13 @@ impl Poller {
     /// // Register the connection with `poll`.
     /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
     ///
-    /// // Add a timeout so we don't wait too long for the connection to setup.
-    /// let mut timer = Timer::timeout(Duration::from_millis(500));
-    /// poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot)?;
-    ///
     /// // Start the event loop.
     /// loop {
     ///     poll.poll(&mut events, None)?;
     ///
     ///     for event in &mut events {
     ///         if event.id() == EventedId(0) {
-    ///             if event.readiness().is_timer() {
-    ///                 // Connection likely timed out.
-    ///             } else {
-    ///                 // Connection is (probably) connected.
-    ///             }
+    ///             // Connection is likely ready.
     ///             # return Ok(());
     ///         }
     ///     }

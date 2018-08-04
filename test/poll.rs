@@ -3,7 +3,6 @@ use std::time::Instant;
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::poll::PollOption;
 use mio_st::registration::Registration;
-use mio_st::timer::Timer;
 
 use init_with_poll;
 
@@ -41,9 +40,9 @@ fn polling_userspace_dont_expand_events() {
 fn polling_deadlines_dont_expand_events() {
     let (mut poll, mut events) = init_with_poll();
 
-    let mut timer = Timer::deadline(Instant::now());
+    let now = Instant::now();
     for _ in 0..EVENTS_CAP + 1 {
-        poll.register(&mut timer, EventedId(0), Ready::TIMER, PollOption::Oneshot).unwrap();
+        poll.add_deadline(EventedId(0), now).unwrap();
     }
 
     let mut check = |length| {

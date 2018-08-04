@@ -63,10 +63,10 @@ pub fn any_port() -> SocketAddr {
     "127.0.0.1:0".parse().unwrap()
 }
 
+mod deadline;
 mod event;
 mod poll;
 mod registering;
 mod tcp;
-mod timer;
 mod udp;
 mod userspace_registration;
