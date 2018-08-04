@@ -474,6 +474,69 @@ impl Poller {
         handle.deregister(self, PollCalled(()))
     }
 
+    /// Add a new deadline to Poller.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// use std::time::{Duration, Instant};
+    ///
+    /// use mio_st::event::{Event, Events, EventedId, Ready};
+    /// use mio_st::poll::Poller;
+    ///
+    /// // Our `Poller` instance and events.
+    /// let mut poller = Poller::new()?;
+    /// let mut events = Events::new();
+    ///
+    /// // Create our timer, with a deadline 10 milliseconds from now.
+    /// let deadline = Instant::now() + Duration::from_millis(10);
+    /// let id = EventedId(0);
+    /// poller.add_deadline(id, deadline);
+    ///
+    /// // Even though we don't provide a timeout to poll this will return in
+    /// // roughly 10 milliseconds and return an event with our deadline.
+    /// poller.poll(&mut events, None)?;
+    ///
+    /// assert_eq!((&mut events).next(), Some(Event::new(id, Ready::TIMER)));
+    /// # Ok(())
+    /// }
+    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
+        trace!("adding deadline: id={}, deadline={:?}", id, deadline);
+        validate_args(id, Ready::TIMER)
+            .map(|()| self.deadlines.push(Reverse(Deadline { id, deadline })))
+    }
+
+    /// Remove a previously added deadline.
+    ///
+    /// It tries removes the deadline from Poller. This return `Ok(())` even if
+    /// the deadline is not found.
+    ///
+    /// # Notes
+    ///
+    /// Removing a deadline is a costly operation. For better performance it is
+    /// advised to not bothering with removing and instead ignore the event
+    /// when it comes up
+    pub fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
+        trace!("removing deadline: id={}", id);
+        validate_args(id, Ready::TIMER)?;
+
+        // TODO: optimize this.
+        let index = self.deadlines.iter()
+            .position(|deadline| deadline.0.id == id);
+
+        if let Some(index) = index {
+            let deadlines = mem::replace(&mut self.deadlines, BinaryHeap::new());
+            let mut deadlines_vec = deadlines.into_vec();
+            debug_assert_eq!(deadlines_vec[index].0.id, id,
+                             "remove_deadline: removing an incorrect deadline");
+            let _ = deadlines_vec.swap_remove(index);
+            drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
+        }
+        Ok(())
+    }
+
     /// Poll for readiness events.
     ///
     /// Blocks the current thread and waits for readiness events for any of the
@@ -605,36 +668,6 @@ impl Poller {
         } else {
             drop(userspace_events.drain(..n));
         }
-    }
-
-    /// Add a new deadline to Poller.
-    pub(crate) fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
-        trace!("adding deadline: id={}, deadline={:?}", id, deadline);
-        validate_args(id, Ready::TIMER)
-            .map(|()| self.deadlines.push(Reverse(Deadline { id, deadline })))
-    }
-
-    /// Remove a previously added deadline.
-    ///
-    /// It tries removes the deadline from Poller. This return `Ok(())` even if
-    /// the deadline is not found.
-    pub(crate) fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
-        trace!("removing deadline: id={}", id);
-        validate_args(id, Ready::TIMER)?;
-
-        // TODO: optimize this.
-        let index = self.deadlines.iter()
-            .position(|deadline| deadline.0.id == id);
-
-        if let Some(index) = index {
-            let deadlines = mem::replace(&mut self.deadlines, BinaryHeap::new());
-            let mut deadlines_vec = deadlines.into_vec();
-            debug_assert_eq!(deadlines_vec[index].0.id, id,
-                             "remove_deadline: removing an incorrect deadline");
-            let _ = deadlines_vec.swap_remove(index);
-            drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
-        }
-        Ok(())
     }
 
     /// Add expired deadlines to the provided `events`.
