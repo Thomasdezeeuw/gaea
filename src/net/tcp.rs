@@ -387,6 +387,15 @@ impl TcpListener {
     pub fn take_error(&mut self) -> io::Result<Option<io::Error>> {
         self.inner.take_error()
     }
+
+    /// Create a independently owned handle to the underlying socket.
+    ///
+    /// The returned `TcpListener` is a reference to the same socket as `self`.
+    /// Both handles can be used to accept incoming connections and options set
+    /// on one listener will affect the other.
+    pub fn try_clone(&mut self) -> io::Result<Self> {
+        self.inner.try_clone().map(|inner| TcpListener { inner })
+    }
 }
 
 impl Evented for TcpListener {

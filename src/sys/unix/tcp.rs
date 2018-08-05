@@ -140,6 +140,10 @@ impl TcpListener {
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.listener.take_error()
     }
+
+    pub fn try_clone(&self) -> io::Result<Self> {
+        self.listener.try_clone().map(|listener| TcpListener { listener })
+    }
 }
 
 impl Evented for TcpListener {
