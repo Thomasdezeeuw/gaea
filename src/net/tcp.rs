@@ -393,7 +393,7 @@ impl TcpListener {
     /// The returned `TcpListener` is a reference to the same socket as `self`.
     /// Both handles can be used to accept incoming connections and options set
     /// on one listener will affect the other.
-    pub fn try_clone(&mut self) -> io::Result<Self> {
+    pub fn try_clone(&self) -> io::Result<Self> {
         self.inner.try_clone().map(|inner| TcpListener { inner })
     }
 }
