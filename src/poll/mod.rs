@@ -465,6 +465,42 @@ impl Poller {
         handle.deregister(self, PollCalled(()))
     }
 
+    /// Notify an evented handle of an user space event.
+    ///
+    /// This uses the user space event system.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// use std::time::Duration;
+    ///
+    /// use mio_st::event::{Event, Events, EventedId, Ready};
+    /// use mio_st::poll::Poller;
+    ///
+    /// let mut poll = Poller::new()?;
+    /// let mut events = Events::new();
+    ///
+    /// // Add a custom user space notification.
+    /// poll.notify(EventedId(0), Ready::READABLE)?;
+    ///
+    /// // Set a timeout because this poll should never receive any events.
+    /// poll.poll(&mut events, None)?;
+    /// assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(0), Ready::READABLE));
+    /// #     Ok(())
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     try_main().unwrap();
+    /// # }
+    /// ```
+    pub fn notify(&mut self, id: EventedId, ready: Ready) -> io::Result<()> {
+        trace!("adding event: id={}, ready={:?}", id, ready);
+        validate_args(id, ready)
+            .map(|()| self.userspace_events.borrow_mut().push(Event::new(id, ready)))
+    }
+
     /// Add a new deadline to Poller.
     ///
     /// # Examples
