@@ -7,10 +7,8 @@
 //! [root of the crate]: ../index.html
 
 use std::{io, mem};
-use std::cell::RefCell;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::rc::{Rc, Weak};
 use std::time::{Duration, Instant};
 
 use sys;
@@ -183,9 +181,7 @@ pub use self::option::PollOption;
 #[derive(Debug)]
 pub struct Poller {
     selector: sys::Selector,
-    // This is shared with all user space registrations, they have a weak
-    // reference.
-    userspace_events: Rc<RefCell<Vec<Event>>>,
+    userspace_events: Vec<Event>,
     deadlines: BinaryHeap<Reverse<Deadline>>,
 }
 
@@ -238,7 +234,7 @@ impl Poller {
     pub fn new() -> io::Result<Poller> {
         Ok(Poller {
             selector: sys::Selector::new()?,
-            userspace_events: Rc::new(RefCell::new(Vec::new())),
+            userspace_events: Vec::new(),
             deadlines: BinaryHeap::new(),
         })
     }
@@ -498,7 +494,7 @@ impl Poller {
     pub fn notify(&mut self, id: EventedId, ready: Ready) -> io::Result<()> {
         trace!("adding event: id={}, ready={:?}", id, ready);
         validate_args(id, ready)
-            .map(|()| self.userspace_events.borrow_mut().push(Event::new(id, ready)))
+            .map(|()| self.userspace_events.push(Event::new(id, ready)))
     }
 
     /// Add a new deadline to Poller.
@@ -654,7 +650,7 @@ impl Poller {
     ///
     /// If we have any deadlines the first one will also cap the timeout.
     fn determine_timeout(&mut self, timeout: Option<Duration>) -> Option<Duration> {
-        if !self.userspace_events.borrow().is_empty() {
+        if !self.userspace_events.is_empty() {
             // User space queue has events, so no blocking.
             return Some(Duration::from_millis(0));
         } else if let Some(deadline) = self.deadlines.peek() {
@@ -678,22 +674,14 @@ impl Poller {
         timeout
     }
 
-    /// Get a weak reference to the user space events.
-    ///
-    /// Used by `Registration`.
-    pub(crate) fn get_userspace_events(&mut self) -> Weak<RefCell<Vec<Event>>> {
-        Rc::downgrade(&self.userspace_events)
-    }
-
     /// Poll user space events.
     fn poll_userspace_internal(&mut self, events: &mut Events) {
         trace!("polling user space events");
-        let mut userspace_events = self.userspace_events.borrow_mut();
-        let n = events.extend_events(&userspace_events);
-        if userspace_events.len() - n == 0 {
-            userspace_events.clear();
+        let n = events.extend_events(&self.userspace_events);
+        if self.userspace_events.len() - n == 0 {
+            self.userspace_events.clear();
         } else {
-            drop(userspace_events.drain(..n));
+            drop(self.userspace_events.drain(..n));
         }
     }
 
