@@ -2,4 +2,3 @@
 //! isn't allowed. As well ass testing the provided arguments.
 
 mod system;
-mod userspace;
