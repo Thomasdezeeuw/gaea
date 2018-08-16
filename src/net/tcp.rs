@@ -129,6 +129,16 @@ impl TcpStream {
         self.inner.keepalive()
     }
 
+    /// Sets the value of the `TCP_NODELAY` option on this socket.
+    pub fn set_nodelay(&mut self, nodelay: bool) -> io::Result<()> {
+        self.inner.set_nodelay(nodelay)
+    }
+
+    /// Gets the value of the `TCP_NODELAY` option on this socket.
+    pub fn nodelay(&mut self) -> io::Result<bool> {
+        self.inner.nodelay()
+    }
+
     /// Receives data on the socket from the remote address to which it is
     /// connected, without removing that data from the queue. On success,
     /// returns the number of bytes peeked.
