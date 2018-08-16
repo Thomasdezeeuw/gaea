@@ -379,6 +379,16 @@ impl TcpListener {
         self.inner.local_addr()
     }
 
+    /// Sets the value for the `IP_TTL` option on this socket.
+    pub fn set_ttl(&mut self, ttl: u32) -> io::Result<()> {
+        self.inner.set_ttl(ttl)
+    }
+
+    /// Gets the value of the `IP_TTL` option for this socket.
+    pub fn ttl(&mut self) -> io::Result<u32> {
+        self.inner.ttl()
+    }
+
     /// Get the value of the `SO_ERROR` option on this socket.
     ///
     /// This will retrieve the stored error in the underlying socket, clearing
