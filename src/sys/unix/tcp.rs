@@ -137,6 +137,14 @@ impl TcpListener {
         self.listener.accept()
     }
 
+    pub fn set_ttl(&mut self, ttl: u32) -> io::Result<()> {
+        self.listener.set_ttl(ttl)
+    }
+
+    pub fn ttl(&mut self) -> io::Result<u32> {
+        self.listener.ttl()
+    }
+
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.listener.take_error()
     }
