@@ -49,6 +49,14 @@ impl TcpStream {
         self.stream.keepalive()
     }
 
+    pub fn set_nodelay(&mut self, nodelay: bool) -> io::Result<()> {
+        self.stream.set_nodelay(nodelay)
+    }
+
+    pub fn nodelay(&mut self) -> io::Result<bool> {
+        self.stream.nodelay()
+    }
+
     pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.stream.peek(buf)
     }
