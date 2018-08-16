@@ -41,6 +41,14 @@ impl TcpStream {
         self.stream.local_addr()
     }
 
+    pub fn set_ttl(&mut self, ttl: u32) -> io::Result<()> {
+        self.stream.set_ttl(ttl)
+    }
+
+    pub fn ttl(&mut self) -> io::Result<u32> {
+        self.stream.ttl()
+    }
+
     pub fn set_keepalive(&self, keepalive: Option<Duration>) -> io::Result<()> {
         self.stream.set_keepalive(keepalive)
     }

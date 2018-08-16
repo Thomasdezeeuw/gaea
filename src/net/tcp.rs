@@ -104,6 +104,16 @@ impl TcpStream {
         self.inner.local_addr()
     }
 
+    /// Sets the value for the `IP_TTL` option on this socket.
+    pub fn set_ttl(&mut self, ttl: u32) -> io::Result<()> {
+        self.inner.set_ttl(ttl)
+    }
+
+    /// Gets the value of the `IP_TTL` option for this socket.
+    pub fn ttl(&mut self) -> io::Result<u32> {
+        self.inner.ttl()
+    }
+
     /// Sets whether keepalive messages are enabled to be sent on this socket.
     ///
     /// On Unix, this option will set the `SO_KEEPALIVE` as well as the
