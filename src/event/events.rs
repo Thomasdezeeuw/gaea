@@ -60,8 +60,8 @@ impl Events {
     ///
     /// # Notes
     ///
-    /// Internally there is *currently* a maximum capacity of 512 events. At
-    /// most 256 events will be used for system events.
+    /// Internally there is *currently* a maximum capacity of 256 events. At
+    /// most 128 events will be used for system events.
     pub fn new() -> Events {
         Events { events: ArrayVec::new(), pos: 0 }
     }
