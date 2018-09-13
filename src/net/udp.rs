@@ -40,8 +40,8 @@ use poll::{PollCalled, PollOption, Poller};
 /// const SENDER_ID: EventedId = EventedId(0);
 /// const ECHOER_ID: EventedId = EventedId(1);
 ///
-/// let sender_address = "127.0.0.1:8888".parse()?;
-/// let echoer_address = "127.0.0.1:9999".parse()?;
+/// let sender_address = "127.0.0.1:7000".parse()?;
+/// let echoer_address = "127.0.0.1:7001".parse()?;
 ///
 /// // Create our sockets.
 /// let mut sender_socket = UdpSocket::bind(sender_address)?;
@@ -112,7 +112,7 @@ impl UdpSocket {
     /// use mio_st::net::UdpSocket;
     ///
     /// // We must bind it to an open address.
-    /// let address = "127.0.0.1:7777".parse()?;
+    /// let address = "127.0.0.1:7002".parse()?;
     /// let socket = UdpSocket::bind(address)?;
     ///
     /// // Our socket was created, but we should not use it before checking it's
@@ -163,7 +163,7 @@ impl UdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7777".parse()?;
+    /// let addr = "127.0.0.1:7003".parse()?;
     /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// assert_eq!(socket.local_addr()?, addr);
@@ -187,13 +187,13 @@ impl UdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7777".parse()?;
+    /// let addr = "127.0.0.1:7004".parse()?;
     /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// // We must check if the socket is writable before calling send_to,
     /// // or we could run into a WouldBlock error.
     ///
-    /// let other_addr = "127.0.0.1:8888".parse()?;
+    /// let other_addr = "127.0.0.1:7005".parse()?;
     /// let bytes_sent = socket.send_to(&[9; 9], other_addr)?;
     /// assert_eq!(bytes_sent, 9);
     /// #
@@ -219,7 +219,7 @@ impl UdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7777".parse()?;
+    /// let addr = "127.0.0.1:7006".parse()?;
     /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// // We must check if the socket is readable before calling recv_from,
@@ -252,7 +252,7 @@ impl UdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7777".parse()?;
+    /// let addr = "127.0.0.1:7007".parse()?;
     /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// // We must check if the socket is readable before calling recv_from,
@@ -349,11 +349,11 @@ impl FromRawFd for UdpSocket {
 /// const SENDER_ID: EventedId = EventedId(1);
 ///
 /// // Create our echoer.
-/// let echoer_addr = "127.0.0.1:5555".parse()?;
+/// let echoer_addr = "127.0.0.1:7008".parse()?;
 /// let mut echoer = UdpSocket::bind(echoer_addr)?;
 ///
 /// // Then we connect to the server.
-/// let sender_addr = "127.0.0.1:4444".parse()?;
+/// let sender_addr = "127.0.0.1:7009".parse()?;
 /// let mut sender = ConnectedUdpSocket::connect(sender_addr, echoer_addr)?;
 ///
 /// // Create our poll instance and events container.
@@ -426,7 +426,7 @@ impl ConnectedUdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7777".parse()?;
+    /// let addr = "127.0.0.1:7010".parse()?;
     /// let mut socket = UdpSocket::bind(addr)?;
     ///
     /// assert_eq!(socket.local_addr()?, addr);
@@ -450,8 +450,8 @@ impl ConnectedUdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::ConnectedUdpSocket;
     ///
-    /// let local_addr = "127.0.0.1:7777".parse()?;
-    /// let remote_addr = "127.0.0.1:8888".parse()?;
+    /// let local_addr = "127.0.0.1:7011".parse()?;
+    /// let remote_addr = "127.0.0.1:7012".parse()?;
     /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
     ///
     /// // We must check if the socket is writable before calling send, or we
@@ -480,8 +480,8 @@ impl ConnectedUdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::ConnectedUdpSocket;
     ///
-    /// let local_addr = "127.0.0.1:7777".parse()?;
-    /// let remote_addr = "127.0.0.1:8888".parse()?;
+    /// let local_addr = "127.0.0.1:7013".parse()?;
+    /// let remote_addr = "127.0.0.1:7014".parse()?;
     /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
     ///
     /// // We must check if the socket is readable before calling recv, or we
@@ -511,8 +511,8 @@ impl ConnectedUdpSocket {
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// use mio_st::net::ConnectedUdpSocket;
     ///
-    /// let local_addr = "127.0.0.1:7777".parse()?;
-    /// let remote_addr = "127.0.0.1:8888".parse()?;
+    /// let local_addr = "127.0.0.1:7015".parse()?;
+    /// let remote_addr = "127.0.0.1:7016".parse()?;
     /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
     ///
     /// // We must check if the socket is readable before calling peek, or we

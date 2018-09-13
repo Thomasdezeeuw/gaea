@@ -29,7 +29,7 @@ use poll::{Poller, PollCalled, PollOption};
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poller, PollOption};
 ///
-/// let address = "127.0.0.1:8888".parse()?;
+/// let address = "127.0.0.1:8000".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
 ///
 /// let mut poll = Poller::new()?;
@@ -260,7 +260,7 @@ impl FromRawFd for TcpStream {
 /// use mio_st::net::TcpListener;
 /// use mio_st::poll::{Poller, PollOption};
 ///
-/// let address = "127.0.0.1:7777".parse()?;
+/// let address = "127.0.0.1:8001".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
 ///
 /// let mut poll = Poller::new()?;
@@ -300,7 +300,7 @@ impl FromRawFd for TcpStream {
 ///
 /// // Bind the tcp socket and start listening, this will return a
 /// // `std::net::TcpListener`.
-/// let addr: SocketAddr = "127.0.0.1:6789".parse()?;
+/// let addr: SocketAddr = "127.0.0.1:8002".parse()?;
 /// let std_listener = builder.bind(addr)?.listen(128)?;
 ///
 /// // Convert the listener into an mio listener.
