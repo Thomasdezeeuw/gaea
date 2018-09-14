@@ -4,11 +4,16 @@ version       = "0.1.0"
 license       = "MIT"
 authors       = ["Carl Lerche <me@carllerche.com>", "Thomas de Zeeuw <thomasdezeeuw@gmail.com>"]
 description   = "Single threaded, lightweight non-blocking IO"
+readme        = "README.md"
 documentation = "https://docs.rs/mio-st"
 homepage      = "https://github.com/Thomasdezeeuw/mio-st"
 repository    = "https://github.com/Thomasdezeeuw/mio-st"
 keywords      = ["io", "async", "non-blocking"]
 categories    = ["asynchronous"]
+include       = ["Cargo.toml", "src/**/*.rs", "LICENSE"]
+
+[badges]
+travis-ci = { repository = "https://github.com/Thomasdezeeuw/mio-st", branch = "master" }
 
 [dependencies]
 bitflags = "1.0.3"
