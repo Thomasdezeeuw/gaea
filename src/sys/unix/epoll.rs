@@ -106,7 +106,7 @@ fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
 }
 
 /// Whether or not the provided `flags` contains the provided `flag`.
-fn contains_flag(flags: libc::uint32_t, flag: libc::c_int) -> bool {
+const fn contains_flag(flags: libc::uint32_t, flag: libc::c_int) -> bool {
     (flags & flag as libc::uint32_t) != 0
 }
 

@@ -215,7 +215,7 @@ fn opt_to_flags(opt: PollOption) -> kevent_flags_t {
 }
 
 /// Create a new `kevent`.
-fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_flags_t, id: EventedId) -> libc::kevent {
+const fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_flags_t, id: EventedId) -> libc::kevent {
     libc::kevent {
         ident, filter, flags,
         fflags: 0,
@@ -272,7 +272,7 @@ fn check_errors(events: &[libc::kevent], ignored_errors: &[kevent_data_t]) -> io
 }
 
 /// Whether or not the provided `flags` contains the provided `flag`.
-fn contains_flag(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
+const fn contains_flag(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
     (flags & flag) != 0
 }
 
