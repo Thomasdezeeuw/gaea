@@ -37,7 +37,7 @@ use event::Event;
 ///     poll.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
 ///     for event in &mut events {
-///         println!("event={:?}", event);
+///         println!("got event: id={:?}, rediness={:?}", event.id(), event.readiness());
 ///     }
 /// #   return Ok(());
 /// }
