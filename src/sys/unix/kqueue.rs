@@ -179,7 +179,7 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
 
     if contains_flag(kevent.flags, libc::EV_ERROR)  {
         // The actual error is stored in `kevent.data`, but we can't pass it
-        // to the user from here. So the user need to try and retrieve the
+        // to the user from here. So the user needs to try and retrieve the
         // error themselves.
         readiness.insert(Ready::ERROR);
     }
@@ -196,7 +196,9 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
 
     if kevent.filter == libc::EVFILT_READ {
         readiness.insert(Ready::READABLE);
-    } else if kevent.filter == libc::EVFILT_WRITE {
+    }
+
+    if kevent.filter == libc::EVFILT_WRITE {
         readiness.insert(Ready::WRITABLE);
     }
 
