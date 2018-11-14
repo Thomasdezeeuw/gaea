@@ -499,6 +499,9 @@ impl Poller {
 
     /// Add a new deadline to Poller.
     ///
+    /// This will cause an event to trigger after the `deadline` has passed with
+    /// the [`Ready::TIMER`] readiness and provided `id`.
+    ///
     /// # Examples
     ///
     /// ```
@@ -540,7 +543,7 @@ impl Poller {
     ///
     /// Removing a deadline is a costly operation. For better performance it is
     /// advised to not bothering with removing and instead ignore the event
-    /// when it comes up
+    /// when it comes up.
     pub fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
         trace!("removing deadline: id={}", id);
         validate_args(id, Ready::TIMER)?;
