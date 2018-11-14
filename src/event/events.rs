@@ -152,3 +152,143 @@ impl<'a> ExactSizeIterator for &'a mut Events {
 }
 
 impl<'a> FusedIterator for &'a mut Events { }
+
+#[cfg(test)]
+mod tests {
+    use std::iter::repeat;
+
+    use event::{Events, Event, EventedId, Ready};
+
+    const EVENTS_CAP: usize = 256;
+
+    #[test]
+    fn push() {
+        let mut events = Events::default();
+        assert_eq!(events.len(), 0);
+        assert!(events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP);
+        assert_eq!((&mut events).len(), 0); // ExactSizeIterator implementation.
+
+        events.push(Event::new(EventedId(0), Ready::all()));
+        assert_eq!(events.len(), 1);
+        assert!(!events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP - 1);
+        assert_eq!((&mut events).len(), 1);
+    }
+
+    #[test]
+    fn clear() {
+        let mut events = Events::new();
+        events.push(Event::new(EventedId(0), Ready::all()));
+
+        events.clear();
+        assert_eq!(events.len(), 0);
+        assert!(events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP);
+    }
+
+    #[test]
+    fn extend_0() {
+        let mut events = Events::new();
+
+        assert_eq!(events.extend_events(&[]), 0);
+        assert_eq!(events.len(), 0);
+        assert!(events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP);
+        assert_eq!((&mut events).len(), 0);
+    }
+
+    #[test]
+    fn extend_many() {
+        let extra_events: [Event; 4] = [
+            Event::new(EventedId(0), Ready::all()),
+            Event::new(EventedId(1), Ready::all()),
+            Event::new(EventedId(2), Ready::all()),
+            Event::new(EventedId(3), Ready::all()),
+        ];
+
+        let mut events = Events::new();
+        assert_eq!(events.extend_events(&extra_events), 4);
+        assert_eq!(events.len(), 4);
+        assert!(!events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP - 4);
+        assert_eq!((&mut events).len(), 4);
+    }
+
+    #[test]
+    fn extend_no_space() {
+        let iter = repeat(Event::new(EventedId(0), Ready::all()));
+        let extra_events: Vec<Event> = iter.take(EVENTS_CAP + 1).collect();
+
+        let mut events = Events::new();
+        assert_eq!(events.extend_events(&extra_events), EVENTS_CAP);
+        assert_eq!(events.len(), EVENTS_CAP);
+        assert!(!events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), 0);
+        assert_eq!((&mut events).len(), EVENTS_CAP);
+
+        assert_eq!(events.extend_events(&extra_events), 0);
+    }
+
+    #[test]
+    fn iter() {
+        let extra_events: [Event; 4] = [
+            Event::new(EventedId(0), Ready::all()),
+            Event::new(EventedId(1), Ready::all()),
+            Event::new(EventedId(2), Ready::all()),
+            Event::new(EventedId(3), Ready::all()),
+        ];
+
+        let mut events = Events::new();
+        assert_eq!(events.extend_events(&extra_events), 4);
+
+        let mut current_id = 0;
+        for event in &mut events.take(2) {
+            assert_eq!(event.id(), EventedId(current_id));
+            assert_eq!(event.readiness(), Ready::all());
+            current_id += 1;
+        }
+
+        assert_eq!(events.len(), 2);
+        assert!(!events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP - 4);
+        assert_eq!((&mut events).len(), 2);
+
+        for event in &mut events {
+            assert_eq!(event.id(), EventedId(current_id));
+            assert_eq!(event.readiness(), Ready::all());
+            current_id += 1;
+        }
+
+        assert_eq!(current_id, 4);
+        assert_eq!(events.len(), 0);
+        assert!(events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP - 4);
+        assert_eq!((&mut events).len(), 0);
+    }
+
+    #[test]
+    fn fused_iter() {
+        let mut events = Events::new();
+        events.push(Event::new(EventedId(0), Ready::all()));
+
+        assert_eq!((&mut events).count(), 1);
+        assert_eq!(events.len(), 0);
+        assert!(events.is_empty());
+        assert_eq!(events.capacity(), EVENTS_CAP);
+        assert_eq!(events.capacity_left(), EVENTS_CAP - 1);
+        assert_eq!((&mut events).len(), 0);
+
+        for _ in 0..100 {
+            assert_eq!((&mut events).next(), None);
+        }
+    }
+}
