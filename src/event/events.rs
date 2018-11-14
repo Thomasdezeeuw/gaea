@@ -68,12 +68,17 @@ impl Events {
 
     /// Returns the number of events in this iteration.
     pub fn len(&self) -> usize {
-        self.events.len()
+        let len = self.events.len();
+        if self.pos > len {
+            0
+        } else {
+            len - self.pos
+        }
     }
 
     /// Whether or not this iteration is empty.
     pub fn is_empty(&self) -> bool {
-        self.events.is_empty()
+        self.len() == 0
     }
 
     /// Clear the events to allow it to be filled again.
