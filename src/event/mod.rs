@@ -42,17 +42,17 @@ pub struct Event {
 
 impl Event {
     /// Creates a new `Event` containing `id` and `readiness`.
-    pub fn new(id: EventedId, readiness: Ready) -> Event {
+    pub const fn new(id: EventedId, readiness: Ready) -> Event {
         Event { id, readiness }
     }
 
     /// Returns the event's id.
-    pub fn id(&self) -> EventedId {
+    pub const fn id(&self) -> EventedId {
         self.id
     }
 
     /// Returns the event's readiness.
-    pub fn readiness(&self) -> Ready {
+    pub const fn readiness(&self) -> Ready {
         self.readiness
     }
 }
