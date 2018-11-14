@@ -168,7 +168,7 @@ impl Selector {
 fn timespec_from_duration(duration: Duration) -> libc::timespec {
     libc::timespec {
         tv_sec: cmp::min(duration.as_secs(), libc::time_t::max_value() as u64) as libc::time_t,
-        tv_nsec: duration.subsec_nanos() as libc::c_long,
+        tv_nsec: libc::c_long::from(duration.subsec_nanos()),
     }
 }
 
