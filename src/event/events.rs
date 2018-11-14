@@ -104,7 +104,7 @@ impl Events {
 
         let len = self.len();
         unsafe {
-            let dst = self.events.as_mut_ptr().offset(len as isize);
+            let dst = self.events.as_mut_ptr().add(len);
             ptr::copy_nonoverlapping(events.as_ptr(), dst, count);
             self.events.set_len(len + count);
         }
