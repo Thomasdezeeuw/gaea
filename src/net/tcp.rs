@@ -379,19 +379,10 @@ impl TcpListener {
     ///
     /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
     pub fn accept(&mut self) -> io::Result<(TcpStream, SocketAddr)> {
-        self.accept_std().and_then(|(stream, addr)| {
+        self.inner.accept().and_then(|(stream, addr)| {
             let stream = TcpStream::from_std_stream(stream)?;
             Ok((stream, addr))
         })
-    }
-
-    /// Accepts a new `std::net::TcpStream`.
-    ///
-    /// This method is the same as `accept`, except that it returns a TCP socket
-    /// *in blocking mode* which isn't bound to `mio`. This can be later then
-    /// converted to a `mio` type, if necessary.
-    pub fn accept_std(&mut self) -> io::Result<(net::TcpStream, SocketAddr)> {
-        self.inner.accept()
     }
 
     /// Returns the local socket address of this listener.
