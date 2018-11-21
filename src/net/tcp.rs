@@ -80,20 +80,6 @@ impl TcpStream {
         sys::TcpStream::connect(stream, &addr).map(|inner| TcpStream { inner })
     }
 
-    /// Creates a new `TcpStream` from a standard `net::TcpStream`.
-    ///
-    /// This function is intended to be used to wrap a TCP stream from the
-    /// standard library in the mio equivalent. The conversion here will
-    /// automatically set `stream` to nonblocking and the returned object should
-    /// be ready to get associated with an event loop.
-    ///
-    /// Note that the TCP stream here will not have `connect` called on it, so
-    /// it should already be connected via some other means (be it manually, the
-    /// `net2` crate, or the standard library).
-    pub fn from_std_stream(stream: net::TcpStream) -> io::Result<TcpStream> {
-        sys::TcpStream::from_std_stream(stream).map(|inner| TcpStream { inner })
-    }
-
     /// Returns the socket address of the remote peer of this TCP connection.
     pub fn peer_addr(&mut self) -> io::Result<SocketAddr> {
         self.inner.peer_addr()
@@ -308,10 +294,7 @@ impl TcpListener {
     ///
     /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
     pub fn accept(&mut self) -> io::Result<(TcpStream, SocketAddr)> {
-        self.inner.accept().and_then(|(stream, addr)| {
-            let stream = TcpStream::from_std_stream(stream)?;
-            Ok((stream, addr))
-        })
+        self.inner.accept().map(|(inner, addr)| (TcpStream{ inner }, addr))
     }
 
     /// Returns the local socket address of this listener.
