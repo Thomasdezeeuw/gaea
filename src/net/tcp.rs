@@ -239,15 +239,12 @@ impl FromRawFd for TcpStream {
     }
 }
 
-/// A structure representing a socket listener.
+/// A TCP socket listener.
 ///
-/// If fine-grained control over the binding and listening process for a socket
-/// is desired then use the `net2::TcpBuilder` methods, in the [`net2`] crate.
-/// This can be used in combination with the [`TcpListener::from_std_listener`]
-/// method to transfer ownership into mio. Also see the second example below.
+/// This works much like the `TcpListener` in the standard library, but this
+/// doesn't block when calling [`accept`].
 ///
-/// [`net2`]: https://crates.io/crates/net2
-/// [`TcpListener::from_std_listener`]: #method.from_std_listener
+/// [`accept`]: #method.accept
 ///
 /// # Examples
 ///
@@ -267,7 +264,7 @@ impl FromRawFd for TcpStream {
 /// let mut events = Events::new();
 ///
 /// // Register the socket with `Poller`
-/// poll.register(&mut listener, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
+/// poll.register(&mut listener, EventedId(0), Ready::all(), PollOption::Edge)?;
 ///
 /// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
