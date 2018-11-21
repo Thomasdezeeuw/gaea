@@ -28,11 +28,6 @@ impl TcpStream {
         Ok(TcpStream { stream })
     }
 
-    pub fn from_std_stream(stream: net::TcpStream) -> io::Result<TcpStream> {
-        stream.set_nonblocking(true)?;
-        Ok(TcpStream { stream })
-    }
-
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
         self.stream.peer_addr()
     }
@@ -150,8 +145,10 @@ impl TcpListener {
         self.listener.local_addr()
     }
 
-    pub fn accept(&self) -> io::Result<(net::TcpStream, SocketAddr)> {
-        self.listener.accept()
+    pub fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
+        let (stream, address) = self.listener.accept()?;
+        stream.set_nonblocking(true)?;
+        Ok((TcpStream { stream }, address))
     }
 
     pub fn set_ttl(&mut self, ttl: u32) -> io::Result<()> {
