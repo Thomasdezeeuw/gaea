@@ -10,10 +10,13 @@ use poll::{Poller, PollCalled, PollOption};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
-/// If fine-grained control over the creation of the socket is desired, you can
-/// use `net2::TcpBuilder` to configure a socket and then pass its socket to
-/// `TcpStream::connect_stream` to transfer ownership into mio and schedule the
-/// connect operation.
+/// This works much like the `TcpStream` in the standard library, but the
+/// [`Read`] and [`Write`] implementation don't block and instead return a
+/// [`WouldBlock`] error.
+///
+/// [`Read`]: #impl-Read
+/// [`Write`]: #impl-Write
+/// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 ///
 /// # Examples
 ///
@@ -206,9 +209,11 @@ impl FromRawFd for TcpStream {
 /// A TCP socket listener.
 ///
 /// This works much like the `TcpListener` in the standard library, but this
-/// doesn't block when calling [`accept`].
+/// doesn't block when calling [`accept`] and instead return [`WouldBlock`]
+/// error.
 ///
 /// [`accept`]: #method.accept
+/// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 ///
 /// # Examples
 ///
