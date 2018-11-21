@@ -279,56 +279,6 @@ impl FromRawFd for TcpStream {
 /// #     try_main().unwrap();
 /// # }
 /// ```
-///
-/// Using the [`net2`] crate to create a listener and change settings on the
-/// accepted incoming connection.
-///
-/// ```
-/// extern crate net2;
-///
-/// # extern crate mio_st;
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
-/// use std::time::Duration;
-/// use std::net::SocketAddr;
-///
-/// use mio_st::net::{TcpListener, TcpStream};
-/// use net2::{self, TcpStreamExt};
-///
-/// // Create a new `net2` `TcpBuilder`.
-/// let builder = net2::TcpBuilder::new_v4()?;
-///
-/// // Bind the tcp socket and start listening, this will return a
-/// // `std::net::TcpListener`.
-/// let addr: SocketAddr = "127.0.0.1:8002".parse()?;
-/// let std_listener = builder.bind(addr)?.listen(128)?;
-///
-/// // Convert the listener into an mio listener.
-/// let mut mio_listener = TcpListener::from_std_listener(std_listener)?;
-///
-/// // Use `mio_listener` as normal, such as registering it with poll, etc.
-///
-/// // This may return a `WouldBlock` error.
-/// # (|| -> ::std::io::Result<()> {
-/// let (std_stream, addr) = mio_listener.accept_std()?;
-///
-/// // Use net2's `TcpStreamExt` trait to modifiy the receiving buffer size.
-/// std_stream.set_recv_buffer_size(4 * 1024)?;
-///
-/// // Now convert the stream into a mio stream, set it non-blocking mode etc.
-/// let mio_stream = TcpStream::from_std_stream(std_stream)?;
-///
-/// // Now the `mio_stream` can be used as normal.
-/// # drop(mio_stream);
-/// # Ok(())
-/// # })();
-/// #     Ok(())
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
-/// # }
-/// ```
 #[derive(Debug)]
 pub struct TcpListener {
     inner: sys::TcpListener,
@@ -337,35 +287,8 @@ pub struct TcpListener {
 impl TcpListener {
     /// Convenience method to bind a new TCP listener to the specified address
     /// to receive new connections.
-    ///
-    /// This function will take the following steps:
-    ///
-    /// 1. Create a new TCP socket.
-    /// 2. Set the `SO_REUSEADDR` option on the socket.
-    /// 3. Bind the socket to the specified address.
-    /// 4. Call `listen` on the socket to prepare it to receive new connections.
-    pub fn bind(addr: SocketAddr) -> io::Result<TcpListener> {
-        let socket = match addr {
-            SocketAddr::V4(..) => TcpBuilder::new_v4(),
-            SocketAddr::V6(..) => TcpBuilder::new_v6(),
-        }?;
-
-        if cfg!(unix) {
-            let _ = socket.reuse_address(true)?;
-        }
-
-        let listener = socket.bind(addr)?.listen(128)?;
-        TcpListener::from_std_listener(listener)
-    }
-
-    /// Creates a new `TcpListener` from an instance of a
-    /// `std::net::TcpListener` type.
-    ///
-    /// This function will set the `listener` provided into nonblocking mode,
-    /// and otherwise the listener will just be wrapped up in an mio listener
-    /// ready to accept new connections and become associated with `Poller`.
-    pub fn from_std_listener(listener: net::TcpListener) -> io::Result<TcpListener> {
-        sys::TcpListener::new(listener).map(|inner| TcpListener { inner })
+    pub fn bind(address: SocketAddr) -> io::Result<TcpListener> {
+        sys::TcpListener::new(address).map(|inner| TcpListener { inner })
     }
 
     /// Accepts a new `TcpStream`.

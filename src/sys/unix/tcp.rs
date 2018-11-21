@@ -140,7 +140,8 @@ pub struct TcpListener {
 }
 
 impl TcpListener {
-    pub fn new(listener: net::TcpListener) -> io::Result<TcpListener> {
+    pub fn new(address: SocketAddr) -> io::Result<TcpListener> {
+        let listener = net::TcpListener::bind(address)?;
         listener.set_nonblocking(true)?;
         Ok(TcpListener { listener })
     }
