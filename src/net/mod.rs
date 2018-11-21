@@ -5,7 +5,7 @@
 //! [portability guidelines] are followed, the behavior should be identical no
 //! matter the target platform.
 //!
-//! [portability guidelines]: ../struct.Poller.html#portability
+//! [portability guidelines]: ../poll/struct.Poller.html#portability
 
 mod tcp;
 mod udp;
