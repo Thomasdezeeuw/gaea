@@ -16,10 +16,21 @@ pub struct TcpStream {
 }
 
 impl TcpStream {
-    pub fn connect(stream: net::TcpStream, addr: &SocketAddr) -> io::Result<TcpStream> {
+    pub fn connect(address: SocketAddr) -> io::Result<TcpStream> {
+        // Create a raw socket descriptor.
+        let socket_family = match address {
+            SocketAddr::V4(..) => libc::AF_INET,
+            SocketAddr::V6(..) => libc::AF_INET6,
+        };
+        let socket_fd = unsafe { libc::socket(socket_family, libc::SOCK_STREAM, 0) };
+        if socket_fd == -1 {
+            return Err(io::Error::last_os_error());
+        }
+
+        let stream = unsafe { net::TcpStream::from_raw_fd(socket_fd) };
         stream.set_nonblocking(true)?;
 
-        match stream.connect(addr) {
+        match stream.connect(address) {
             Ok(..) => {},
             Err(ref e) if e.raw_os_error() == Some(libc::EINPROGRESS) => {},
             Err(e) => return Err(e),

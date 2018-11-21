@@ -4,8 +4,6 @@ use std::net::{self, Shutdown, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::time::Duration;
 
-use net2::TcpBuilder;
-
 use sys;
 use event::{Evented, EventedId, Ready};
 use poll::{Poller, PollCalled, PollOption};
@@ -57,27 +55,7 @@ impl TcpStream {
     /// Create a new TCP stream and issue a non-blocking connect to the
     /// specified address.
     pub fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
-        let sock = match addr {
-            SocketAddr::V4(..) => TcpBuilder::new_v4(),
-            SocketAddr::V6(..) => TcpBuilder::new_v6(),
-        }?;
-        TcpStream::connect_stream(sock.to_tcp_stream()?, addr)
-    }
-
-    /// Creates a new `TcpStream` from the pending socket inside the given
-    /// `std::net::TcpBuilder`, connecting it to the address specified.
-    ///
-    /// This constructor allows configuring the socket before it's actually
-    /// connected, and this function will transfer ownership to the returned
-    /// `TcpStream` if successful. An unconnected `TcpStream` can be created
-    /// with the `net2::TcpBuilder` type (and also configured via that route).
-    ///
-    /// The platform specific behavior of this function looks like:
-    ///
-    /// * On Unix, the socket is placed into nonblocking mode and then a
-    ///   `connect` call is issued.
-    pub fn connect_stream(stream: net::TcpStream, addr: SocketAddr) -> io::Result<TcpStream> {
-        sys::TcpStream::connect(stream, &addr).map(|inner| TcpStream { inner })
+        sys::TcpStream::connect(addr).map(|inner| TcpStream { inner })
     }
 
     /// Returns the socket address of the remote peer of this TCP connection.
