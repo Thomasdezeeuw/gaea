@@ -11,7 +11,7 @@ matrix:
     - os: osx
 language: rust
 rust:
-  - stable
+# - stable # Enable once Rust 2018 compiles on stable.
   - beta
   - nightly
 script:
