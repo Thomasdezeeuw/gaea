@@ -3,11 +3,11 @@ use std::os::unix::io::RawFd;
 use std::time::Duration;
 
 use libc;
+use log::error;
 
-use event::{Event, EventedId, Events, Ready};
-use poll::PollOption;
-
-use super::EVENTS_CAP;
+use crate::event::{Event, EventedId, Events, Ready};
+use crate::poll::PollOption;
+use crate::sys::EVENTS_CAP;
 
 #[derive(Debug)]
 pub struct Selector {

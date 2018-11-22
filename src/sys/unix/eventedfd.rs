@@ -1,8 +1,8 @@
 use std::io;
 use std::os::unix::io::RawFd;
 
-use event::{Evented, EventedId, Ready};
-use poll::{PollCalled, PollOption, Poller};
+use crate::event::{Evented, EventedId, Ready};
+use crate::poll::{PollCalled, PollOption, Poller};
 
 /// Adapter for a `RawFd` providing an [`Evented`] implementation.
 ///

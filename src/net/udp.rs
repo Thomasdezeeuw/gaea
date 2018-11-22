@@ -3,9 +3,9 @@ use std::net::SocketAddr;
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use sys;
-use event::{Evented, EventedId, Ready};
-use poll::{PollCalled, PollOption, Poller};
+use crate::sys;
+use crate::event::{Evented, EventedId, Ready};
+use crate::poll::{PollCalled, PollOption, Poller};
 
 /// A User Datagram Protocol socket.
 ///

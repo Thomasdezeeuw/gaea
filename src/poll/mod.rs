@@ -11,8 +11,10 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::time::{Duration, Instant};
 
-use sys;
-use event::{Event, Evented, EventedId, Events, Ready};
+use log::{trace, debug};
+
+use crate::sys;
+use crate::event::{Event, Evented, EventedId, Events, Ready};
 
 mod option;
 

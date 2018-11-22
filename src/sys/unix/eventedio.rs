@@ -2,9 +2,9 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use event::{Evented, EventedId, Ready};
-use poll::{PollCalled, PollOption, Poller};
-use sys::unix::EventedFd;
+use crate::event::{Evented, EventedId, Ready};
+use crate::poll::{PollCalled, PollOption, Poller};
+use crate::sys::unix::EventedFd;
 
 /// Managed adaptor for a `RawFd` providing an [`Evented`] implementation.
 ///

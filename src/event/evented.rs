@@ -1,7 +1,7 @@
 use std::io;
 
-use event::{EventedId, Ready};
-use poll::{PollCalled, PollOption, Poller};
+use crate::event::{EventedId, Ready};
+use crate::poll::{PollCalled, PollOption, Poller};
 
 /// A value that may be registered with `Poller`.
 ///

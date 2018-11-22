@@ -140,16 +140,6 @@
         variant_size_differences,
 )]
 
-extern crate arrayvec;
-#[macro_use]
-extern crate bitflags;
-#[macro_use]
-extern crate log;
-extern crate net2;
-
-#[cfg(unix)]
-extern crate libc;
-
 mod sys;
 
 pub mod event;
@@ -160,7 +150,7 @@ pub mod poll;
 pub mod unix {
     //! Unix only extensions.
 
-    pub use sys::EventedFd;
-    pub use sys::EventedIo;
-    pub use sys::pipe::{new_pipe, Receiver, Sender};
+    pub use crate::sys::EventedFd;
+    pub use crate::sys::EventedIo;
+    pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
 }

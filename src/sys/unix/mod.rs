@@ -5,8 +5,6 @@ mod udp;
 
 pub mod pipe;
 
-use super::EVENTS_CAP;
-
 #[cfg(target_os = "linux")]
 mod epoll;
 
