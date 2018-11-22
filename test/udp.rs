@@ -5,7 +5,7 @@ use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::{ConnectedUdpSocket, UdpSocket};
 use mio_st::poll::PollOption;
 
-use {any_port, expect_events, init_with_poll};
+use crate::{any_port, expect_events, init_with_poll};
 
 // TODO: test the different `PollOption`s.
 // TODO: test with both ends our UdpSockets.

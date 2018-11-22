@@ -8,7 +8,7 @@ use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::{TcpListener, TcpStream};
 use mio_st::poll::{PollOption, Poller};
 
-use {any_port, expect_events, init_with_poll};
+use crate::{any_port, expect_events, init_with_poll};
 
 // TODO: add tests for both TcpStream and TcpListener:
 // reregistering and

@@ -11,6 +11,7 @@ repository    = "https://github.com/Thomasdezeeuw/mio-st"
 keywords      = ["io", "async", "non-blocking"]
 categories    = ["asynchronous"]
 include       = ["Cargo.toml", "src/**/*.rs", "LICENSE"]
+edition       = "2018"
 
 [badges]
 travis-ci = { repository = "https://github.com/Thomasdezeeuw/mio-st", branch = "master" }

@@ -3,7 +3,7 @@ use std::iter::FusedIterator;
 
 use arrayvec::ArrayVec;
 
-use event::Event;
+use crate::event::Event;
 
 /// An iterator over a collection of readiness events.
 ///
@@ -152,7 +152,7 @@ impl<'a> FusedIterator for &'a mut Events { }
 mod tests {
     use std::iter::repeat;
 
-    use event::{Events, Event, EventedId, Ready};
+    use crate::event::{Events, Event, EventedId, Ready};
 
     const EVENTS_CAP: usize = 256;
 

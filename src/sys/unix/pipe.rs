@@ -4,9 +4,9 @@ use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use libc;
 
-use event::{Evented, EventedId, Ready};
-use poll::{PollCalled, PollOption, Poller};
-use unix::EventedIo;
+use crate::event::{Evented, EventedId, Ready};
+use crate::poll::{PollCalled, PollOption, Poller};
+use crate::sys::unix::EventedIo;
 
 /// Create a new non-blocking unix pipe.
 ///

@@ -2,9 +2,9 @@ use std::io;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use event::{Evented, EventedId, Ready};
-use poll::{PollCalled, PollOption, Poller};
-use sys::unix::EventedFd;
+use crate::event::{Evented, EventedId, Ready};
+use crate::poll::{PollCalled, PollOption, Poller};
+use crate::sys::unix::EventedFd;
 
 #[derive(Debug)]
 pub struct UdpSocket {

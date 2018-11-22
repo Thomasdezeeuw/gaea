@@ -1,6 +1,6 @@
 use mio_st::event::{Event, EventedId, Ready};
 
-use init;
+use crate::init;
 
 #[test]
 fn evented_id() {

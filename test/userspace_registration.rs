@@ -1,6 +1,6 @@
 use mio_st::event::{Event, EventedId, Ready};
 
-use {expect_events, init_with_poll};
+use crate::{expect_events, init_with_poll};
 
 #[test]
 fn notify() {

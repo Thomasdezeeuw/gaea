@@ -4,7 +4,7 @@ use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::TcpStream;
 use mio_st::poll::PollOption;
 
-use {expect_events, init_with_poll};
+use crate::{expect_events, init_with_poll};
 
 #[test]
 fn registering_deregistering() {

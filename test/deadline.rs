@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use mio_st::event::{Event, EventedId, Events, Ready};
 use mio_st::poll::Poller;
 
-use {expect_events, init_with_poll};
+use crate::{expect_events, init_with_poll};
 
 /// A wrapper function around `expect_events` to check that elapsed time doesn't
 /// exceed `max_elapsed`, runs a single poll.

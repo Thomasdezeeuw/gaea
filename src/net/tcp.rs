@@ -4,9 +4,9 @@ use std::net::{self, Shutdown, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::time::Duration;
 
-use sys;
-use event::{Evented, EventedId, Ready};
-use poll::{Poller, PollCalled, PollOption};
+use crate::sys;
+use crate::event::{Evented, EventedId, Ready};
+use crate::poll::{Poller, PollCalled, PollOption};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///

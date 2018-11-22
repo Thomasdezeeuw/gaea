@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use mio_st::event::{Event, EventedId, Ready};
 
-use init_with_poll;
+use crate::init_with_poll;
 
 // TODO: add tests for both TcpStream and TcpListener:
 // reregistering and

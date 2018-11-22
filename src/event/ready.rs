@@ -1,3 +1,5 @@
+use bitflags::bitflags;
+
 bitflags! {
     /// A set of readiness event kinds.
     ///
