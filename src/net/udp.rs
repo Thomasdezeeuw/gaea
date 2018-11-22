@@ -392,17 +392,6 @@ impl ConnectedUdpSocket {
             .and_then(|socket| socket.connect(connect_addr))
     }
 
-    /// Creates a new mio-wrapped UDP socket from an bound and connected UDP
-    /// socket from the standard library.
-    ///
-    /// This function requires that `socket` has previously been bound and
-    /// connected to an address to work correctly.
-    pub fn from_connected_std_socket(socket: net::UdpSocket) -> io::Result<ConnectedUdpSocket> {
-        socket.set_nonblocking(true)?;
-        sys::UdpSocket::new(socket)
-            .map(|socket| ConnectedUdpSocket { socket })
-    }
-
     /// Returns the socket address that this socket was created from.
     ///
     /// # Examples
