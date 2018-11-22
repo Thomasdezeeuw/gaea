@@ -9,17 +9,14 @@ use poll::{PollCalled, PollOption, Poller};
 
 /// A User Datagram Protocol socket.
 ///
-/// This is an implementation of a bound UDP socket. This supports both IPv4 and
-/// IPv6 addresses, and there is no corresponding notion of a server because UDP
-/// is a datagram protocol.
+/// This works much like the `UdpSocket` in the standard library, but the
+/// [`send_to`], [`recv_from`] and [`peek_from`] methods don't block and instead
+/// return a [`WouldBlock`] error.
 ///
-/// If fine-grained control over the binding and options for a socket is desired
-/// then use the `net2::UdpBuilder` methods, in the [`net2`] crate. This can be
-/// used in combination with the [`UdpSocket::from_std_socket`] method to
-/// transfer ownership into mio.
-///
-/// [`net2`]: https://crates.io/crates/net2
-/// [`UdpSocket::from_std_socket`]: #method.from_std_socket
+/// [`send_to`]: #method.send_to
+/// [`recv_from`]: #method.recv_from
+/// [`peek_from`]: #method.peek_from
+/// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 ///
 /// # Examples
 ///
