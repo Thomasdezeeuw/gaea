@@ -34,8 +34,7 @@
 //! A simple TCP server.
 //!
 //! ```
-//! # use std::error::Error;
-//! # fn try_main() -> Result<(), Box<Error>> {
+//! # fn main() -> Result<(), Box<std::error::Error>> {
 //! use std::io;
 //! use std::collections::HashMap;
 //!
@@ -125,10 +124,6 @@
 //!     err.kind() == io::ErrorKind::WouldBlock
 //! }
 //! #     Ok(())
-//! # }
-//! #
-//! # fn main() {
-//! #     try_main().unwrap();
 //! # }
 //! ```
 

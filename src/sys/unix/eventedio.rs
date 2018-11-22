@@ -21,8 +21,7 @@ use sys::unix::EventedFd;
 /// # Examples
 ///
 /// ```
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::net::TcpListener;
 /// use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 ///
@@ -45,10 +44,6 @@ use sys::unix::EventedFd;
 /// // Register the listener using `EventedFd`.
 /// poll.register(&mut evented_listener, EventedId(0), Ready::READABLE, PollOption::Edge)?;
 /// #     Ok(())
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
 /// # }
 /// ```
 ///
