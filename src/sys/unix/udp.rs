@@ -12,7 +12,9 @@ pub struct UdpSocket {
 }
 
 impl UdpSocket {
-    pub fn new(socket: net::UdpSocket) -> io::Result<UdpSocket> {
+    pub fn bind(address: SocketAddr) -> io::Result<UdpSocket> {
+        let socket = net::UdpSocket::bind(address)?;
+        socket.set_nonblocking(true)?;
         Ok(UdpSocket { socket })
     }
 

@@ -1,5 +1,5 @@
 use std::io;
-use std::net::{self, SocketAddr};
+use std::net::SocketAddr;
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
@@ -124,21 +124,8 @@ impl UdpSocket {
     /// #   try_main().unwrap();
     /// # }
     /// ```
-    pub fn bind(addr: SocketAddr) -> io::Result<UdpSocket> {
-        net::UdpSocket::bind(addr)
-            .and_then(UdpSocket::from_std_socket)
-    }
-
-    /// Creates a new mio-wrapped UDP socket from an bound UDP socket from the
-    /// standard library.
-    ///
-    /// This function requires that `socket` has previously been bound to an
-    /// address to work correctly, and returns an UDP socket which can be used
-    /// with mio to send/receive UDP messages.
-    pub fn from_std_socket(socket: net::UdpSocket) -> io::Result<UdpSocket> {
-        socket.set_nonblocking(true)?;
-        sys::UdpSocket::new(socket)
-            .map(|socket| UdpSocket { socket })
+    pub fn bind(address: SocketAddr) -> io::Result<UdpSocket> {
+        sys::UdpSocket::bind(address).map(|socket| UdpSocket { socket })
     }
 
     /// Connects the UDP socket by setting the default destination and limiting
