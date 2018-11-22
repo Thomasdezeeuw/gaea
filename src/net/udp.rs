@@ -24,9 +24,7 @@ use poll::{PollCalled, PollOption, Poller};
 /// listens for messages and prints them to standard out.
 ///
 /// ```
-/// # use std::error::Error;
-/// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
@@ -87,10 +85,6 @@ use poll::{PollCalled, PollOption, Poller};
 ///     }
 /// }
 /// # }
-/// #
-/// # fn main() {
-/// #   try_main().unwrap();
-/// # }
 /// ```
 #[derive(Debug)]
 pub struct UdpSocket {
@@ -103,9 +97,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// #
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// // We must bind it to an open address.
@@ -115,10 +107,6 @@ impl UdpSocket {
     /// // Our socket was created, but we should not use it before checking it's
     /// // readiness.
     /// #    Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
     /// # }
     /// ```
     pub fn bind(address: SocketAddr) -> io::Result<UdpSocket> {
@@ -142,9 +130,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// #
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7003".parse()?;
@@ -152,10 +138,6 @@ impl UdpSocket {
     ///
     /// assert_eq!(socket.local_addr()?, addr);
     /// #    Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
     /// # }
     pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
         self.socket.local_addr()
@@ -166,9 +148,8 @@ impl UdpSocket {
     ///
     /// # Examples
     ///
-    /// ```no_run
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// ```
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7004".parse()?;
@@ -183,10 +164,6 @@ impl UdpSocket {
     /// #
     /// #    Ok(())
     /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
-    /// # }
     /// ```
     pub fn send_to(&mut self, buf: &[u8], target: SocketAddr) -> io::Result<usize> {
         self.socket.send_to(buf, &target)
@@ -198,9 +175,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::error::Error;
-    /// #
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7006".parse()?;
@@ -215,10 +190,6 @@ impl UdpSocket {
     /// #
     /// #    Ok(())
     /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
-    /// # }
     /// ```
     pub fn recv_from(&mut self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.socket.recv_from(buf)
@@ -231,9 +202,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::error::Error;
-    /// #
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7007".parse()?;
@@ -251,10 +220,6 @@ impl UdpSocket {
     /// assert_eq!(buf1, buf2);
     /// #
     /// #    Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
     /// # }
     /// ```
     pub fn peek_from(&mut self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
@@ -322,9 +287,7 @@ impl FromRawFd for UdpSocket {
 /// # Examples
 ///
 /// ```
-/// # use std::error::Error;
-/// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
 /// use mio_st::poll::{Poller, PollOption};
@@ -368,10 +331,6 @@ impl FromRawFd for UdpSocket {
 ///     }
 /// }
 /// # }
-/// #
-/// # fn main() {
-/// #   try_main().unwrap();
-/// # }
 /// ```
 #[derive(Debug)]
 pub struct ConnectedUdpSocket {
@@ -394,9 +353,7 @@ impl ConnectedUdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// #
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// let addr = "127.0.0.1:7010".parse()?;
@@ -404,10 +361,6 @@ impl ConnectedUdpSocket {
     ///
     /// assert_eq!(socket.local_addr()?, addr);
     /// #    Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
     /// # }
     pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
         self.socket.local_addr()
@@ -419,8 +372,7 @@ impl ConnectedUdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::ConnectedUdpSocket;
     ///
     /// let local_addr = "127.0.0.1:7011".parse()?;
@@ -434,10 +386,6 @@ impl ConnectedUdpSocket {
     /// assert_eq!(bytes_sent, 9);
     /// #    Ok(())
     /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
-    /// # }
     /// ```
     pub fn send(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.socket.send(buf)
@@ -449,8 +397,7 @@ impl ConnectedUdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::ConnectedUdpSocket;
     ///
     /// let local_addr = "127.0.0.1:7013".parse()?;
@@ -465,10 +412,6 @@ impl ConnectedUdpSocket {
     /// println!("Received {:?} -> {:?} bytes", buf, num_recv);
     /// #    Ok(())
     /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
-    /// # }
     /// ```
     pub fn recv(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.socket.recv(buf)
@@ -480,8 +423,7 @@ impl ConnectedUdpSocket {
     /// # Examples
     ///
     /// ```no_run
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::ConnectedUdpSocket;
     ///
     /// let local_addr = "127.0.0.1:7015".parse()?;
@@ -498,10 +440,6 @@ impl ConnectedUdpSocket {
     /// assert_eq!(buf1, buf2);
     /// assert_eq!(num_recv1, num_recv2);
     /// #    Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #   try_main().unwrap();
     /// # }
     /// ```
     pub fn peek(&mut self, buf: &mut [u8]) -> io::Result<usize> {

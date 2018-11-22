@@ -20,8 +20,7 @@ use event::Event;
 /// # Examples
 ///
 /// ```
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{EventedId, Events, Ready};
@@ -41,10 +40,6 @@ use event::Event;
 ///     }
 /// #   return Ok(());
 /// }
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
 /// # }
 /// ```
 #[derive(Debug)]

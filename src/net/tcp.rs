@@ -21,9 +21,7 @@ use poll::{Poller, PollCalled, PollOption};
 /// # Examples
 ///
 /// ```
-/// # use std::error::Error;
-/// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
@@ -43,10 +41,6 @@ use poll::{Poller, PollCalled, PollOption};
 ///
 /// // The socket might be ready at this point.
 /// #     Ok(())
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
 /// # }
 /// ```
 #[derive(Debug)]
@@ -218,8 +212,7 @@ impl FromRawFd for TcpStream {
 /// # Examples
 ///
 /// ```
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
@@ -239,10 +232,6 @@ impl FromRawFd for TcpStream {
 ///
 /// // There may be a socket ready to be accepted.
 /// #     Ok(())
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
 /// # }
 /// ```
 #[derive(Debug)]

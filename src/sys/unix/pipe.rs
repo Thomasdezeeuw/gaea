@@ -20,8 +20,7 @@ use unix::EventedIo;
 /// # Examples
 ///
 /// ```
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::io::{self, Read, Write};
 ///
 /// use mio_st::unix::new_pipe;
@@ -60,10 +59,6 @@ use unix::EventedIo;
 ///         }
 ///     }
 /// }
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
 /// # }
 /// ```
 pub fn new_pipe() -> io::Result<(Receiver, Sender)> {

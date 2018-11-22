@@ -32,8 +32,7 @@ use poll::{PollCalled, PollOption, Poller};
 /// Basic usage
 ///
 /// ```
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::net::TcpListener;
 /// use std::os::unix::io::AsRawFd;
 ///
@@ -49,10 +48,6 @@ use poll::{PollCalled, PollOption, Poller};
 /// // Register the listener using `EventedFd`.
 /// poll.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Ready::READABLE, PollOption::Edge)?;
 /// #     Ok(())
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
 /// # }
 /// ```
 ///

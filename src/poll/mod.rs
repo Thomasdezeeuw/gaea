@@ -110,8 +110,7 @@ pub use self::option::PollOption;
 /// For example:
 ///
 /// ```
-/// # use std::error::Error;
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::thread;
 /// use std::time::Duration;
 ///
@@ -131,10 +130,6 @@ pub use self::option::PollOption;
 /// // this point.
 /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
 /// #     Ok(())
-/// # }
-/// #
-/// # fn main() {
-/// #     try_main().unwrap();
 /// # }
 /// ```
 ///
@@ -209,8 +204,7 @@ impl Poller {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::Duration;
     ///
     /// use mio_st::event::Events;
@@ -225,10 +219,6 @@ impl Poller {
     /// // handles have been registered with this `Poller` instance.
     /// poll.poll(&mut events, Some(Duration::from_millis(500)))?;
     /// #     Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     try_main().unwrap();
     /// # }
     /// ```
     pub fn new() -> io::Result<Poller> {
@@ -294,8 +284,7 @@ impl Poller {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::{Duration, Instant};
     ///
     /// use mio_st::event::{Events, EventedId, Ready};
@@ -324,10 +313,6 @@ impl Poller {
     ///         }
     ///     }
     /// }
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     try_main().unwrap();
     /// # }
     /// ```
     pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
@@ -366,8 +351,7 @@ impl Poller {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::event::{EventedId, Ready};
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
@@ -385,10 +369,6 @@ impl Poller {
     /// // is not being changed.
     /// poll.reregister(&mut stream, EventedId(2), Ready::WRITABLE, PollOption::Edge)?;
     /// #     Ok(())
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     try_main().unwrap();
     /// # }
     /// ```
     pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
@@ -421,8 +401,7 @@ impl Poller {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::Duration;
     ///
     /// use mio_st::event::{Events, EventedId, Ready};
@@ -448,10 +427,6 @@ impl Poller {
     /// assert!(events.is_empty());
     /// #     Ok(())
     /// # }
-    /// #
-    /// # fn main() {
-    /// #     try_main().unwrap();
-    /// # }
     /// ```
     pub fn deregister<E>(&mut self, handle: &mut E) -> io::Result<()>
     where
@@ -468,8 +443,7 @@ impl Poller {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::Duration;
     ///
     /// use mio_st::event::{Event, Events, EventedId, Ready};
@@ -486,10 +460,6 @@ impl Poller {
     /// assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(0), Ready::READABLE));
     /// #     Ok(())
     /// # }
-    /// #
-    /// # fn main() {
-    /// #     try_main().unwrap();
-    /// # }
     /// ```
     pub fn notify(&mut self, id: EventedId, ready: Ready) -> io::Result<()> {
         trace!("adding event: id={}, ready={:?}", id, ready);
@@ -505,8 +475,7 @@ impl Poller {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::{Duration, Instant};
     ///
     /// use mio_st::event::{Event, Events, EventedId, Ready};
