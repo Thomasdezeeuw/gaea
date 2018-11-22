@@ -16,8 +16,8 @@ include       = ["Cargo.toml", "src/**/*.rs", "LICENSE"]
 travis-ci = { repository = "https://github.com/Thomasdezeeuw/mio-st", branch = "master" }
 
 [dependencies]
-bitflags = "1.0.3"
-log      = "0.4.3"
+bitflags = "1.0.4"
+log      = "0.4.6"
 net2     = "0.2.33"
 
 [dependencies.arrayvec]
@@ -26,10 +26,10 @@ default-features = false
 features = ["use_union"]
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.42"
+libc = "0.2.44"
 
 [dev-dependencies]
-env_logger = "0.5.10"
+env_logger = "0.6.0"
 
 [[test]]
 name = "test"
