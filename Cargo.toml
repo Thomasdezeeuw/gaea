@@ -18,15 +18,13 @@ travis-ci = { repository = "https://github.com/Thomasdezeeuw/mio-st", branch = "
 
 [dependencies]
 bitflags = "1.0.4"
+libc     = "0.2.44"
 log      = "0.4.6"
 
 [dependencies.arrayvec]
 version = "0.4.7"
 default-features = false
 features = ["use_union"]
-
-[target.'cfg(unix)'.dependencies]
-libc = "0.2.44"
 
 [dev-dependencies]
 env_logger = "0.6.0"
