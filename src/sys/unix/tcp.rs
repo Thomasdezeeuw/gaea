@@ -1,7 +1,6 @@
 use std::io::{self, Read, Write};
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
-use std::time::Duration;
 
 use libc;
 use net2::TcpStreamExt;
@@ -53,14 +52,6 @@ impl TcpStream {
 
     pub fn ttl(&mut self) -> io::Result<u32> {
         self.stream.ttl()
-    }
-
-    pub fn set_keepalive(&self, keepalive: Option<Duration>) -> io::Result<()> {
-        self.stream.set_keepalive(keepalive)
-    }
-
-    pub fn keepalive(&self) -> io::Result<Option<Duration>> {
-        self.stream.keepalive()
     }
 
     pub fn set_nodelay(&mut self, nodelay: bool) -> io::Result<()> {
