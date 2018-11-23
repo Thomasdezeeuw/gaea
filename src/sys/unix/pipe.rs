@@ -36,7 +36,7 @@ use crate::sys::unix::EventedIo;
 /// let mut events = Events::new();
 ///
 /// // Create a new pipe.
-/// let (mut receiver, mut sender) = new_pipe()?;
+/// let (mut sender, mut receiver) = new_pipe()?;
 ///
 /// // Register both ends of the channel.
 /// poll.register(&mut receiver, CHANNEL_RECV_ID, Ready::READABLE, PollOption::Level)?;
@@ -61,7 +61,7 @@ use crate::sys::unix::EventedIo;
 /// }
 /// # }
 /// ```
-pub fn new_pipe() -> io::Result<(Receiver, Sender)> {
+pub fn new_pipe() -> io::Result<(Sender, Receiver)> {
     let mut fds: [RawFd; 2] = unsafe { mem::uninitialized() };
 
     if unsafe { libc::pipe(fds.as_mut_ptr()) } == -1 {
@@ -74,7 +74,7 @@ pub fn new_pipe() -> io::Result<(Receiver, Sender)> {
         }
         let r = Receiver { inner: unsafe { EventedIo::from_raw_fd(fds[0]) } };
         let w = Sender { inner: unsafe { EventedIo::from_raw_fd(fds[1]) } };
-        Ok((r, w))
+        Ok((w, r))
     }
 }
 
