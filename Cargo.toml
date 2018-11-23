@@ -17,14 +17,10 @@ edition       = "2018"
 travis-ci = { repository = "https://github.com/Thomasdezeeuw/mio-st", branch = "master" }
 
 [dependencies]
+arrayvec = { version = "0.4.7", default-features = false, features = ["use_union"] }
 bitflags = "1.0.4"
 libc     = "0.2.44"
 log      = "0.4.6"
-
-[dependencies.arrayvec]
-version = "0.4.7"
-default-features = false
-features = ["use_union"]
 
 [dev-dependencies]
 env_logger = "0.6.0"
