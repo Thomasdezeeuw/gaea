@@ -1,9 +1,9 @@
+use std::mem::size_of_val;
 use std::io::{self, Read, Write};
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use libc;
-use net2::TcpStreamExt;
 
 use crate::event::{Evented, EventedId, Ready};
 use crate::poll::{PollCalled, PollOption, Poller};
@@ -16,7 +16,7 @@ pub struct TcpStream {
 
 impl TcpStream {
     pub fn connect(address: SocketAddr) -> io::Result<TcpStream> {
-        // Create a raw socket descriptor.
+        // Create a raw socket file descriptor.
         let socket_family = match address {
             SocketAddr::V4(..) => libc::AF_INET,
             SocketAddr::V6(..) => libc::AF_INET6,
@@ -26,15 +26,22 @@ impl TcpStream {
             return Err(io::Error::last_os_error());
         }
 
-        let stream = unsafe { net::TcpStream::from_raw_fd(socket_fd) };
-        stream.set_nonblocking(true)?;
-
-        match stream.connect(address) {
-            Ok(..) => {},
-            Err(ref e) if e.raw_os_error() == Some(libc::EINPROGRESS) => {},
-            Err(e) => return Err(e),
+        // Set non blocking mode.
+        if unsafe { libc::fcntl(socket_fd, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
+            return Err(io::Error::last_os_error());
         }
 
+        // Connect to the provided address. If this would block it will return
+        // `EINPROGRESS`, which we don't consider an error here.
+        let (raw_address, raw_address_length) = raw_address(&address);
+        if unsafe { libc::connect(socket_fd, raw_address, raw_address_length) } == -1 {
+            let err = io::Error::last_os_error();
+            if err.raw_os_error() != Some(libc::EINPROGRESS) {
+                return Err(err);
+            }
+        }
+
+        let stream = unsafe { net::TcpStream::from_raw_fd(socket_fd) };
         Ok(TcpStream { stream })
     }
 
@@ -72,6 +79,20 @@ impl TcpStream {
 
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.stream.take_error()
+    }
+}
+
+// Implementation taken from the Rust standard library.
+// Copyright 2015 The Rust Project Developers.
+#[allow(trivial_casts)]
+fn raw_address(address: &SocketAddr) -> (*const libc::sockaddr, libc::socklen_t) {
+    match *address {
+        SocketAddr::V4(ref address) => {
+            (address as *const _ as *const _, size_of_val(address) as libc::socklen_t)
+        }
+        SocketAddr::V6(ref address) => {
+            (address as *const _ as *const _, size_of_val(address) as libc::socklen_t)
+        }
     }
 }
 
