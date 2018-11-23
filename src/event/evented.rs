@@ -11,6 +11,8 @@ use crate::poll::{PollCalled, PollOption, Poller};
 ///
 /// See [`Poller`] for more details.
 ///
+/// [`Poller`]: ../poll/struct.Poller.html
+///
 /// # Implementing `Evented`
 ///
 /// There are two types of `Evented` values.
@@ -20,13 +22,6 @@ use crate::poll::{PollCalled, PollOption, Poller};
 ///   case, an implementation of `Evented` delegates to a lower level handle.
 ///   Examples of this are [`TcpStream`]s, or the *unix only* [`EventedFd`].
 ///
-/// * **User** handles, which are driven entirely in user space using
-///   [`Registration`] and [`Notifier`]. In this case, the implementer takes
-///   responsibility for driving the readiness state changes.
-///
-/// [`Poller`]: ../poll/struct.Poller.html
-/// [`Registration`]: ../registration/struct.Registration.html
-/// [`Notifier`]: ../registration/struct.Notifier.html
 /// [`TcpStream`]: ../net/struct.TcpStream.html
 /// [`EventedFd`]: ../unix/struct.EventedFd.html
 ///
