@@ -320,7 +320,7 @@ impl Poller {
     pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized
     {
-        validate_args(id, interests)?;
+        not_empty(interests)?;
         trace!("registering with poller: id={}, interests={:?}, opt={:?}", id, interests, opt);
         handle.register(self, id, interests, opt, PollCalled(()))
     }
@@ -376,7 +376,7 @@ impl Poller {
     pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized
     {
-        validate_args(id, interests)?;
+        not_empty(interests)?;
         trace!("reregistering with poller: id={}, interests={:?}, opt={:?}", id, interests, opt);
         handle.reregister(self, id, interests, opt, PollCalled(()))
     }
@@ -465,7 +465,7 @@ impl Poller {
     /// ```
     pub fn notify(&mut self, id: EventedId, ready: Ready) -> io::Result<()> {
         trace!("adding event: id={}, ready={:?}", id, ready);
-        validate_args(id, ready)
+        not_empty(ready)
             .map(|()| self.userspace_events.push(Event::new(id, ready)))
     }
 
@@ -501,7 +501,7 @@ impl Poller {
     /// }
     pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
         trace!("adding deadline: id={}, deadline={:?}", id, deadline);
-        validate_args(id, Ready::TIMER)
+        not_empty(Ready::TIMER)
             .map(|()| self.deadlines.push(Reverse(Deadline { id, deadline })))
     }
 
@@ -517,7 +517,7 @@ impl Poller {
     /// when it comes up.
     pub fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
         trace!("removing deadline: id={}", id);
-        validate_args(id, Ready::TIMER)?;
+        not_empty(Ready::TIMER)?;
 
         // TODO: optimize this.
         let index = self.deadlines.iter()
@@ -684,11 +684,9 @@ impl Poller {
 
 /// Validate the provided arguments making sure the `id` is valid and the other
 /// arguments aren't empty.
-fn validate_args(id: EventedId, interests: Ready) -> io::Result<()> {
+fn not_empty(interests: Ready) -> io::Result<()> {
     if interests.is_empty() {
         Err(io::Error::new(io::ErrorKind::Other, "empty interests"))
-    } else if !id.is_valid() {
-        Err(io::Error::new(io::ErrorKind::Other, "invalid evented id"))
     } else {
         Ok(())
     }

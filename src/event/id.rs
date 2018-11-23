@@ -26,18 +26,6 @@ use std::fmt;
 #[repr(transparent)]
 pub struct EventedId(pub usize);
 
-/// The only invalid evented id.
-///
-/// [`EventedId.is_valid`] can be used to determine if the id is valid.
-pub const INVALID_EVENTED_ID: EventedId = EventedId(::std::usize::MAX);
-
-impl EventedId {
-    /// Whether or not the `EventedId` is valid.
-    pub fn is_valid(self) -> bool {
-        self != INVALID_EVENTED_ID
-    }
-}
-
 impl From<usize> for EventedId {
     fn from(val: usize) -> EventedId {
         EventedId(val)

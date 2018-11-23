@@ -106,27 +106,6 @@ fn registering_twice() {
 }
 
 #[test]
-fn invalid_id() {
-    let (mut poll, mut events) = init_with_poll();
-    let address = "127.0.0.1:12345".parse().unwrap();
-    let mut stream = TcpStream::connect(address).unwrap();
-
-    let invalid_id = EventedId(usize::max_value());
-
-    let result = poll.register(&mut stream, invalid_id, Ready::READABLE, PollOption::Edge);
-    assert!(result.is_err());
-    assert!(result.unwrap_err().description().contains("invalid evented id"));
-    expect_events(&mut poll, &mut events, 1, vec![]);
-
-    poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
-
-    let result = poll.reregister(&mut stream, invalid_id, Ready::READABLE, PollOption::Edge);
-    assert!(result.is_err());
-    assert!(result.unwrap_err().description().contains("invalid evented id"));
-    expect_events(&mut poll, &mut events, 1, vec![]);
-}
-
-#[test]
 fn empty_interests() {
     let (mut poll, mut events) = init_with_poll();
     let address = "127.0.0.1:12345".parse().unwrap();
