@@ -24,7 +24,7 @@ pub use self::option::PollOption;
 //
 // 1. Operating System specific event queue. This is currently kqueue or epoll.
 //    All the relevant code is in the `sys` module. This mainly deals with file
-//    descriptor, e.g. for sockets.
+//    descriptors, e.g. for sockets.
 //
 // 2. User space events. This is simply a vector in the `Poller` instance,
 //    adding an new event is a simple push onto it. `Events` hold both the
@@ -246,21 +246,16 @@ impl Poller {
     /// for readiness state changes.
     ///
     /// `id`: The caller picks a id to associate with the handle. When [`poll`]
-    /// returns an event for the handle, this id is included. This allows the
-    /// caller to map the event to its handle. The id associated with the
+    /// returns an [event] for the handle, this id is [included]. This allows
+    /// the caller to map the event to its handle. The id associated with the
     /// `Evented` handle can be changed at any time by calling [`reregister`].
-    /// Note that `id` may not be invalid, see [`is_valid`], and will return an
-    /// error if it is.
     ///
     /// `interests`: Specifies which operations `Poller` should monitor for
     /// readiness. `Poller` will only return readiness events for operations
     /// specified by this argument. If a socket is registered with [readable]
     /// interests and the socket becomes writable, no event will be returned
     /// from [`poll`]. The readiness interests for an `Evented` handle can be
-    /// changed at any time by calling [`reregister`]. Note that [timer]
-    /// readiness events will always be triggered, even if the `Evented` handle
-    /// is not registered with that interest. If an empty interests is passed
-    /// this will return an error.
+    /// changed at any time by calling [`reregister`].
     ///
     /// `opt`: Specifies the registration option. Just like the interests, the
     /// option can be changed for an `Evented` handle at any time by calling
@@ -278,7 +273,8 @@ impl Poller {
     /// [`poll`]: #method.poll
     /// [`struct`]: #
     /// [`reregister`]: #method.reregister
-    /// [`is_valid`]: ../event/struct.EventedId.html#method.is_valid
+    /// [event]: ../event/struct.Event.html
+    /// [included]: ../event/struct.Event.html#method.id
     /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
     /// [timer]: ../event/struct.Ready.html#associatedconstant.TIMER
     /// [`deregister`]: #method.deregister
@@ -297,7 +293,7 @@ impl Poller {
     /// let mut poll = Poller::new()?;
     /// let mut events = Events::new();
     ///
-    /// // Create a TCP connection.
+    /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
     ///
@@ -310,7 +306,7 @@ impl Poller {
     ///
     ///     for event in &mut events {
     ///         if event.id() == EventedId(0) {
-    ///             // Connection is likely ready.
+    ///             // Connection is (likely) ready for use.
     ///             # return Ok(());
     ///         }
     ///     }
@@ -338,8 +334,8 @@ impl Poller {
     /// longer requested for the handle.
     ///
     /// The `Evented` handle must have previously been registered with this
-    /// instance of `Poller` otherwise the call to `reregister` will return with
-    /// an error.
+    /// instance of `Poller` otherwise the call to `reregister` may return an
+    /// error.
     ///
     /// See the [`register`] documentation for details about the function
     /// arguments and see the [`struct`] docs for a high level overview of
@@ -360,6 +356,7 @@ impl Poller {
     ///
     /// let mut poll = Poller::new()?;
     ///
+    /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
     ///
@@ -388,17 +385,19 @@ impl Poller {
     /// with [`oneshot`], deregistering clears up any internal resources needed
     /// to track the handle.
     ///
-    /// A handle can be passed back to `register` after it has been
+    /// A handle can be registered again using [`register`] after it has been
     /// deregistered; however, it must be passed back to the **same** `Poller`
     /// instance.
     ///
     /// # Notes
     ///
-    /// Calling `reregister` after `deregister` may be work on some platforms
+    /// Calling [`reregister`] after `deregister` may be work on some platforms
     /// but not all. To properly re-register a handle after deregistering use
     /// `register`, this works on all platforms.
     ///
     /// [`oneshot`]: enum.PollOption.html#variant.Oneshot
+    /// [`register`]: #method.register
+    /// [`reregister`]: #method.reregister
     ///
     /// # Examples
     ///
@@ -413,6 +412,7 @@ impl Poller {
     /// let mut poll = Poller::new()?;
     /// let mut events = Events::new();
     ///
+    /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
     ///
@@ -424,8 +424,8 @@ impl Poller {
     /// // Deregister it so the resources can be cleaned up.
     /// poll.deregister(&mut stream)?;
     ///
-    /// // Set a timeout because this poll should never receive any events.
-    /// poll.poll(&mut events, Some(Duration::from_secs(1)))?;
+    /// // Set a timeout because this poller shouldn't receive any events anymore.
+    /// poll.poll(&mut events, Some(Duration::from_millis(200)))?;
     /// assert!(events.is_empty());
     /// #     Ok(())
     /// # }
@@ -499,7 +499,7 @@ impl Poller {
     ///
     /// assert_eq!((&mut events).next(), Some(Event::new(id, Ready::TIMER)));
     /// # Ok(())
-    /// }
+    /// # }
     pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
         trace!("adding deadline: id={}, deadline={:?}", id, deadline);
         self.deadlines.push(Reverse(Deadline { id, deadline }));
@@ -507,14 +507,11 @@ impl Poller {
 
     /// Remove a previously added deadline.
     ///
-    /// It tries removes the deadline from Poller. This return `Ok(())` even if
-    /// the deadline is not found.
-    ///
     /// # Notes
     ///
     /// Removing a deadline is a costly operation. For better performance it is
-    /// advised to not bothering with removing and instead ignore the event
-    /// when it comes up.
+    /// advised to not bother with removing and instead ignore the event when it
+    /// comes up.
     pub fn remove_deadline(&mut self, id: EventedId) {
         trace!("removing deadline: id={}", id);
 
@@ -539,14 +536,15 @@ impl Poller {
     ///
     /// The function will block until either;
     ///
-    /// * at least one readiness event has been received,
-    /// * a timer was trigger, or
-    /// * the `timeout` has elapsed.
+    /// - at least one readiness event has been received from,
+    /// - a deadline is elapsed, or
+    /// - the provided `timeout` has elapsed.
     ///
-    /// A `timeout` of `None` means that `poll` will block until one of the
-    /// other two conditions are true. Note that the `timeout` will be rounded
-    /// up to the system clock granularity (usually 1ms), and kernel scheduling
-    /// delays mean that the blocking interval may be overrun by a small amount.
+    /// Providing a `timeout` of `None` means that `poll` will block until one
+    /// of the other two conditions are true. Note that the `timeout` will be
+    /// rounded up to the system clock granularity (usually 1ms), and kernel
+    /// scheduling delays mean that the blocking interval may be overrun by a
+    /// small amount.
     ///
     /// The supplied `events` will be cleared and newly received readiness
     /// events will be stored in it. If not all events fit into the `events`,
@@ -557,7 +555,7 @@ impl Poller {
     /// becomes both readable and writable, it may be possible for a single
     /// readiness event to be returned with both [readable] and [writable]
     /// readiness **OR** two separate events may be returned, one with
-    /// [readable] set and one with [writable] set.
+    /// readable set and one with writable set.
     ///
     /// See the [struct] level documentation for a higher level discussion of
     /// polling.
@@ -582,6 +580,7 @@ impl Poller {
                     if let Some(to) = timeout {
                         let elapsed = start.elapsed();
                         if elapsed >= to {
+                            // Timeout elapsed so we need to return.
                             break;
                         } else {
                             timeout = Some(to - elapsed);
@@ -600,11 +599,11 @@ impl Poller {
     /// Poll for user space readiness events.
     ///
     /// The regular call to [`poll`] uses a system call to read readiness events
-    /// for system resource such as sockets. This method **does not** do that,
+    /// for system resources such as sockets. This method **does not** do that,
     /// it will only read user space readiness events, including deadlines.
     ///
-    /// Because no system call is used the method is faster then calling `poll`,
-    /// even with a 0 ms timeout, and does not block.
+    /// Because no system call is used this method is faster then calling
+    /// `poll`, even with a 0 ms timeout, and never blocks.
     ///
     /// [`poll`]: #method.poll
     pub fn poll_userspace(&mut self, events: &mut Events) {
@@ -615,7 +614,7 @@ impl Poller {
         self.poll_deadlines(events);
     }
 
-    /// Compute the timeout value passed to the system selector. If the
+    /// Compute the timeout value to be passed to the system selector. If the
     /// user space queue has pending events, we still want to poll the system
     /// selector for new events, but we don't want to block the thread to wait
     /// for new events.
@@ -635,8 +634,8 @@ impl Poller {
             // Determine the timeout for the next deadline.
             let deadline_timeout = deadline.0.deadline.duration_since(now);
             match timeout {
-                // The provided timeout is before the deadline timeout, so we'll
-                // keep the original timeout.
+                // The provided timeout is smaller then the deadline timeout, so
+                // we'll keep the original timeout.
                 Some(timeout) if timeout < deadline_timeout => {},
                 // Deadline timeout is sooner, use that.
                 _ => return Some(deadline_timeout),
