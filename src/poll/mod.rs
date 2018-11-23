@@ -499,10 +499,9 @@ impl Poller {
     /// assert_eq!((&mut events).next(), Some(Event::new(id, Ready::TIMER)));
     /// # Ok(())
     /// }
-    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) -> io::Result<()> {
+    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
         trace!("adding deadline: id={}, deadline={:?}", id, deadline);
-        not_empty(Ready::TIMER)
-            .map(|()| self.deadlines.push(Reverse(Deadline { id, deadline })))
+        self.deadlines.push(Reverse(Deadline { id, deadline }));
     }
 
     /// Remove a previously added deadline.
