@@ -54,3 +54,30 @@ impl Event {
         self.readiness
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::event::{Event, EventedId, Ready};
+
+    #[test]
+    fn event() {
+        let event = Event::new(EventedId(0), Ready::all());
+        assert_eq!(event.id(), EventedId(0));
+        assert_eq!(event.readiness(), Ready::all());
+    }
+
+    #[test]
+    fn equality() {
+        let event = Event::new(EventedId(0), Ready::all());
+        assert_eq!(event, event.clone());
+
+        let event2 = Event::new(EventedId(0), Ready::all());
+        assert_eq!(event, event2);
+
+        let event3 = Event::new(EventedId(1), Ready::all());
+        assert_ne!(event, event3);
+
+        let event4 = Event::new(EventedId(0), Ready::READABLE);
+        assert_ne!(event, event4);
+    }
+}
