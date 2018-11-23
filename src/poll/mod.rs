@@ -679,11 +679,10 @@ impl Poller {
     }
 }
 
-/// Validate the provided arguments making sure the `id` is valid and the other
-/// arguments aren't empty.
+/// Validate that the provided interests isn't empty.
 fn not_empty(interests: Ready) -> io::Result<()> {
     if interests.is_empty() {
-        Err(io::Error::new(io::ErrorKind::Other, "empty interests"))
+        Err(io::Error::new(io::ErrorKind::Other, "registering with empty interests"))
     } else {
         Ok(())
     }
