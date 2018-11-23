@@ -181,15 +181,6 @@ fn stream() {
 
     assert_eq!(stream.peer_addr().unwrap(), addr);
 
-    let keep_alive = stream.keepalive().unwrap();
-    if keep_alive.is_some() {
-        stream.set_keepalive(None).unwrap();
-        assert_eq!(stream.keepalive().unwrap(), None);
-    } else {
-        stream.set_keepalive(Some(Duration::from_secs(1))).unwrap();
-        assert_eq!(stream.keepalive().unwrap(), Some(Duration::from_secs(1)));
-    }
-
     let mut buf = [0; 20];
     let capacity = 19;
     let n = stream.peek(&mut buf[0..capacity]).unwrap();
