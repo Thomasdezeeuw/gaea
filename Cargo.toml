@@ -19,7 +19,6 @@ travis-ci = { repository = "https://github.com/Thomasdezeeuw/mio-st", branch = "
 [dependencies]
 bitflags = "1.0.4"
 log      = "0.4.6"
-net2     = "0.2.33"
 
 [dependencies.arrayvec]
 version = "0.4.7"
