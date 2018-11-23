@@ -64,7 +64,6 @@ pub fn any_port() -> SocketAddr {
 }
 
 mod deadline;
-mod poll;
 mod registering;
 mod tcp;
 mod udp;
