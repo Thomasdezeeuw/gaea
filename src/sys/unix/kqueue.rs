@@ -5,7 +5,7 @@ use std::time::Duration;
 use libc;
 use log::error;
 
-use crate::event::{Event, EventedId, Events, Ready, INVALID_EVENTED_ID};
+use crate::event::{Event, EventedId, Events, Ready};
 use crate::poll::PollOption;
 use crate::sys::EVENTS_CAP;
 
@@ -156,8 +156,8 @@ impl Selector {
         let flags = libc::EV_DELETE | libc::EV_RECEIPT;
         // id is not used.
         let mut changes: [libc::kevent; 2] = [
-            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, INVALID_EVENTED_ID),
-            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, INVALID_EVENTED_ID),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, EventedId(::std::usize::MAX)),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, EventedId(::std::usize::MAX)),
         ];
 
         kevent_register(self.kq, &mut changes, &[libc::ENOENT as kevent_data_t])

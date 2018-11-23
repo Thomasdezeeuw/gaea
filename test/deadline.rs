@@ -20,17 +20,6 @@ fn expect_events_elapsed(poll: &mut Poller, events: &mut Events, max_elapsed: Du
 const MARGIN_MS: u64 = 10;
 
 #[test]
-fn invalid_id() {
-    let (mut poll, mut events) = init_with_poll();
-
-    let result = poll.add_deadline(EventedId(usize::max_value()), Instant::now());
-    assert!(result.is_err());
-    assert!(result.unwrap_err().description().contains("invalid evented id"));
-
-    expect_events(&mut poll, &mut events, 1, vec![]);
-}
-
-#[test]
 fn add_deadline() {
     let (mut poll, mut events) = init_with_poll();
 

@@ -10,8 +10,6 @@ pub use self::events::Events;
 pub use self::id::EventedId;
 pub use self::ready::Ready;
 
-pub(crate) use self::id::INVALID_EVENTED_ID;
-
 /// A readiness event.
 ///
 /// `Event` is a [readiness state] paired with a [`EventedId`]. It is returned by
