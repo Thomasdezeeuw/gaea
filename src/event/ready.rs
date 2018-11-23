@@ -33,15 +33,15 @@ bitflags! {
     /// assert!(!ready.is_error());
     /// ```
     pub struct Ready: u8 {
-        /// Readable readiness
+        /// Readable readiness.
         const READABLE = 0b0000_0001;
         /// Writable readiness.
         const WRITABLE = 0b0000_0010;
         /// Error readiness.
         const ERROR    = 0b0000_0100;
-        /// Timer was triggered, see [`Timer`].
+        /// Deadline was elapsed, see [`Poller.add_deadline`].
         ///
-        /// [`Timer`]: ../timer/struct.Timer.html
+        /// [`Poller.add_deadline`]: ../poll/struct.Poller.html#method.add_deadline
         const TIMER    = 0b0000_1000;
         /// Hup readiness, this signal is Unix specific.
         #[cfg(unix)]
@@ -68,7 +68,7 @@ impl Ready {
         self.contains(Ready::ERROR)
     }
 
-    /// Returns true if the value includes an timer.
+    /// Returns true if a deadline has elapsed.
     #[inline]
     pub fn is_timer(self) -> bool {
         self.contains(Ready::TIMER)
