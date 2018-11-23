@@ -525,9 +525,8 @@ impl Poller {
         if let Some(index) = index {
             let deadlines = mem::replace(&mut self.deadlines, BinaryHeap::new());
             let mut deadlines_vec = deadlines.into_vec();
-            debug_assert_eq!(deadlines_vec[index].0.id, id,
-                             "remove_deadline: removing an incorrect deadline");
-            let _ = deadlines_vec.swap_remove(index);
+            let removed_deadline = deadlines_vec.swap_remove(index);
+            debug_assert_eq!(removed_deadline.0.id, id, "remove_deadline: removed incorrect deadline");
             drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
         }
     }
