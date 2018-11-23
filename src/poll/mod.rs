@@ -321,7 +321,7 @@ impl Poller {
         where E: Evented + ?Sized
     {
         not_empty(interests)?;
-        trace!("registering with poller: id={}, interests={:?}, opt={:?}", id, interests, opt);
+        trace!("registering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
         handle.register(self, id, interests, opt, PollCalled(()))
     }
 
@@ -377,7 +377,7 @@ impl Poller {
         where E: Evented + ?Sized
     {
         not_empty(interests)?;
-        trace!("reregistering with poller: id={}, interests={:?}, opt={:?}", id, interests, opt);
+        trace!("reregistering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
         handle.reregister(self, id, interests, opt, PollCalled(()))
     }
 
@@ -434,7 +434,7 @@ impl Poller {
     where
         E: Evented + ?Sized,
     {
-        trace!("deregistering with poller");
+        trace!("deregistering handle");
         handle.deregister(self, PollCalled(()))
     }
 
@@ -464,9 +464,10 @@ impl Poller {
     /// # }
     /// ```
     pub fn notify(&mut self, id: EventedId, ready: Ready) -> io::Result<()> {
-        trace!("adding event: id={}, ready={:?}", id, ready);
-        not_empty(ready)
-            .map(|()| self.userspace_events.push(Event::new(id, ready)))
+        not_empty(ready)?;
+        trace!("adding user space event: id={}, ready={:?}", id, ready);
+        self.userspace_events.push(Event::new(id, ready));
+        Ok(())
     }
 
     /// Add a new deadline to Poller.
@@ -566,8 +567,8 @@ impl Poller {
     /// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
     pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
-        trace!("polling: timeout={:?}", timeout);
         let mut timeout = self.determine_timeout(timeout);
+        trace!("polling: timeout={:?}", timeout);
 
         events.clear();
         loop {
@@ -608,8 +609,9 @@ impl Poller {
     ///
     /// [`poll`]: #method.poll
     pub fn poll_userspace(&mut self, events: &mut Events) {
-        trace!("polling user space only");
+        trace!("polling user space");
         events.clear();
+
         self.poll_userspace_internal(events);
         self.poll_deadlines(events);
     }
