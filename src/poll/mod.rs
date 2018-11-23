@@ -514,9 +514,8 @@ impl Poller {
     /// Removing a deadline is a costly operation. For better performance it is
     /// advised to not bothering with removing and instead ignore the event
     /// when it comes up.
-    pub fn remove_deadline(&mut self, id: EventedId) -> io::Result<()> {
+    pub fn remove_deadline(&mut self, id: EventedId) {
         trace!("removing deadline: id={}", id);
-        not_empty(Ready::TIMER)?;
 
         // TODO: optimize this.
         let index = self.deadlines.iter()
@@ -530,7 +529,6 @@ impl Poller {
             let _ = deadlines_vec.swap_remove(index);
             drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
         }
-        Ok(())
     }
 
     /// Poll for readiness events.
