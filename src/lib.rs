@@ -154,3 +154,8 @@ pub mod unix {
     pub use crate::sys::EventedIo;
     pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
 }
+
+#[doc(no_inline)]
+pub use crate::poll::{Poller, PollOption};
+#[doc(no_inline)]
+pub use crate::event::{Event, EventedId, Events, Ready};
