@@ -276,7 +276,6 @@ impl Poller {
     /// [event]: ../event/struct.Event.html
     /// [included]: ../event/struct.Event.html#method.id
     /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
-    /// [timer]: ../event/struct.Ready.html#associatedconstant.TIMER
     /// [`deregister`]: #method.deregister
     ///
     /// # Examples
@@ -488,7 +487,7 @@ impl Poller {
     /// let mut poller = Poller::new()?;
     /// let mut events = Events::new();
     ///
-    /// // Create our timer, with a deadline 10 milliseconds from now.
+    /// // Add our deadline, to trigger an event 10 milliseconds from now.
     /// let deadline = Instant::now() + Duration::from_millis(10);
     /// let id = EventedId(0);
     /// poller.add_deadline(id, deadline);
