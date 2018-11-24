@@ -135,10 +135,23 @@ fn poller_register_empty_interests() {
 fn poller_notify() {
     let (mut poller, mut events) = init_with_poller();
 
+    // Single event.
     let id = EventedId(0);
     let ready = Ready::READABLE;
     poller.notify(id, ready).expect("unable to notify");
     expect_userspace_events(&mut poller, &mut events, vec![Event::new(id, ready)]);
+
+    // Multiple events.
+    poller.notify(EventedId(0), Ready::READABLE).unwrap();
+    poller.notify(EventedId(0), Ready::WRITABLE).unwrap();
+    poller.notify(EventedId(0), Ready::READABLE | Ready::WRITABLE).unwrap();
+    poller.notify(EventedId(1), Ready::all()).unwrap();
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(EventedId(0), Ready::READABLE),
+        Event::new(EventedId(0), Ready::WRITABLE),
+        Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE),
+        Event::new(EventedId(1), Ready::all()),
+    ]);
 }
 
 #[test]
