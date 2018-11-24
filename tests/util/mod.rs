@@ -5,7 +5,7 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use log::debug;
+use log::error;
 
 use mio_st::event::{Event, Events};
 use mio_st::poll::Poller;
@@ -42,8 +42,33 @@ pub fn expect_userspace_events(poller: &mut Poller, mut events: &mut Events, mut
         }
     }
 
-    assert!((&*events).is_empty(), "Got extra user space events: {:?}", events);
-    assert!(expected.is_empty(), "Didn't get all expected user space events, missing: {:?}", expected);
+    assert!((&*events).is_empty(), "got extra user space events: {:?}", events);
+    assert!(expected.is_empty(), "didn't get all expected user space events, missing: {:?}", expected);
+}
+
+/// Poll `poller` and compare the retrieved events with the `expected` ones.
+/// This test is looser then `expect_userspace_events`, it only check if an
+/// events readiness contains the expected readiness and the ids match.
+pub fn expect_events(poller: &mut Poller, events: &mut Events, mut expected: Vec<Event>) {
+    poller.poll(events, Some(Duration::from_millis(200)))
+        .expect("unable to poll");
+
+    for event in &mut *events {
+        let index = expected.iter()
+            .position(|expected| {
+                event.id() == expected.id() &&
+                event.readiness().contains(expected.readiness())
+            });
+
+        if let Some(index) = index {
+            expected.swap_remove(index);
+        } else {
+            // Must accept sporadic events.
+            error!("got unexpected event: {:?}", event);
+        }
+    }
+
+    assert!(expected.is_empty(), "the following expected events were not found: {:?}", expected);
 }
 
 /// Assert that `result` is an error and the formatted error (via

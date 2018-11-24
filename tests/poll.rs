@@ -2,12 +2,15 @@ use std::io;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use mio_st::event::{Event, EventedId, Evented, Ready};
+use mio_st::event::{Event, EventedId, Events, Evented, Ready};
 use mio_st::poll::{Poller, PollOption, PollCalled};
 
 mod util;
 
-use self::util::{assert_error, expect_userspace_events, init, init_with_poller};
+use self::util::{assert_error, expect_events, expect_userspace_events, init, init_with_poller};
+
+/// Allowed margin for `Poller.poll` to overrun the deadline.
+const MARGIN: Duration = Duration::from_millis(10);
 
 struct TestEvented {
     registrations: Vec<(EventedId, Ready, PollOption)>,
@@ -173,4 +176,127 @@ fn poller_remove_deadline() {
 
     sleep(timeout);
     expect_userspace_events(&mut poller, &mut events, vec![]);
+}
+
+#[test]
+fn poller_add_multiple_deadlines() {
+    let (mut poller, mut events) = init_with_poller();
+
+    const T1: Duration = Duration::from_millis(20);
+    const T2: Duration = Duration::from_millis(40);
+    const T3: Duration = Duration::from_millis(60);
+
+    const TIMEOUTS: [[Duration; 3]; 6] = [
+        [T1, T2, T3],
+        [T1, T3, T2],
+        [T2, T1, T3],
+        [T2, T3, T1],
+        [T3, T1, T2],
+        [T3, T2, T1],
+    ];
+
+    fn timeout_to_token(timeout: Duration) -> EventedId {
+        match timeout {
+            T1 => EventedId(1),
+            T2 => EventedId(2),
+            T3 => EventedId(3),
+            _ => unreachable!()
+        }
+    }
+
+    for timeouts in &TIMEOUTS {
+        for timeout in timeouts.iter() {
+            let token = timeout_to_token(*timeout);
+            let first_token = EventedId(token.0 * 100);
+            let duration = Instant::now() + *timeout;
+
+            poller.add_deadline(first_token, duration);
+            poller.remove_deadline(first_token);
+            poller.add_deadline(token, duration);
+        }
+
+        for token in 1..4 {
+            expect_events_elapsed(&mut poller, &mut events, T1 + MARGIN, vec![
+                Event::new(EventedId(token), Ready::TIMER),
+            ]);
+        }
+    }
+}
+
+#[test]
+fn poller_add_multiple_deadlines_same_time() {
+    let (mut poller, mut events) = init_with_poller();
+
+    let deadline = Instant::now();
+    for token in 0..3 {
+        poller.add_deadline(EventedId(token), deadline);
+    }
+
+    expect_events_elapsed(&mut poller, &mut events, MARGIN, vec![
+        Event::new(EventedId(0), Ready::TIMER),
+        Event::new(EventedId(1), Ready::TIMER),
+        Event::new(EventedId(2), Ready::TIMER),
+    ]);
+}
+
+#[test]
+fn poller_add_multiple_deadlines_same_id() {
+    let (mut poller, mut events) = init_with_poller();
+
+    poller.add_deadline(EventedId(0), Instant::now() + Duration::from_millis(20));
+    poller.add_deadline(EventedId(0), Instant::now() + Duration::from_millis(10));
+
+    expect_events_elapsed(&mut poller, &mut events, Duration::from_millis(10) + MARGIN, vec![
+        Event::new(EventedId(0), Ready::TIMER),
+    ]);
+    expect_events_elapsed(&mut poller, &mut events, Duration::from_millis(10) + MARGIN, vec![
+        Event::new(EventedId(0), Ready::TIMER),
+    ]);
+}
+
+#[test]
+fn poller_deterime_timeout() {
+    let (mut poller, mut events) = init_with_poller();
+
+    const POLL_TIMEOUT: Duration = Duration::from_millis(50);
+
+    let timeouts = [
+        // Has user space events, so no blocking.
+        (None, true, Duration::from_millis(0)),
+        // Has an expired deadline, so no blocking.
+        (Some(Duration::from_millis(0)), false, Duration::from_millis(0)),
+        // Next deadline shorter then timeout, so use deadline as timeout.
+        (Some(Duration::from_millis(20)), false, Duration::from_millis(20)),
+        // Next deadline longer then timeout, so use provided timeout.
+        (Some(Duration::from_millis(100)), false, POLL_TIMEOUT),
+        // No user space or deadlines, so use provided timeout.
+        (None, false, POLL_TIMEOUT),
+    ];
+
+    for &(timeout, add_event, max_elapsed) in &timeouts {
+        if let Some(timeout) = timeout {
+            poller.add_deadline(EventedId(0), Instant::now() + timeout);
+        }
+
+        if add_event {
+            poller.notify(EventedId(1), Ready::READABLE)
+                .expect("can't add user space event");
+        }
+
+        let start = Instant::now();
+        poller.poll(&mut events, Some(POLL_TIMEOUT)).expect("unable to poll");
+        let elapsed = start.elapsed();
+        assert!(elapsed < max_elapsed + MARGIN, "expected poll to return within {:?}, \
+            it returned after: {:?}", max_elapsed, elapsed);
+    }
+}
+
+/// A wrapper function around `expect_events` to check that elapsed time doesn't
+/// exceed `max_elapsed`.
+fn expect_events_elapsed(poller: &mut Poller, events: &mut Events, max_elapsed: Duration, expected: Vec<Event>) {
+    let start = Instant::now();
+    expect_events(poller, events, expected);
+    let elapsed = start.elapsed();
+    assert!(elapsed < max_elapsed, "expected poll to return within {:?}, \
+            it returned after: {:?}", max_elapsed, elapsed);
 }
