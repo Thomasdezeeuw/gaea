@@ -6,15 +6,15 @@
 //! [`Poller`]: struct.Poller.html
 //! [root of the crate]: ../index.html
 
-use std::{io, mem};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::time::{Duration, Instant};
+use std::{io, mem};
 
 use log::{trace, debug};
 
-use crate::sys;
 use crate::event::{Event, Evented, EventedId, Events, Ready};
+use crate::sys;
 
 mod option;
 
@@ -313,7 +313,7 @@ impl Poller {
     /// # }
     /// ```
     pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
-        where E: Evented + ?Sized
+        where E: Evented + ?Sized,
     {
         not_empty(interests)?;
         trace!("registering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
@@ -370,7 +370,7 @@ impl Poller {
     /// # }
     /// ```
     pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
-        where E: Evented + ?Sized
+        where E: Evented + ?Sized,
     {
         not_empty(interests)?;
         trace!("reregistering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
@@ -430,8 +430,7 @@ impl Poller {
     /// # }
     /// ```
     pub fn deregister<E>(&mut self, handle: &mut E) -> io::Result<()>
-    where
-        E: Evented + ?Sized,
+        where E: Evented + ?Sized,
     {
         trace!("deregistering handle");
         handle.deregister(self, PollCalled(()))
