@@ -661,9 +661,9 @@ impl Poller {
         let now = Instant::now();
 
         for _ in 0..events.capacity_left() {
-            match self.deadlines.peek().map(|deadline| deadline.0) {
-                Some(deadline) if deadline.deadline <= now => {
-                    let _ = self.deadlines.pop().unwrap();
+            match self.deadlines.peek() {
+                Some(deadline) if deadline.0.deadline <= now => {
+                    let deadline = self.deadlines.pop().unwrap().0;
                     events.push(Event::new(deadline.id, Ready::TIMER));
                 },
                 _ => return,

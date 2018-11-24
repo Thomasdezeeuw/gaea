@@ -1,4 +1,5 @@
 use std::io;
+use std::iter::repeat;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -8,6 +9,9 @@ use mio_st::poll::{Poller, PollOption, PollCalled};
 mod util;
 
 use self::util::{assert_error, expect_events, expect_userspace_events, init, init_with_poller};
+
+/// Total capacity of `Events`.
+const EVENTS_CAP: usize = 256;
 
 /// Allowed margin for `Poller.poll` to overrun the deadline.
 const MARGIN: Duration = Duration::from_millis(10);
@@ -289,6 +293,80 @@ fn poller_deterime_timeout() {
         assert!(elapsed < max_elapsed + MARGIN, "expected poll to return within {:?}, \
             it returned after: {:?}", max_elapsed, elapsed);
     }
+}
+
+#[test]
+fn poller_poll_userspace_internal() {
+    let (mut poller, mut events) = init_with_poller();
+
+    // No events.
+    expect_events(&mut poller, &mut events, Vec::new());
+
+    // Single event, fits in `Events`.
+    poller.notify(EventedId(0), Ready::READABLE)
+        .expect("unable to add user space event");
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(EventedId(0), Ready::READABLE)
+    ]);
+
+    // Maximum capacity events, all fit in `Events`.
+    let expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::READABLE))
+        .take(EVENTS_CAP)
+        .map(|event| {
+            poller.notify(event.id(), event.readiness())
+                .expect("unable to add user space event");
+            event
+        })
+        .collect();
+    expect_events(&mut poller, &mut events, expected);
+    expect_events(&mut poller, &mut events, Vec::new());
+
+    // More events then `Events` can handle, the remaining events should be
+    // returned in the next call to poll.
+    let mut expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::READABLE))
+        .take(EVENTS_CAP + 1)
+        .map(|event| {
+            poller.notify(event.id(), event.readiness())
+                .expect("unable to add user space event");
+            event
+        })
+        .collect();
+    let last = vec![expected.pop().unwrap()];
+    expect_events(&mut poller, &mut events, expected);
+    expect_events(&mut poller, &mut events, last);
+}
+
+#[test]
+fn poller_poll_deadlines_internal() {
+    let (mut poller, mut events) = init_with_poller();
+    let now = Instant::now();
+
+    // No deadlines.
+    expect_events(&mut poller, &mut events, Vec::new());
+
+    // Single deadline, fits in `Events`.
+    poller.add_deadline(EventedId(0), now);
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(EventedId(0), Ready::TIMER)
+    ]);
+
+    // Maximum capacity deadlines, all fit in `Events`.
+    let expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::TIMER))
+        .take(EVENTS_CAP)
+        .map(|event| { poller.add_deadline(event.id(), now); event})
+        .collect();
+    expect_events(&mut poller, &mut events, expected);
+    expect_events(&mut poller, &mut events, Vec::new());
+
+    // More deadlines then `Events` can handle, the remaining deadlines should
+    // be returned in the next call to poll.
+    let mut expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::TIMER))
+        .take(EVENTS_CAP + 1)
+        .map(|event| { poller.add_deadline(event.id(), now); event})
+        .collect();
+    let last = vec![expected.pop().unwrap()];
+    expect_events(&mut poller, &mut events, expected);
+    expect_events(&mut poller, &mut events, last);
 }
 
 /// A wrapper function around `expect_events` to check that elapsed time doesn't
