@@ -39,10 +39,10 @@ use crate::sys::unix::EventedFd;
 /// // Now we can let `EventedIo` manage the lifetime for us.
 /// let mut evented_listener = unsafe { EventedIo::from_raw_fd(listener_fd) };
 ///
-/// let mut poll = Poller::new()?;
+/// let mut poller = Poller::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poll.register(&mut evented_listener, EventedId(0), Ready::READABLE, PollOption::Edge)?;
+/// poller.register(&mut evented_listener, EventedId(0), Ready::READABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -73,16 +73,16 @@ impl AsRawFd for EventedIo {
 }
 
 impl Evented for EventedIo {
-    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).register(poll, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).reregister(poll, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).deregister(poll, p)
+    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).deregister(poller, p)
     }
 }
 
