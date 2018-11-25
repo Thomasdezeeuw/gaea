@@ -158,20 +158,24 @@ pub struct TcpListener {
 }
 
 impl TcpListener {
-    pub fn new(address: SocketAddr) -> io::Result<TcpListener> {
+    pub fn bind(address: SocketAddr) -> io::Result<TcpListener> {
         let listener = net::TcpListener::bind(address)?;
         listener.set_nonblocking(true)?;
         Ok(TcpListener { listener })
     }
 
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.listener.local_addr()
+    pub fn try_clone(&self) -> io::Result<TcpListener> {
+        self.listener.try_clone().map(|listener| TcpListener { listener })
     }
 
     pub fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
         let (stream, address) = self.listener.accept()?;
         stream.set_nonblocking(true)?;
         Ok((TcpStream { stream }, address))
+    }
+
+    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+        self.listener.local_addr()
     }
 
     pub fn set_ttl(&mut self, ttl: u32) -> io::Result<()> {
@@ -184,10 +188,6 @@ impl TcpListener {
 
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.listener.take_error()
-    }
-
-    pub fn try_clone(&self) -> io::Result<Self> {
-        self.listener.try_clone().map(|listener| TcpListener { listener })
     }
 }
 

@@ -152,6 +152,17 @@ impl Into<net::TcpStream> for TcpStream {
 }
 
 #[cfg(unix)]
+impl FromRawFd for TcpStream {
+    /// The caller must ensure that the stream is in non-blocking mode when
+    /// using this function.
+    unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
+        TcpStream {
+            inner: FromRawFd::from_raw_fd(fd),
+        }
+    }
+}
+
+#[cfg(unix)]
 impl IntoRawFd for TcpStream {
     fn into_raw_fd(self) -> RawFd {
         self.inner.into_raw_fd()
@@ -162,15 +173,6 @@ impl IntoRawFd for TcpStream {
 impl AsRawFd for TcpStream {
     fn as_raw_fd(&self) -> RawFd {
         self.inner.as_raw_fd()
-    }
-}
-
-#[cfg(unix)]
-impl FromRawFd for TcpStream {
-    unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
-        TcpStream {
-            inner: FromRawFd::from_raw_fd(fd),
-        }
     }
 }
 
@@ -217,7 +219,7 @@ impl TcpListener {
     /// Convenience method to bind a new TCP listener to the specified address
     /// to receive new connections.
     pub fn bind(address: SocketAddr) -> io::Result<TcpListener> {
-        sys::TcpListener::new(address).map(|inner| TcpListener { inner })
+        sys::TcpListener::bind(address).map(|inner| TcpListener { inner })
     }
 
     /// Create a independently owned handle to the underlying socket.
@@ -225,7 +227,7 @@ impl TcpListener {
     /// The returned `TcpListener` is a reference to the same socket as `self`.
     /// Both handles can be used to accept incoming connections and options set
     /// on one listener will affect the other.
-    pub fn try_clone(&self) -> io::Result<Self> {
+    pub fn try_clone(&self) -> io::Result<TcpListener> {
         self.inner.try_clone().map(|inner| TcpListener { inner })
     }
 
@@ -283,6 +285,17 @@ impl Evented for TcpListener {
 }
 
 #[cfg(unix)]
+impl FromRawFd for TcpListener {
+    /// The caller must ensure that the listener is in non-blocking mode when
+    /// using this function.
+    unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
+        TcpListener {
+            inner: sys::TcpListener::from_raw_fd(fd),
+        }
+    }
+}
+
+#[cfg(unix)]
 impl IntoRawFd for TcpListener {
     fn into_raw_fd(self) -> RawFd {
         self.inner.into_raw_fd()
@@ -293,14 +306,5 @@ impl IntoRawFd for TcpListener {
 impl AsRawFd for TcpListener {
     fn as_raw_fd(&self) -> RawFd {
         self.inner.as_raw_fd()
-    }
-}
-
-#[cfg(unix)]
-impl FromRawFd for TcpListener {
-    unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
-        TcpListener {
-            inner: sys::TcpListener::from_raw_fd(fd),
-        }
     }
 }
