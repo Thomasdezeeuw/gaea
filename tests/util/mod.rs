@@ -1,7 +1,10 @@
 //! Collection of testing utilities.
 
+// Not all functions are used in all tests, causing warnings of unused functions
+// while other tests are actually using them.
 #![allow(dead_code)]
 
+use std::io;
 use std::net::SocketAddr;
 use std::time::Duration;
 
@@ -78,4 +81,18 @@ pub fn assert_error<T, E: ToString>(result: Result<T, E>, expected_msg: &str) {
         Ok(_) => panic!("unexpected OK result"),
         Err(err) => assert_eq!(err.to_string(), expected_msg),
     }
+}
+
+/// Assert that the provided result is an `io::Error` with kind `WouldBlock`.
+pub fn assert_would_block<T>(result: io::Result<T>) {
+    match result {
+        Ok(_) => panic!("unexpected OK result, expected a `WouldBlock` error"),
+        Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {},
+        Err(err) => panic!("unexpected error result: {}", err),
+    }
+}
+
+/// Bind to any port on localhost.
+pub fn any_local_address() -> SocketAddr {
+    "127.0.0.1:0".parse().unwrap()
 }
