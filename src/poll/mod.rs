@@ -212,14 +212,14 @@ impl Poller {
     /// use mio_st::event::Events;
     /// use mio_st::poll::Poller;
     ///
-    /// let mut poll = Poller::new()?;
+    /// let mut poller = Poller::new()?;
     ///
-    /// // Create a structure to receive polled events
+    /// // Create a structure to receive polled events.
     /// let mut events = Events::new();
     ///
     /// // Wait for events, but none will be received because no `Evented`
     /// // handles have been registered with this `Poller` instance.
-    /// poll.poll(&mut events, Some(Duration::from_millis(500)))?;
+    /// poller.poll(&mut events, Some(Duration::from_millis(500)))?;
     /// #     Ok(())
     /// # }
     /// ```
@@ -289,19 +289,19 @@ impl Poller {
     /// use mio_st::poll::{Poller, PollOption};
     ///
     /// // Create a new `Poller` instance as well a containers for the vents.
-    /// let mut poll = Poller::new()?;
+    /// let mut poller = Poller::new()?;
     /// let mut events = Events::new();
     ///
     /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
     ///
-    /// // Register the connection with `poll`.
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
+    /// // Register the connection with `poller`.
+    /// poller.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
     ///
     /// // Start the event loop.
     /// loop {
-    ///     poll.poll(&mut events, None)?;
+    ///     poller.poll(&mut events, None)?;
     ///
     ///     for event in &mut events {
     ///         if event.id() == EventedId(0) {
@@ -353,19 +353,19 @@ impl Poller {
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
-    /// let mut poll = Poller::new()?;
+    /// let mut poller = Poller::new()?;
     ///
     /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
     /// let address = "216.58.193.100:80".parse()?;
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poller`, only with readable interest.
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
+    /// poller.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
     ///
     /// // Reregister the connection specifying a different id and write interest
     /// // instead. `PollOption::Edge` must be specified even though that value
     /// // is not being changed.
-    /// poll.reregister(&mut stream, EventedId(2), Ready::WRITABLE, PollOption::Edge)?;
+    /// poller.reregister(&mut stream, EventedId(2), Ready::WRITABLE, PollOption::Edge)?;
     /// #     Ok(())
     /// # }
     /// ```
@@ -408,7 +408,7 @@ impl Poller {
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
-    /// let mut poll = Poller::new()?;
+    /// let mut poller = Poller::new()?;
     /// let mut events = Events::new();
     ///
     /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
@@ -416,15 +416,15 @@ impl Poller {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poller`.
-    /// poll.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
+    /// poller.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
     ///
     /// // Do stuff with the connection etc.
     ///
     /// // Deregister it so the resources can be cleaned up.
-    /// poll.deregister(&mut stream)?;
+    /// poller.deregister(&mut stream)?;
     ///
     /// // Set a timeout because this poller shouldn't receive any events anymore.
-    /// poll.poll(&mut events, Some(Duration::from_millis(200)))?;
+    /// poller.poll(&mut events, Some(Duration::from_millis(200)))?;
     /// assert!(events.is_empty());
     /// #     Ok(())
     /// # }
@@ -449,14 +449,14 @@ impl Poller {
     /// use mio_st::event::{Event, Events, EventedId, Ready};
     /// use mio_st::poll::Poller;
     ///
-    /// let mut poll = Poller::new()?;
+    /// let mut poller = Poller::new()?;
     /// let mut events = Events::new();
     ///
     /// // Add a custom user space notification.
-    /// poll.notify(EventedId(0), Ready::READABLE)?;
+    /// poller.notify(EventedId(0), Ready::READABLE)?;
     ///
     /// // Set a timeout because this poll should never receive any events.
-    /// poll.poll(&mut events, None)?;
+    /// poller.poll(&mut events, None)?;
     /// assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(0), Ready::READABLE));
     /// #     Ok(())
     /// # }
@@ -496,7 +496,7 @@ impl Poller {
     /// poller.poll(&mut events, None)?;
     ///
     /// assert_eq!((&mut events).next(), Some(Event::new(id, Ready::TIMER)));
-    /// # Ok(())
+    /// #     Ok(())
     /// # }
     pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
         trace!("adding deadline: id={}, deadline={:?}", id, deadline);

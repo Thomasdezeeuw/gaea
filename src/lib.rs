@@ -47,7 +47,7 @@
 //! const SERVER_ID: EventedId = EventedId(0);
 //!
 //! // Create a `Poller` instance.
-//! let mut poll = Poller::new()?;
+//! let mut poller = Poller::new()?;
 //! // Also create a container for all events.
 //! let mut events = Events::new();
 //!
@@ -57,7 +57,7 @@
 //!
 //! // Register our TCP listener with `Poller`, this allows us to receive
 //! // notifications about incoming connections.
-//! poll.register(&mut server, SERVER_ID, Ready::READABLE, PollOption::Edge)?;
+//! poller.register(&mut server, SERVER_ID, Ready::READABLE, PollOption::Edge)?;
 //!
 //! // A hashmap with `EventedId` -> `TcpStream` connections.
 //! let mut connections = HashMap::with_capacity(512);
@@ -69,14 +69,14 @@
 //! loop {
 //!     # break;
 //!     // Check for new events.
-//!     poll.poll(&mut events, None)?;
+//!     poller.poll(&mut events, None)?;
 //!
 //!     for event in &mut events {
 //!         // Depending on the event id we need to take an action.
 //!         match event.id() {
 //!             SERVER_ID => {
 //!                 // The server is ready to accept one or more connections.
-//!                 accept_connections(&mut server, &mut poll, &mut connections, &mut current_id)?;
+//!                 accept_connections(&mut server, &mut poller, &mut connections, &mut current_id)?;
 //!             }
 //!             connection_id => {
 //!                 // A connection is possibly ready, but it might a spurious
@@ -94,13 +94,13 @@
 //!     }
 //! }
 //!
-//! fn accept_connections(server: &mut TcpListener, poll: &mut Poller, connections: &mut HashMap<EventedId, TcpStream>, current_id: &mut EventedId) -> io::Result<()> {
+//! fn accept_connections(server: &mut TcpListener, poller: &mut Poller, connections: &mut HashMap<EventedId, TcpStream>, current_id: &mut EventedId) -> io::Result<()> {
 //!     // Since we registered with edge-triggered events for our server we need
 //!     // to accept connections until we hit a would block "error".
 //!     loop {
 //!         let (mut connection, address) = match server.accept() {
 //!             Ok((connection, address)) => (connection, address),
-//!             Err(ref err) if is_would_block(err) => return Ok(()),
+//!             Err(ref err) if would_block(err) => return Ok(()),
 //!             Err(err) => return Err(err),
 //!         };
 //!
@@ -113,14 +113,14 @@
 //!         // Register the TCP connection so we can handle events for it as
 //!         // well.
 //!         let interests = Ready::READABLE | Ready::WRITABLE | Ready::ERROR;
-//!         poll.register(&mut connection, id, interests, PollOption::Edge)?;
+//!         poller.register(&mut connection, id, interests, PollOption::Edge)?;
 //!
 //!         // Store our connection so we can access it later.
 //!         connections.insert(id, connection);
 //!     }
 //! }
 //!
-//! fn is_would_block(err: &io::Error) -> bool {
+//! fn would_block(err: &io::Error) -> bool {
 //!     err.kind() == io::ErrorKind::WouldBlock
 //! }
 //! #     Ok(())

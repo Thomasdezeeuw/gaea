@@ -43,10 +43,10 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// // Bind a listener from the standard library.
 /// let listener = TcpListener::bind("127.0.0.1:0")?;
 ///
-/// let mut poll = Poller::new()?;
+/// let mut poller = Poller::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poll.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Ready::READABLE, PollOption::Edge)?;
+/// poller.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Ready::READABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -66,16 +66,16 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// }
 ///
 /// impl Evented for MyIo {
-///     fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-///         EventedFd(&self.fd).register(poll, id, interests, opt, p)
+///     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///         EventedFd(&self.fd).register(poller, id, interests, opt, p)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-///         EventedFd(&self.fd).reregister(poll, id, interests, opt, p)
+///     fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///         EventedFd(&self.fd).reregister(poller, id, interests, opt, p)
 ///     }
 ///
-///     fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
-///         EventedFd(&self.fd).deregister(poll, p)
+///     fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
+///         EventedFd(&self.fd).deregister(poller, p)
 ///     }
 /// }
 /// ```
@@ -83,15 +83,15 @@ use crate::poll::{PollCalled, PollOption, Poller};
 pub struct EventedFd<'a>(pub &'a RawFd);
 
 impl<'a> Evented for EventedFd<'a> {
-    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
-        poll.selector().register(*self.0, id, interests, opt)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
+        poller.selector().register(*self.0, id, interests, opt)
     }
 
-    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
-        poll.selector().reregister(*self.0, id, interests, opt)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
+        poller.selector().reregister(*self.0, id, interests, opt)
     }
 
-    fn deregister(&mut self, poll: &mut Poller, _: PollCalled) -> io::Result<()> {
-        poll.selector().deregister(*self.0)
+    fn deregister(&mut self, poller: &mut Poller, _: PollCalled) -> io::Result<()> {
+        poller.selector().deregister(*self.0)
     }
 }

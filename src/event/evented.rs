@@ -51,19 +51,19 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-///         // Delegate the `register` call to `socket`
-///         self.socket.register(poll, id, interests, opt, p)
+///     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///         // Delegate the `register` call to `socket`.
+///         self.socket.register(poller, id, interests, opt, p)
 ///     }
 ///
-///     fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-///         // Delegate the `reregister` call to `socket`
-///         self.socket.reregister(poll, id, interests, opt, p)
+///     fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///         // Delegate the `reregister` call to `socket`.
+///         self.socket.reregister(poller, id, interests, opt, p)
 ///     }
 ///
-///     fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
-///         // Delegate the `deregister` call to `socket`
-///         self.socket.deregister(poll, p)
+///     fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
+///         // Delegate the `deregister` call to `socket`.
+///         self.socket.deregister(poller, p)
 ///     }
 /// }
 /// ```
@@ -74,7 +74,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poller.register`]: ../poll/struct.Poller.html#method.register
-    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
 
     /// Reregister `self` with the given `Poller` instance.
     ///
@@ -82,7 +82,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poller.reregister`]: ../poll/struct.Poller.html#method.reregister
-    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poller` instance
     ///
@@ -90,5 +90,5 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poller.deregister`]: ../poll/struct.Poller.html#method.deregister
-    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()>;
+    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()>;
 }

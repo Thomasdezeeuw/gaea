@@ -26,14 +26,14 @@ use crate::event::Event;
 /// use mio_st::event::{EventedId, Events, Ready};
 /// use mio_st::poll::{Poller, PollOption};
 ///
-/// let mut poll = Poller::new()?;
+/// let mut poller = Poller::new()?;
 /// let mut events = Events::new();
 ///
-/// // Register `Evented` handles with `poll` here.
+/// // Register `Evented` handles with `poller` here.
 ///
 /// // Run the event loop.
 /// loop {
-///     poll.poll(&mut events, Some(Duration::from_millis(100)))?;
+///     poller.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
 ///     for event in &mut events {
 ///         println!("got event: id={:?}, rediness={:?}", event.id(), event.readiness());

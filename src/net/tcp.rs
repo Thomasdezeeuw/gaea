@@ -30,13 +30,13 @@ use crate::poll::{Poller, PollCalled, PollOption};
 /// let address = "127.0.0.1:8000".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
 ///
-/// let mut poll = Poller::new()?;
+/// let mut poller = Poller::new()?;
 /// let mut events = Events::new();
 ///
 /// // Register the socket with `Poller`.
-/// poll.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
+/// poller.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
 ///
-/// poll.poll(&mut events, None)?;
+/// poller.poll(&mut events, None)?;
 ///
 /// // The socket might be ready at this point.
 /// #     Ok(())
@@ -132,16 +132,16 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.register(poll, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+        self.inner.register(poller, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.reregister(poll, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+        self.inner.reregister(poller, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
-        self.inner.deregister(poll, p)
+    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
+        self.inner.deregister(poller, p)
     }
 }
 
@@ -179,7 +179,7 @@ impl AsRawFd for TcpStream {
 /// A TCP socket listener.
 ///
 /// This works much like the `TcpListener` in the standard library, but this
-/// doesn't block when calling [`accept`] and instead return [`WouldBlock`]
+/// doesn't block when calling [`accept`] and instead returns a [`WouldBlock`]
 /// error.
 ///
 /// [`accept`]: #method.accept
@@ -198,13 +198,13 @@ impl AsRawFd for TcpStream {
 /// let address = "127.0.0.1:8001".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
 ///
-/// let mut poll = Poller::new()?;
+/// let mut poller = Poller::new()?;
 /// let mut events = Events::new();
 ///
 /// // Register the socket with `Poller`
-/// poll.register(&mut listener, EventedId(0), Ready::all(), PollOption::Edge)?;
+/// poller.register(&mut listener, EventedId(0), Ready::all(), PollOption::Edge)?;
 ///
-/// poll.poll(&mut events, Some(Duration::from_millis(100)))?;
+/// poller.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
 /// // There may be a socket ready to be accepted.
 /// #     Ok(())
@@ -271,16 +271,16 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.register(poll, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+        self.inner.register(poller, id, interests, opt, p)
     }
 
-    fn reregister(&mut self, poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.reregister(poll, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+        self.inner.reregister(poller, id, interests, opt, p)
     }
 
-    fn deregister(&mut self, poll: &mut Poller, p: PollCalled) -> io::Result<()> {
-        self.inner.deregister(poll, p)
+    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
+        self.inner.deregister(poller, p)
     }
 }
 
