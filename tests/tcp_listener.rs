@@ -1,8 +1,8 @@
+use std::net;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 use std::sync::{Arc, Barrier};
-use std::thread::sleep;
+use std::thread::{self, sleep};
 use std::time::Duration;
-use std::{net, thread};
 
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::TcpListener;
@@ -366,7 +366,6 @@ fn tcp_listener_level_poll_option() {
     thread_handle2.join().unwrap();
 }
 
-
 #[test]
 fn tcp_listener_oneshot_poll_option() {
     let (mut poller, mut events) = init_with_poller();
@@ -381,6 +380,54 @@ fn tcp_listener_oneshot_poll_option() {
     sleep(Duration::from_millis(20));
 
     let mut seen_event = false;
+    for _ in 0..2 {
+        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+
+        for event in &mut events {
+            match event.id() {
+                ID if !seen_event => seen_event = true,
+                ID => panic!("unexpected event for oneshot TCP listener"),
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    thread_handle.join().unwrap();
+}
+
+#[test]
+fn tcp_listener_oneshot_poll_option_reregister() {
+    let (mut poller, mut events) = init_with_poller();
+
+    const ID: EventedId = EventedId(0);
+
+    let mut listener = TcpListener::bind(any_local_address()).unwrap();
+    let thread_handle = start_connections(&mut listener, 2, None);
+    poller.register(&mut listener, ID, Ready::READABLE, PollOption::Oneshot).unwrap();
+
+    // Give the connections some time to run.
+    sleep(Duration::from_millis(20));
+
+    let mut seen_event = false;
+    for _ in 0..2 {
+        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+
+        for event in &mut events {
+            match event.id() {
+                ID if !seen_event => seen_event = true,
+                ID => panic!("unexpected event for oneshot TCP listener"),
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    // Give the second connection some time to run.
+    sleep(Duration::from_millis(20));
+
+    // Reregister the listener and we expect to see more events.
+    poller.reregister(&mut listener, ID, Ready::READABLE, PollOption::Oneshot).unwrap();
+
+    seen_event = false;
     for _ in 0..2 {
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
