@@ -145,12 +145,6 @@ impl Evented for TcpStream {
     }
 }
 
-impl Into<net::TcpStream> for TcpStream {
-    fn into(self) -> net::TcpStream {
-        self.inner.into()
-    }
-}
-
 #[cfg(unix)]
 impl FromRawFd for TcpStream {
     /// The caller must ensure that the stream is in non-blocking mode when
