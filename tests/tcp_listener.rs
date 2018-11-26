@@ -230,7 +230,6 @@ fn tcp_listener_reregister() {
     // Expect no more connections.
     assert_would_block(listener.accept());
 
-
     assert!(listener.take_error().unwrap().is_none());
     thread_handle.join().expect("unable to join thread");
 }
@@ -400,6 +399,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
     let (mut poller, mut events) = init_with_poller();
 
     const ID: EventedId = EventedId(0);
+    const ID2: EventedId = EventedId(2);
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle = start_connections(&mut listener, 2, None);
@@ -425,7 +425,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
     sleep(Duration::from_millis(20));
 
     // Reregister the listener and we expect to see more events.
-    poller.reregister(&mut listener, ID, Ready::READABLE, PollOption::Oneshot).unwrap();
+    poller.reregister(&mut listener, ID2, Ready::READABLE, PollOption::Oneshot).unwrap();
 
     seen_event = false;
     for _ in 0..2 {
@@ -433,8 +433,8 @@ fn tcp_listener_oneshot_poll_option_reregister() {
 
         for event in &mut events {
             match event.id() {
-                ID if !seen_event => seen_event = true,
-                ID => panic!("unexpected event for oneshot TCP listener"),
+                ID2 if !seen_event => seen_event = true,
+                ID2 => panic!("unexpected event for oneshot TCP listener"),
                 _ => unreachable!(),
             }
         }
