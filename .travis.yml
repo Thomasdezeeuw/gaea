@@ -4,9 +4,9 @@ os:
   - linux
   - osx
 env:
-  - RUST_BACKTRACE=1
+  - RUST_BACKTRACE=full
 matrix:
-  fast_finish: true
+  fast_finish: false
   allow_failures:
     - os: osx
 language: rust
