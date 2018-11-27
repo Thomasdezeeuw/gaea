@@ -2,8 +2,8 @@ use std::io;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use crate::event::{Evented, EventedId, Ready};
-use crate::poll::{PollCalled, PollOption, Poller};
+use crate::event::{Evented, EventedId};
+use crate::poll::{Interests, PollOption, Poller};
 use crate::sys::unix::EventedFd;
 
 #[derive(Debug)]
@@ -56,16 +56,16 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).deregister(poller, p)
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).deregister(poller)
     }
 }
 

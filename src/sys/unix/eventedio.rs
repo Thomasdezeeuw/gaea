@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use crate::event::{Evented, EventedId, Ready};
-use crate::poll::{PollCalled, PollOption, Poller};
+use crate::event::{Evented, EventedId};
+use crate::poll::{Interests, PollOption, Poller};
 use crate::sys::unix::EventedFd;
 
 /// Managed adaptor for a `RawFd` providing an [`Evented`] implementation.
@@ -26,7 +26,7 @@ use crate::sys::unix::EventedFd;
 /// use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 ///
 /// use mio_st::event::{Evented, EventedId, Ready};
-/// use mio_st::poll::{Poller, PollOption};
+/// use mio_st::poll::{Interests, PollOption, Poller};
 /// use mio_st::unix::EventedIo;
 ///
 /// // Bind a listener from the standard library.
@@ -42,7 +42,7 @@ use crate::sys::unix::EventedFd;
 /// let mut poller = Poller::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poller.register(&mut evented_listener, EventedId(0), Ready::READABLE, PollOption::Edge)?;
+/// poller.register(&mut evented_listener, EventedId(0), Interests::READABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -73,16 +73,16 @@ impl AsRawFd for EventedIo {
 }
 
 impl Evented for EventedIo {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).deregister(poller, p)
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).deregister(poller)
     }
 }
 

@@ -132,7 +132,7 @@ pub use self::option::PollOption;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point.
-/// poll.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
+/// poll.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -183,16 +183,6 @@ pub struct Poller {
     userspace_events: Vec<Event>,
     deadlines: BinaryHeap<Reverse<Deadline>>,
 }
-
-/// A type to check if `Evented` handles are called via a `Poller` instance.
-///
-/// This struct is used in the [`Evented`] trait. Since it can only created from
-/// within the poll module it forces all calls to `Evented` handles to go via a
-/// `Poller` instance.
-///
-/// [`Evented`]: ../event/trait.Evented.html
-#[derive(Debug)]
-pub struct PollCalled(());
 
 impl Poller {
     /// Return a new `Poller` handle.
@@ -301,7 +291,7 @@ impl Poller {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `poller`.
-    /// poller.register(&mut stream, EventedId(0), Ready::READABLE | Ready::WRITABLE, PollOption::Edge)?;
+    /// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
     ///
     /// // Start the event loop.
     /// loop {
@@ -316,12 +306,11 @@ impl Poller {
     /// }
     /// # }
     /// ```
-    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
+    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized,
     {
-        not_empty(interests)?;
         trace!("registering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
-        handle.register(self, id, interests, opt, PollCalled(()))
+        handle.register(self, id, interests, opt)
     }
 
     /// Re-register an `Evented` handle with the `Poller` instance.
@@ -353,9 +342,9 @@ impl Poller {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::event::{EventedId, Ready};
+    /// use mio_st::event::EventedId;
     /// use mio_st::net::TcpStream;
-    /// use mio_st::poll::{Poller, PollOption};
+    /// use mio_st::poll::{Interests, PollOption, Poller};
     ///
     /// let mut poller = Poller::new()?;
     ///
@@ -364,21 +353,20 @@ impl Poller {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poller`, only with readable interest.
-    /// poller.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
+    /// poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)?;
     ///
     /// // Reregister the connection specifying a different id and write interest
     /// // instead. `PollOption::Edge` must be specified even though that value
     /// // is not being changed.
-    /// poller.reregister(&mut stream, EventedId(2), Ready::WRITABLE, PollOption::Edge)?;
+    /// poller.reregister(&mut stream, EventedId(2), Interests::WRITABLE, PollOption::Edge)?;
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()>
+    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized,
     {
-        not_empty(interests)?;
         trace!("reregistering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
-        handle.reregister(self, id, interests, opt, PollCalled(()))
+        handle.reregister(self, id, interests, opt)
     }
 
     /// Deregister an `Evented` handle with the `Poller` instance.
@@ -420,7 +408,7 @@ impl Poller {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poller`.
-    /// poller.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)?;
+    /// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
     ///
     /// // Do stuff with the connection etc.
     ///
@@ -437,7 +425,7 @@ impl Poller {
         where E: Evented + ?Sized,
     {
         trace!("deregistering handle");
-        handle.deregister(self, PollCalled(()))
+        handle.deregister(self)
     }
 
     /// Notify an evented handle of an user space event.
@@ -457,7 +445,7 @@ impl Poller {
     /// let mut events = Events::new();
     ///
     /// // Add a custom user space notification.
-    /// poller.notify(EventedId(0), Ready::READABLE)?;
+    /// poller.notify(EventedId(0), Ready::READABLE);
     ///
     /// // Set a timeout because this poll should never receive any events.
     /// poller.poll(&mut events, None)?;
@@ -465,11 +453,10 @@ impl Poller {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn notify(&mut self, id: EventedId, ready: Ready) -> io::Result<()> {
-        not_empty(ready)?;
+    pub fn notify(&mut self, id: EventedId, ready: Ready) {
+        debug_assert!(!ready.is_empty(), "notifying with empty readiness");
         trace!("adding user space event: id={}, ready={:?}", id, ready);
         self.userspace_events.push(Event::new(id, ready));
-        Ok(())
     }
 
     /// Add a new deadline to Poller.
@@ -678,15 +665,6 @@ impl Poller {
     /// `EventedFd`.
     pub(crate) fn selector(&self) -> &sys::Selector {
         &self.selector
-    }
-}
-
-/// Validate that the provided interests isn't empty.
-fn not_empty(interests: Ready) -> io::Result<()> {
-    if interests.is_empty() {
-        Err(io::Error::new(io::ErrorKind::Other, "registering with empty interests"))
-    } else {
-        Ok(())
     }
 }
 

@@ -6,7 +6,7 @@ use libc;
 use log::error;
 
 use crate::event::{Event, EventedId, Events, Ready};
-use crate::poll::PollOption;
+use crate::poll::{Interests, PollOption};
 use crate::sys::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types
@@ -101,19 +101,19 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()> {
+    pub fn register(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         let flags = opt_to_flags(opt) | libc::EV_ADD;
         // At most we need two changes, but maybe we only need 1.
         let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
         let mut n_changes = 0;
 
-        if interests.contains(Ready::WRITABLE) {
+        if interests.is_writable() {
             let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, id);
             unsafe { ptr::write(&mut changes[n_changes], kevent) };
             n_changes += 1;
         }
 
-        if interests.contains(Ready::READABLE) {
+        if interests.is_readable() {
             let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, id);
             unsafe { ptr::write(&mut changes[n_changes], kevent) };
             n_changes += 1;
@@ -122,7 +122,7 @@ impl Selector {
         kevent_register(self.kq, &mut changes[0..n_changes], &[])
     }
 
-    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()> {
+    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         let flags = opt_to_flags(opt);
         let write_flags = if interests.is_writable() {
             flags | libc::EV_ADD

@@ -1,8 +1,8 @@
 use std::io::{Read, Write};
 
 use mio_st::event::{Event, EventedId, Ready};
-use mio_st::poll::{Poller, PollOption};
-use mio_st::unix::new_pipe;
+use mio_st::poll::{Interests, PollOption, Poller};
+use mio_st::unix::{new_pipe, Sender, Receiver};
 
 mod util;
 
@@ -19,9 +19,9 @@ fn unix_pipe() {
 
     let (mut sender, mut receiver) = new_pipe().expect("can't create pipe");
 
-    poller.register(&mut sender, SENDER_ID, Ready::WRITABLE, PollOption::Level)
+    poller.register(&mut sender, SENDER_ID, Sender::INTERESTS, PollOption::Level)
         .expect("can't register sender");
-    poller.register(&mut receiver, RECEIVER_ID, Ready::READABLE, PollOption::Level)
+    poller.register(&mut receiver, RECEIVER_ID, Receiver::INTERESTS, PollOption::Level)
         .expect("can't register receiver");
 
     expect_events(&mut poller, &mut events, vec![
@@ -48,7 +48,7 @@ fn receiver_writable_interests() {
     let (_, mut receiver) = new_pipe().expect("can't create pipe");
 
     let mut poller = Poller::new().unwrap();
-    poller.register(&mut receiver, RECEIVER_ID, Ready::WRITABLE, PollOption::Level)
+    poller.register(&mut receiver, RECEIVER_ID, Interests::WRITABLE, PollOption::Level)
         .unwrap();
 }
 
@@ -60,6 +60,6 @@ fn sender_readable_interests() {
     let (mut sender, _) = new_pipe().expect("can't create pipe");
 
     let mut poller = Poller::new().unwrap();
-    poller.register(&mut sender, SENDER_ID, Ready::READABLE, PollOption::Level)
+    poller.register(&mut sender, SENDER_ID, Interests::READABLE, PollOption::Level)
         .unwrap();
 }

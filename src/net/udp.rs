@@ -4,8 +4,8 @@ use std::net::SocketAddr;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::sys;
-use crate::event::{Evented, EventedId, Ready};
-use crate::poll::{PollCalled, PollOption, Poller};
+use crate::event::{Evented, EventedId};
+use crate::poll::{Interests, PollOption, Poller};
 
 /// A User Datagram Protocol socket.
 ///
@@ -29,7 +29,7 @@ use crate::poll::{PollCalled, PollOption, Poller};
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::UdpSocket;
-/// use mio_st::poll::{Poller, PollOption};
+/// use mio_st::poll::{Interests, PollOption, Poller};
 ///
 /// // Unique ids and address for both the sender and echoer.
 /// const SENDER_ID: EventedId = EventedId(0);
@@ -52,8 +52,8 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// let mut events = Events::new();
 ///
 /// // Register our sockets
-/// poller.register(&mut sender_socket, SENDER_ID, Ready::WRITABLE, PollOption::Level)?;
-/// poller.register(&mut echoer_socket, ECHOER_ID, Ready::READABLE, PollOption::Level)?;
+/// poller.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
+/// poller.register(&mut echoer_socket, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
 ///
 /// // The message we'll send.
 /// const MSG_TO_SEND: &[u8; 11] = b"Hello world";
@@ -241,16 +241,16 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.socket.register(poller, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.socket.reregister(poller, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
-        self.socket.deregister(poller, p)
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+        self.socket.deregister(poller)
     }
 }
 
@@ -294,7 +294,7 @@ impl FromRawFd for UdpSocket {
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use mio_st::event::{Events, EventedId, Ready};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-/// use mio_st::poll::{Poller, PollOption};
+/// use mio_st::poll::{Interests, PollOption, Poller};
 ///
 /// const ECHOER_ID: EventedId = EventedId(0);
 /// const SENDER_ID: EventedId = EventedId(1);
@@ -312,8 +312,8 @@ impl FromRawFd for UdpSocket {
 /// let mut events = Events::new();
 ///
 /// // Register our echoer and sender.
-/// poller.register(&mut echoer, ECHOER_ID, Ready::READABLE, PollOption::Level)?;
-/// poller.register(&mut sender, SENDER_ID, Ready::WRITABLE, PollOption::Level)?;
+/// poller.register(&mut echoer, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
+/// poller.register(&mut sender, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
 ///
 /// loop {
 ///     poller.poll(&mut events, None)?;
@@ -465,16 +465,16 @@ impl ConnectedUdpSocket {
 }
 
 impl Evented for ConnectedUdpSocket {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.socket.register(poller, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.socket.reregister(poller, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
-        self.socket.deregister(poller, p)
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+        self.socket.deregister(poller)
     }
 }
 
