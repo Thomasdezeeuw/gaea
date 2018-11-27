@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::TcpListener;
-use mio_st::poll::{PollOption, Poller};
+use mio_st::poll::{Interests, PollOption, Poller};
 
 mod util;
 
@@ -441,6 +441,18 @@ fn tcp_listener_oneshot_poll_option_reregister() {
     }
 
     thread_handle.join().unwrap();
+}
+
+#[test]
+#[should_panic(expected = "TcpListener only needs readable interests")]
+fn tcp_listener_writable_interests() {
+    init();
+
+    let mut listener = TcpListener::bind(any_local_address()).unwrap();
+
+    let mut poller = Poller::new().unwrap();
+    poller.register(&mut listener, EventedId(0), Interests::WRITABLE, PollOption::Level)
+        .unwrap();
 }
 
 /// Start `n_connections` connections in a different thread to the provided
