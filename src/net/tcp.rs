@@ -274,10 +274,12 @@ impl TcpListener {
 
 impl Evented for TcpListener {
     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
         self.inner.register(poller, id, interests, opt)
     }
 
     fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
         self.inner.reregister(poller, id, interests, opt)
     }
 
