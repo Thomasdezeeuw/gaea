@@ -109,7 +109,7 @@ fn new_epoll_event(interests: Interests, opt: PollOption, id: EventedId) -> libc
     }
 }
 
-fn to_epoll_events(interests: Ready, opt: PollOption) -> libc::uint32_t {
+fn to_epoll_events(interests: Interests, opt: PollOption) -> libc::uint32_t {
     let mut events = 0;
 
     if interests.is_readable() {
