@@ -96,6 +96,8 @@ fn tcp_stream_nodelay() {
 fn tcp_stream_peek() {
     let (mut poller, mut events) = init_with_poller();
 
+    let barrier = Arc::new(Barrier::new(2));
+    let barrier2 = barrier.clone();
     let (sender, receiver) = channel();
     let thread_handle = thread::spawn(move || {
         let listener = net::TcpListener::bind(any_local_address()).unwrap();
@@ -104,6 +106,9 @@ fn tcp_stream_peek() {
 
         let (mut stream, _) = listener.accept().unwrap();
         stream.write(DATA).unwrap();
+
+        drop(stream);
+        barrier2.wait();
     });
 
     let address = receiver.recv().unwrap();
@@ -124,8 +129,9 @@ fn tcp_stream_peek() {
     assert_eq!(n, DATA.len());
     assert_eq!(buf[0..n], DATA[..]);
 
-    let n = stream.read(&mut buf).unwrap();
-    assert_eq!(n, 0);
+    // Make sure the connection is dropped.
+    barrier.wait();
+    assert_eq!(stream.read(&mut buf).unwrap(), 0);
 
     thread_handle.join().expect("unable to join thread");
 }
