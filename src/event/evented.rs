@@ -1,7 +1,7 @@
 use std::io;
 
-use crate::event::{EventedId, Ready};
-use crate::poll::{PollCalled, PollOption, Poller};
+use crate::event::EventedId;
+use crate::poll::{Interests, PollOption, Poller};
 
 /// A value that may be registered with `Poller`.
 ///
@@ -40,9 +40,9 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// ```
 /// use std::io;
 ///
-/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::event::{Evented, EventedId};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poller, PollOption, PollCalled};
+/// use mio_st::poll::{Interests, PollOption, Poller};
 ///
 /// pub struct MyEvented {
 ///     /// Our system handle that implements `Evented`.
@@ -50,19 +50,19 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`.
-///         self.socket.register(poller, id, interests, opt, p)
+///         self.socket.register(poller, id, interests, opt)
 ///     }
 ///
-///     fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
+///     fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`.
-///         self.socket.reregister(poller, id, interests, opt, p)
+///         self.socket.reregister(poller, id, interests, opt)
 ///     }
 ///
-///     fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
+///     fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
 ///         // Delegate the `deregister` call to `socket`.
-///         self.socket.deregister(poller, p)
+///         self.socket.deregister(poller)
 ///     }
 /// }
 /// ```
@@ -73,7 +73,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poller.register`]: ../poll/struct.Poller.html#method.register
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>;
 
     /// Reregister `self` with the given `Poller` instance.
     ///
@@ -81,7 +81,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poller.reregister`]: ../poll/struct.Poller.html#method.reregister
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()>;
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>;
 
     /// Deregister `self` from the given `Poller` instance
     ///
@@ -89,5 +89,5 @@ pub trait Evented {
     /// instead.
     ///
     /// [`Poller.deregister`]: ../poll/struct.Poller.html#method.deregister
-    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()>;
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()>;
 }

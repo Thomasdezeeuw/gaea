@@ -4,8 +4,8 @@ use std::net::{Shutdown, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::sys;
-use crate::event::{Evented, EventedId, Ready};
-use crate::poll::{Poller, PollCalled, PollOption};
+use crate::event::{Evented, EventedId};
+use crate::poll::{Interests, PollOption, Poller};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -23,7 +23,7 @@ use crate::poll::{Poller, PollCalled, PollOption};
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Events, EventedId, Ready};
+/// use mio_st::event::{Events, EventedId};
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poller, PollOption};
 ///
@@ -34,7 +34,7 @@ use crate::poll::{Poller, PollCalled, PollOption};
 /// let mut events = Events::new();
 ///
 /// // Register the socket with `Poller`.
-/// poller.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)?;
+/// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
 ///
 /// poller.poll(&mut events, None)?;
 ///
@@ -136,16 +136,16 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.register(poller, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.inner.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.reregister(poller, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.inner.reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
-        self.inner.deregister(poller, p)
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+        self.inner.deregister(poller)
     }
 }
 
@@ -189,7 +189,7 @@ impl AsRawFd for TcpStream {
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Events, EventedId, Ready};
+/// use mio_st::event::{Events, EventedId};
 /// use mio_st::net::TcpListener;
 /// use mio_st::poll::{Poller, PollOption};
 ///
@@ -200,7 +200,7 @@ impl AsRawFd for TcpStream {
 /// let mut events = Events::new();
 ///
 /// // Register the socket with `Poller`
-/// poller.register(&mut listener, EventedId(0), Ready::all(), PollOption::Edge)?;
+/// poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)?;
 ///
 /// poller.poll(&mut events, Some(Duration::from_millis(100)))?;
 ///
@@ -273,16 +273,16 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.register(poller, id, interests, opt, p)
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.inner.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-        self.inner.reregister(poller, id, interests, opt, p)
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.inner.reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
-        self.inner.deregister(poller, p)
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+        self.inner.deregister(poller)
     }
 }
 

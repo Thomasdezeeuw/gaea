@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::net::TcpStream;
-use mio_st::poll::PollOption;
+use mio_st::poll::{Interests, PollOption};
 
 mod util;
 
@@ -42,7 +42,7 @@ fn tcp_stream() {
     let listener_address = receiver.recv().unwrap();
     let mut stream = TcpStream::connect(listener_address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     // Connect is non-blocking, so wait until the other thread accepted the
@@ -114,7 +114,7 @@ fn tcp_stream_peek() {
     let address = receiver.recv().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::READABLE),
@@ -145,7 +145,7 @@ fn tcp_stream_shutdown_read() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.reregister(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)
+    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -170,7 +170,7 @@ fn tcp_stream_shutdown_write() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.reregister(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)
+    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -195,7 +195,7 @@ fn tcp_stream_shutdown_both() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.reregister(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)
+    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -234,7 +234,7 @@ fn tcp_stream_read() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)
+    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::READABLE),
@@ -274,7 +274,7 @@ fn tcp_stream_write() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge)
+    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -316,7 +316,7 @@ fn tcp_stream_deregister() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge).unwrap();
+    poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge).unwrap();
     poller.deregister(&mut stream).unwrap();
 
     // Shouldn't get any events after deregistering.
@@ -339,9 +339,9 @@ fn tcp_stream_reregister() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Ready::WRITABLE, PollOption::Edge).unwrap();
+    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge).unwrap();
     poller.deregister(&mut stream).unwrap();
-    poller.reregister(&mut stream, EventedId(1), Ready::WRITABLE, PollOption::Edge).unwrap();
+    poller.reregister(&mut stream, EventedId(1), Interests::WRITABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(1), Ready::WRITABLE),
@@ -375,7 +375,7 @@ fn tcp_stream_edge_poll_option_drain() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)
+    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     let mut seen_events = 0;
@@ -429,7 +429,7 @@ fn tcp_stream_edge_poll_option_no_drain() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Ready::READABLE, PollOption::Edge)
+    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     let mut seen_event = false;
@@ -475,7 +475,7 @@ fn tcp_stream_level_poll_option() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Ready::READABLE, PollOption::Level)
+    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Level)
         .expect("unable to register TCP stream");
 
     let mut seen_events = 0;
@@ -529,7 +529,7 @@ fn tcp_stream_oneshot_poll_option() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, ID, Ready::READABLE, PollOption::Oneshot).unwrap();
+    poller.register(&mut stream, ID, Interests::READABLE, PollOption::Oneshot).unwrap();
 
     let mut seen_event = false;
     for _ in 0..2 {
@@ -571,7 +571,7 @@ fn tcp_stream_oneshot_poll_option_reregister() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, ID, Ready::READABLE, PollOption::Oneshot).unwrap();
+    poller.register(&mut stream, ID, Interests::READABLE, PollOption::Oneshot).unwrap();
 
     let mut seen_event = false;
     for _ in 0..2 {
@@ -590,7 +590,7 @@ fn tcp_stream_oneshot_poll_option_reregister() {
     barrier.wait();
 
     // Reregister the listener and we expect to see more events.
-    poller.reregister(&mut stream, ID2, Ready::READABLE, PollOption::Oneshot).unwrap();
+    poller.reregister(&mut stream, ID2, Interests::READABLE, PollOption::Oneshot).unwrap();
 
     seen_event = false;
     for _ in 0..2 {

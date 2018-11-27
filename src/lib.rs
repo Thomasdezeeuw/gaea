@@ -38,7 +38,7 @@
 //! use std::io;
 //! use std::collections::HashMap;
 //!
-//! use mio_st::event::{Events, EventedId, Ready};
+//! use mio_st::event::{Events, EventedId};
 //! use mio_st::net::{TcpListener, TcpStream};
 //! use mio_st::poll::{Poller, PollOption};
 //!
@@ -57,7 +57,7 @@
 //!
 //! // Register our TCP listener with `Poller`, this allows us to receive
 //! // notifications about incoming connections.
-//! poller.register(&mut server, SERVER_ID, Ready::READABLE, PollOption::Edge)?;
+//! poller.register(&mut server, SERVER_ID, TcpListener::INTERESTS, PollOption::Edge)?;
 //!
 //! // A hashmap with `EventedId` -> `TcpStream` connections.
 //! let mut connections = HashMap::with_capacity(512);
@@ -112,8 +112,7 @@
 //!
 //!         // Register the TCP connection so we can handle events for it as
 //!         // well.
-//!         let interests = Ready::READABLE | Ready::WRITABLE | Ready::ERROR;
-//!         poller.register(&mut connection, id, interests, PollOption::Edge)?;
+//!         poller.register(&mut connection, id, TcpStream::INTERESTS, PollOption::Edge)?;
 //!
 //!         // Store our connection so we can access it later.
 //!         connections.insert(id, connection);

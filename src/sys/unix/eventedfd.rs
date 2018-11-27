@@ -1,8 +1,8 @@
 use std::io;
 use std::os::unix::io::RawFd;
 
-use crate::event::{Evented, EventedId, Ready};
-use crate::poll::{PollCalled, PollOption, Poller};
+use crate::event::{Evented, EventedId};
+use crate::poll::{Interests, PollOption, Poller};
 
 /// Adapter for a `RawFd` providing an [`Evented`] implementation.
 ///
@@ -37,7 +37,7 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// use std::os::unix::io::AsRawFd;
 ///
 /// use mio_st::event::{Evented, EventedId, Ready};
-/// use mio_st::poll::{Poller, PollOption};
+/// use mio_st::poll::{Interests, PollOption, Poller};
 /// use mio_st::unix::EventedFd;
 ///
 /// // Bind a listener from the standard library.
@@ -46,7 +46,7 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// let mut poller = Poller::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poller.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Ready::READABLE, PollOption::Edge)?;
+/// poller.register(&mut EventedFd(&listener.as_raw_fd()), EventedId(0), Interests::READABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -58,7 +58,7 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// use std::os::unix::io::RawFd;
 ///
 /// use mio_st::event::{Evented, EventedId, Ready};
-/// use mio_st::poll::{Poller, PollOption, PollCalled};
+/// use mio_st::poll::{Interests, PollOption, Poller};
 /// use mio_st::unix::EventedFd;
 ///
 /// pub struct MyIo {
@@ -66,16 +66,16 @@ use crate::poll::{PollCalled, PollOption, Poller};
 /// }
 ///
 /// impl Evented for MyIo {
-///     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-///         EventedFd(&self.fd).register(poller, id, interests, opt, p)
+///     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+///         EventedFd(&self.fd).register(poller, id, interests, opt)
 ///     }
 ///
-///     fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
-///         EventedFd(&self.fd).reregister(poller, id, interests, opt, p)
+///     fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+///         EventedFd(&self.fd).reregister(poller, id, interests, opt)
 ///     }
 ///
-///     fn deregister(&mut self, poller: &mut Poller, p: PollCalled) -> io::Result<()> {
-///         EventedFd(&self.fd).deregister(poller, p)
+///     fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+///         EventedFd(&self.fd).deregister(poller)
 ///     }
 /// }
 /// ```
@@ -83,15 +83,15 @@ use crate::poll::{PollCalled, PollOption, Poller};
 pub struct EventedFd<'a>(pub &'a RawFd);
 
 impl<'a> Evented for EventedFd<'a> {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
+    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         poller.selector().register(*self.0, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         poller.selector().reregister(*self.0, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller, _: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
         poller.selector().deregister(*self.0)
     }
 }

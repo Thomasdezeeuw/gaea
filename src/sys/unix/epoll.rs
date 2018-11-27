@@ -6,7 +6,7 @@ use libc;
 use log::error;
 
 use crate::event::{Event, EventedId, Events, Ready};
-use crate::poll::PollOption;
+use crate::poll::{Interests, PollOption};
 use crate::sys::EVENTS_CAP;
 
 #[derive(Debug)]
@@ -46,12 +46,12 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()> {
+    pub fn register(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         let mut epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_ADD, fd, &mut epoll_event)
     }
 
-    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Ready, opt: PollOption) -> io::Result<()> {
+    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         let mut epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_MOD, fd, &mut epoll_event)
     }
@@ -102,7 +102,7 @@ fn contains_flag(flags: libc::uint32_t, flag: libc::c_int) -> bool {
 }
 
 /// Create a new `epoll_event`.
-fn new_epoll_event(interests: Ready, opt: PollOption, id: EventedId) -> libc::epoll_event {
+fn new_epoll_event(interests: Interests, opt: PollOption, id: EventedId) -> libc::epoll_event {
     libc::epoll_event {
         events: to_epoll_events(interests, opt),
         u64: id.0 as u64,
@@ -118,14 +118,6 @@ fn to_epoll_events(interests: Ready, opt: PollOption) -> libc::uint32_t {
 
     if interests.is_writable() {
         events |= libc::EPOLLOUT;
-    }
-
-    if interests.is_error() {
-        events |= libc::EPOLLERR;
-    }
-
-    if interests.is_hup() {
-        events |= libc::EPOLLRDHUP;
     }
 
     events |= match opt {

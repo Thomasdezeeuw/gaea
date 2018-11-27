@@ -4,7 +4,7 @@ use std::thread::sleep;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{Event, EventedId, Events, Evented, Ready};
-use mio_st::poll::{Poller, PollOption, PollCalled};
+use mio_st::poll::{Interests, PollOption, Poller};
 
 mod util;
 
@@ -17,8 +17,8 @@ const EVENTS_CAP: usize = 256;
 const MARGIN: Duration = Duration::from_millis(10);
 
 struct TestEvented {
-    registrations: Vec<(EventedId, Ready, PollOption)>,
-    reregistrations: Vec<(EventedId, Ready, PollOption)>,
+    registrations: Vec<(EventedId, Interests, PollOption)>,
+    reregistrations: Vec<(EventedId, Interests, PollOption)>,
     deregister_count: usize,
 }
 
@@ -33,17 +33,17 @@ impl TestEvented {
 }
 
 impl Evented for TestEvented {
-    fn register(&mut self, _poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, _poll: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.registrations.push((id, interests, opt));
         Ok(())
     }
 
-    fn reregister(&mut self, _poll: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, _p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, _poll: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.reregistrations.push((id, interests, opt));
         Ok(())
     }
 
-    fn deregister(&mut self, _poll: &mut Poller, _p: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, _poll: &mut Poller) -> io::Result<()> {
         self.deregister_count += 1;
         Ok(())
     }
@@ -56,7 +56,7 @@ fn poller_registration() {
 
     let mut handle = TestEvented::new();
     let id = EventedId(0);
-    let interests = Ready::READABLE;
+    let interests = Interests::READABLE;
     let opt = PollOption::Edge;
     poller.register(&mut handle, id, interests, opt)
         .expect("unable to register evented handle");
@@ -66,7 +66,7 @@ fn poller_registration() {
     assert_eq!(handle.deregister_count, 0);
 
     let re_id = EventedId(0);
-    let re_interests = Ready::READABLE;
+    let re_interests = Interests::READABLE;
     let re_opt = PollOption::Edge;
     poller.reregister(&mut handle, re_id, re_interests, re_opt)
         .expect("unable to reregister evented handle");
@@ -84,15 +84,15 @@ fn poller_registration() {
 struct ErroneousTestEvented;
 
 impl Evented for ErroneousTestEvented {
-    fn register(&mut self, _poll: &mut Poller, _id: EventedId, _interests: Ready, _opt: PollOption, _p: PollCalled) -> io::Result<()> {
+    fn register(&mut self, _poll: &mut Poller, _id: EventedId, _interests: Interests, _opt: PollOption) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "register"))
     }
 
-    fn reregister(&mut self, _poll: &mut Poller, _id: EventedId, _interests: Ready, _opt: PollOption, _p: PollCalled) -> io::Result<()> {
+    fn reregister(&mut self, _poll: &mut Poller, _id: EventedId, _interests: Interests, _opt: PollOption) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "reregister"))
     }
 
-    fn deregister(&mut self, _poll: &mut Poller, _p: PollCalled) -> io::Result<()> {
+    fn deregister(&mut self, _poll: &mut Poller) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "deregister"))
     }
 }
@@ -104,31 +104,11 @@ fn poller_erroneous_registration() {
 
     let mut handle = ErroneousTestEvented;
     let id = EventedId(0);
-    let interests = Ready::READABLE;
+    let interests = Interests::READABLE;
     let opt = PollOption::Edge;
     assert_error(poller.register(&mut handle, id, interests, opt), "register");
     assert_error(poller.reregister(&mut handle, id, interests, opt), "reregister");
     assert_error(poller.deregister(&mut handle), "deregister");
-}
-
-#[test]
-fn poller_register_empty_interests() {
-    init();
-    let mut poller = Poller::new().expect("unable to create Poller instance");
-
-    let mut handle = TestEvented::new();
-    let id = EventedId(0);
-    let interests = Ready::empty();
-    let opt = PollOption::Edge;
-    assert_error(poller.register(&mut handle, id, interests, opt),
-                 "registering with empty interests");
-
-    assert_error(poller.reregister(&mut handle, id, interests, opt),
-                 "registering with empty interests");
-
-    assert!(handle.registrations.is_empty());
-    assert!(handle.reregistrations.is_empty());
-    assert_eq!(handle.deregister_count, 0);
 }
 
 #[test]
@@ -138,30 +118,20 @@ fn poller_notify() {
     // Single event.
     let id = EventedId(0);
     let ready = Ready::READABLE;
-    poller.notify(id, ready).expect("unable to notify");
+    poller.notify(id, ready);
     expect_userspace_events(&mut poller, &mut events, vec![Event::new(id, ready)]);
 
     // Multiple events.
-    poller.notify(EventedId(0), Ready::READABLE).unwrap();
-    poller.notify(EventedId(0), Ready::WRITABLE).unwrap();
-    poller.notify(EventedId(0), Ready::READABLE | Ready::WRITABLE).unwrap();
-    poller.notify(EventedId(1), Ready::all()).unwrap();
+    poller.notify(EventedId(0), Ready::READABLE);
+    poller.notify(EventedId(0), Ready::WRITABLE);
+    poller.notify(EventedId(0), Ready::READABLE | Ready::WRITABLE);
+    poller.notify(EventedId(1), Ready::all());
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::READABLE),
         Event::new(EventedId(0), Ready::WRITABLE),
         Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE),
         Event::new(EventedId(1), Ready::all()),
     ]);
-}
-
-#[test]
-fn poller_notify_empty_interests() {
-    init();
-    let mut poller = Poller::new().expect("unable to create Poller instance");
-
-    let id = EventedId(0);
-    let ready = Ready::empty();
-    assert_error(poller.notify(id, ready), "registering with empty interests");
 }
 
 #[test]
@@ -296,8 +266,7 @@ fn poller_deterime_timeout() {
         }
 
         if add_event {
-            poller.notify(EventedId(1), Ready::READABLE)
-                .expect("can't add user space event");
+            poller.notify(EventedId(1), Ready::READABLE);
         }
 
         let start = Instant::now();
@@ -316,8 +285,7 @@ fn poller_poll_userspace_internal() {
     expect_events(&mut poller, &mut events, Vec::new());
 
     // Single event, fits in `Events`.
-    poller.notify(EventedId(0), Ready::READABLE)
-        .expect("unable to add user space event");
+    poller.notify(EventedId(0), Ready::READABLE);
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::READABLE)
     ]);
@@ -326,8 +294,7 @@ fn poller_poll_userspace_internal() {
     let expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::READABLE))
         .take(EVENTS_CAP)
         .map(|event| {
-            poller.notify(event.id(), event.readiness())
-                .expect("unable to add user space event");
+            poller.notify(event.id(), event.readiness());
             event
         })
         .collect();
@@ -339,8 +306,7 @@ fn poller_poll_userspace_internal() {
     let mut expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::READABLE))
         .take(EVENTS_CAP + 1)
         .map(|event| {
-            poller.notify(event.id(), event.readiness())
-                .expect("unable to add user space event");
+            poller.notify(event.id(), event.readiness());
             event
         })
         .collect();
