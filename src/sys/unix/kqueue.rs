@@ -89,16 +89,7 @@ impl Selector {
                 kevents.as_mut_ptr(), events_cap, timespec_ptr)
         };
         match n_events {
-            -1 => {
-                let err = io::Error::last_os_error();
-                match err.raw_os_error() {
-                    // The call was interrupted, try again.
-                    // FIXME: the timeout should be reduced here, since time has
-                    // passed.
-                    Some(libc::EINTR) => self.select(events, timeout),
-                    _ => Err(err),
-                }
-            },
+            -1 => Err(io::Error::last_os_error()),
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
                 for kevent in kevents.iter().take(n as usize) {
