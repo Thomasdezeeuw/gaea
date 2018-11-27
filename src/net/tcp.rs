@@ -1,5 +1,5 @@
 use std::io::{self, Read, Write};
-use std::net::{self, Shutdown, SocketAddr};
+use std::net::{Shutdown, SocketAddr};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
