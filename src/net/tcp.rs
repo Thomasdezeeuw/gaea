@@ -48,6 +48,10 @@ pub struct TcpStream {
 }
 
 impl TcpStream {
+    /// The interests to use when registering to receive both readable and
+    /// writable events.
+    pub const INTERESTS: Interests = Interests::BOTH;
+
     /// Create a new TCP stream and issue a non-blocking connect to the
     /// specified address.
     pub fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
@@ -210,6 +214,10 @@ pub struct TcpListener {
 }
 
 impl TcpListener {
+    /// The interests to use when registering to receive acceptable connections
+    /// events.
+    pub const INTERESTS: Interests = Interests::READABLE;
+
     /// Convenience method to bind a new TCP listener to the specified address
     /// to receive new connections.
     pub fn bind(address: SocketAddr) -> io::Result<TcpListener> {

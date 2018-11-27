@@ -88,6 +88,11 @@ pub struct Receiver {
     inner: EventedIo,
 }
 
+impl Receiver {
+    /// The interests to use when registering to receive readable events.
+    pub const INTERESTS: Interests = Interests::READABLE;
+}
+
 impl Evented for Receiver {
     fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Ready, opt: PollOption, p: PollCalled) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
@@ -130,6 +135,11 @@ impl Read for Receiver {
 #[derive(Debug)]
 pub struct Sender {
     inner: EventedIo,
+}
+
+impl Sender {
+    /// The interests to use when registering to receive writable events.
+    pub const INTERESTS: Interests = Interests::WRITABLE;
 }
 
 impl Evented for Sender {

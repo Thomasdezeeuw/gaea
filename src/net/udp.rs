@@ -92,6 +92,10 @@ pub struct UdpSocket {
 }
 
 impl UdpSocket {
+    /// The interests to use when registering to receive both readable and
+    /// writable events.
+    pub const INTERESTS: Interests = Interests::BOTH;
+
     /// Creates a UDP socket and binds it to the given address.
     ///
     /// # Examples
@@ -338,6 +342,10 @@ pub struct ConnectedUdpSocket {
 }
 
 impl ConnectedUdpSocket {
+    /// The interests to use when registering to receive both readable and
+    /// writable events.
+    pub const INTERESTS: Interests = Interests::BOTH;
+
     /// Creates a connected UDP socket.
     ///
     /// This method first binds a UDP socket to the `bind_addr`ess, then connects

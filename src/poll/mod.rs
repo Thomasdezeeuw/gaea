@@ -257,7 +257,9 @@ impl Poller {
     /// specified by this argument. If a socket is registered with [readable]
     /// interests and the socket becomes writable, no event will be returned
     /// from [`poll`]. The readiness interests for an `Evented` handle can be
-    /// changed at any time by calling [`reregister`].
+    /// changed at any time by calling [`reregister`]. Most types have a
+    /// associated constant named `INTERESTS` which provide a good default
+    /// value.
     ///
     /// `opt`: Specifies the registration option. Just like the interests, the
     /// option can be changed for an `Evented` handle at any time by calling

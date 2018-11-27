@@ -27,11 +27,9 @@ impl Interests {
     /// Writable interest.
     pub const WRITABLE: Interests = Interests(unsafe { NonZeroU8::new_unchecked(WRITABLE) });
 
-    /*
     /// Both readable and writable interests, not public because `Interests`
     /// might be expanded in the future.
     pub(crate) const BOTH: Interests = Interests(unsafe { NonZeroU8::new_unchecked(READABLE | WRITABLE) });
-    */
 
     /// Returns true if the value includes readable interest.
     #[inline]
