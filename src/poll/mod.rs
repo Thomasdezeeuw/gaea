@@ -16,8 +16,10 @@ use log::{trace, debug};
 use crate::event::{Event, Evented, EventedId, Events, Ready};
 use crate::sys;
 
+mod interests;
 mod option;
 
+pub use self::interests::Interests;
 pub use self::option::PollOption;
 
 // Poller uses three subsystems to bring a complete event system to the user.

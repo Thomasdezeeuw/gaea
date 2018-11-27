@@ -156,6 +156,6 @@ pub mod unix {
 }
 
 #[doc(no_inline)]
-pub use crate::poll::{Poller, PollOption};
+pub use crate::poll::{Interests, Poller, PollOption};
 #[doc(no_inline)]
 pub use crate::event::{Event, EventedId, Events, Ready};
