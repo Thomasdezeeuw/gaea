@@ -15,12 +15,11 @@ use crate::poll::{PollCalled, PollOption, Poller};
 ///
 /// # Implementing `Evented`
 ///
-/// There are two types of `Evented` values.
-///
-/// * **System** handles, which are backed by sockets or other system handles.
-///   These `Evented` handles will be monitored by the system selector. In this
-///   case, an implementation of `Evented` delegates to a lower level handle.
-///   Examples of this are [`TcpStream`]s, or the *unix only* [`EventedFd`].
+/// Implementation of `Evented` are always backed by **system** handles, which
+/// are backed by sockets or other system handles. The `Evented` handles will be
+/// monitored by the system selector. In this case, an implementation of
+/// `Evented` delegates to a lower level handle. Examples of this are
+/// [`TcpStream`]s, or the *unix only* [`EventedFd`].
 ///
 /// [`TcpStream`]: ../net/struct.TcpStream.html
 /// [`EventedFd`]: ../unix/struct.EventedFd.html
