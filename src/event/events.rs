@@ -165,7 +165,7 @@ mod tests {
         assert_eq!(events.capacity_left(), EVENTS_CAP);
         assert_eq!((&mut events).len(), 0); // ExactSizeIterator implementation.
 
-        events.push(Event::new(EventedId(0), Ready::all()));
+        events.push(Event::new(EventedId(0), Ready::READABLE));
         assert_eq!(events.len(), 1);
         assert!(!events.is_empty());
         assert_eq!(events.capacity(), EVENTS_CAP);
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn clear() {
         let mut events = Events::new();
-        events.push(Event::new(EventedId(0), Ready::all()));
+        events.push(Event::new(EventedId(0), Ready::ERROR));
 
         events.clear();
         assert_eq!(events.len(), 0);
@@ -200,10 +200,10 @@ mod tests {
     #[test]
     fn extend_many() {
         let extra_events: [Event; 4] = [
-            Event::new(EventedId(0), Ready::all()),
-            Event::new(EventedId(1), Ready::all()),
-            Event::new(EventedId(2), Ready::all()),
-            Event::new(EventedId(3), Ready::all()),
+            Event::new(EventedId(0), Ready::READABLE),
+            Event::new(EventedId(1), Ready::READABLE),
+            Event::new(EventedId(2), Ready::READABLE),
+            Event::new(EventedId(3), Ready::READABLE),
         ];
 
         let mut events = Events::new();
@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn extend_no_space() {
-        let iter = repeat(Event::new(EventedId(0), Ready::all()));
+        let iter = repeat(Event::new(EventedId(0), Ready::READABLE));
         let extra_events: Vec<Event> = iter.take(EVENTS_CAP + 1).collect();
 
         let mut events = Events::new();
@@ -234,10 +234,10 @@ mod tests {
     #[test]
     fn iter() {
         let extra_events: [Event; 4] = [
-            Event::new(EventedId(0), Ready::all()),
-            Event::new(EventedId(1), Ready::all()),
-            Event::new(EventedId(2), Ready::all()),
-            Event::new(EventedId(3), Ready::all()),
+            Event::new(EventedId(0), Ready::WRITABLE),
+            Event::new(EventedId(1), Ready::WRITABLE),
+            Event::new(EventedId(2), Ready::WRITABLE),
+            Event::new(EventedId(3), Ready::WRITABLE),
         ];
 
         let mut events = Events::new();
@@ -246,7 +246,7 @@ mod tests {
         let mut current_id = 0;
         for event in &mut events.take(2) {
             assert_eq!(event.id(), EventedId(current_id));
-            assert_eq!(event.readiness(), Ready::all());
+            assert_eq!(event.readiness(), Ready::WRITABLE);
             current_id += 1;
         }
 
@@ -258,7 +258,7 @@ mod tests {
 
         for event in &mut events {
             assert_eq!(event.id(), EventedId(current_id));
-            assert_eq!(event.readiness(), Ready::all());
+            assert_eq!(event.readiness(), Ready::WRITABLE);
             current_id += 1;
         }
 
@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn fused_iter() {
         let mut events = Events::new();
-        events.push(Event::new(EventedId(0), Ready::all()));
+        events.push(Event::new(EventedId(0), Ready::ERROR));
 
         assert_eq!((&mut events).count(), 1);
         assert_eq!(events.len(), 0);
