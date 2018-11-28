@@ -454,7 +454,6 @@ impl Poller {
     /// # }
     /// ```
     pub fn notify(&mut self, id: EventedId, ready: Ready) {
-        debug_assert!(!ready.is_empty(), "notifying with empty readiness");
         trace!("adding user space event: id={}, ready={:?}", id, ready);
         self.userspace_events.push(Event::new(id, ready));
     }

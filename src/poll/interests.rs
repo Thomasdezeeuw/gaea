@@ -35,13 +35,13 @@ impl Interests {
     /// Returns true if the value includes readable interest.
     #[inline]
     pub fn is_readable(self) -> bool {
-        (self.0.get() & READABLE) != 0
+        self.0.get() & READABLE != 0
     }
 
     /// Returns true if the value includes writable interest.
     #[inline]
     pub fn is_writable(self) -> bool {
-        (self.0.get() & WRITABLE) != 0
+        self.0.get() & WRITABLE != 0
     }
 }
 

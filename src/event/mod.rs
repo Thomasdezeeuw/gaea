@@ -61,22 +61,25 @@ mod tests {
 
     #[test]
     fn event() {
-        let event = Event::new(EventedId(0), Ready::all());
+        let event = Event::new(EventedId(0), Ready::READABLE);
         assert_eq!(event.id(), EventedId(0));
-        assert_eq!(event.readiness(), Ready::all());
+        assert_eq!(event.readiness(), Ready::READABLE);
     }
 
     #[test]
     fn equality() {
-        let event = Event::new(EventedId(0), Ready::all());
+        let event = Event::new(EventedId(0), Ready::WRITABLE);
         assert_eq!(event, event.clone());
 
-        let event2 = Event::new(EventedId(0), Ready::all());
+        // Same
+        let event2 = Event::new(EventedId(0), Ready::WRITABLE);
         assert_eq!(event, event2);
 
-        let event3 = Event::new(EventedId(1), Ready::all());
+        // Different id.
+        let event3 = Event::new(EventedId(1), Ready::WRITABLE);
         assert_ne!(event, event3);
 
+        // Different readiness.
         let event4 = Event::new(EventedId(0), Ready::READABLE);
         assert_ne!(event, event4);
     }

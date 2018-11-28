@@ -125,12 +125,12 @@ fn poller_notify() {
     poller.notify(EventedId(0), Ready::READABLE);
     poller.notify(EventedId(0), Ready::WRITABLE);
     poller.notify(EventedId(0), Ready::READABLE | Ready::WRITABLE);
-    poller.notify(EventedId(1), Ready::all());
+    poller.notify(EventedId(1), Ready::READABLE | Ready::WRITABLE | Ready::ERROR);
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::READABLE),
         Event::new(EventedId(0), Ready::WRITABLE),
         Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE),
-        Event::new(EventedId(1), Ready::all()),
+        Event::new(EventedId(1), Ready::READABLE | Ready::WRITABLE | Ready::ERROR),
     ]);
 }
 
