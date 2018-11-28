@@ -69,6 +69,23 @@ mod tests {
     use crate::poll::Interests;
 
     #[test]
+    fn is_tests() {
+        assert!(Interests::READABLE.is_readable());
+        assert!(!Interests::WRITABLE.is_readable());
+        assert!(!Interests::READABLE.is_writable());
+        assert!(Interests::WRITABLE.is_writable());
+        assert!(Interests::BOTH.is_readable());
+        assert!(Interests::BOTH.is_readable());
+    }
+
+    #[test]
+    fn bit_or() {
+        let interests = Interests::READABLE | Interests::WRITABLE;
+        assert!(interests.is_readable());
+        assert!(interests.is_writable());
+    }
+
+    #[test]
     fn fmt_debug() {
         assert_eq!(format!("{:?}", Interests::READABLE), "READABLE");
         assert_eq!(format!("{:?}", Interests::WRITABLE), "WRITABLE");
