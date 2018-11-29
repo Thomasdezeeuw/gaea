@@ -129,15 +129,11 @@ fn to_epoll_events(interests: Interests, opt: PollOption) -> libc::uint32_t {
 }
 
 fn epoll_ctl(epfd: RawFd, op: libc::c_int, fd: RawFd, event: *mut libc::epoll_event) -> io::Result<()> {
-    let ok = unsafe { libc::epoll_ctl(epfd, op, fd, event) };
-
-    if ok == -1 {
+    if unsafe { libc::epoll_ctl(epfd, op, fd, event) } == -1 {
         // Possible errors:
         // EBADF, EEXIST, ENOENT, EPERM: user error.
         // EINVAL, ELOOP: shouldn't happen.
         // ENOMEM, ENOSPC: can't handle.
-        //
-        // The man page doesn't mention EINTR, so we don't handle it here.
         Err(io::Error::last_os_error())
     } else {
         Ok(())

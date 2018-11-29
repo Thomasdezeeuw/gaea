@@ -243,7 +243,6 @@ fn tcp_listener_reregister() {
     let address = listener.local_addr().unwrap();
 
     poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge).unwrap();
-    poller.deregister(&mut listener).unwrap();
     poller.reregister(&mut listener, EventedId(1), TcpListener::INTERESTS, PollOption::Edge).unwrap();
 
     // Start another thread that connects to our listener.
