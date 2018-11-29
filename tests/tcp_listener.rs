@@ -47,6 +47,7 @@ fn tcp_listener() {
 }
 
 #[test]
+#[cfg(not(feature="disable_test_ipv6"))]
 fn tcp_listener_ipv6() {
     let (mut poller, mut events) = init_with_poller();
 

@@ -17,4 +17,4 @@ rust:
 script:
   - cargo --version
   - rustc --version
-  - cargo test --verbose
+  - cargo test --verbose --features disable_test_ipv6

@@ -61,6 +61,7 @@ fn tcp_stream() {
 }
 
 #[test]
+#[cfg(not(feature="disable_test_ipv6"))]
 fn tcp_stream_ipv6() {
     let (mut poller, mut events) = init_with_poller();
 
