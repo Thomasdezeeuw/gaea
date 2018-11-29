@@ -1,4 +1,4 @@
-use std::net;
+use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 use std::sync::{Arc, Barrier};
 use std::thread::{self, sleep};
@@ -17,6 +17,42 @@ fn tcp_listener() {
     let (mut poller, mut events) = init_with_poller();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
+    let address = listener.local_addr().unwrap();
+
+    poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)
+        .expect("unable to register TCP listener");
+
+    // Start another thread that connects to our listener.
+    let thread_handle = thread::spawn(move || {
+        let stream = net::TcpStream::connect(address).unwrap();
+        drop(stream);
+    });
+
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(EventedId(0), Ready::READABLE),
+    ]);
+
+    // Expect a single connection.
+    let (mut stream, peer_address) = listener.accept()
+        .expect("unable to accept connection");
+    assert!(peer_address.ip().is_loopback());
+    assert_eq!(stream.peer_addr().unwrap(), peer_address);
+    assert_eq!(stream.local_addr().unwrap(), address);
+
+    // Expect no more connections.
+    assert_would_block(listener.accept());
+
+    assert!(listener.take_error().unwrap().is_none());
+    thread_handle.join().expect("unable to join thread");
+}
+
+#[test]
+fn tcp_listener_ipv6() {
+    let (mut poller, mut events) = init_with_poller();
+
+    let address: SocketAddr = "[::1]:0".parse().unwrap();
+    assert!(address.is_ipv6());
+    let mut listener = TcpListener::bind(address).unwrap();
     let address = listener.local_addr().unwrap();
 
     poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)
