@@ -96,3 +96,8 @@ pub fn assert_would_block<T>(result: io::Result<T>) {
 pub fn any_local_address() -> SocketAddr {
     "127.0.0.1:0".parse().unwrap()
 }
+
+/// Bind to any port on localhost, using a IPv6 address.
+pub fn any_local_ipv6_address() -> SocketAddr {
+    "[::1]:0".parse().unwrap()
+}
