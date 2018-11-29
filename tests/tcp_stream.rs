@@ -188,7 +188,7 @@ fn tcp_stream_shutdown_read() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -213,7 +213,7 @@ fn tcp_stream_shutdown_write() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -238,7 +238,7 @@ fn tcp_stream_shutdown_both() {
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -277,7 +277,7 @@ fn tcp_stream_read() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::READABLE),
@@ -317,7 +317,7 @@ fn tcp_stream_write() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
     expect_events(&mut poller, &mut events, vec![
         Event::new(EventedId(0), Ready::WRITABLE),
@@ -383,7 +383,6 @@ fn tcp_stream_reregister() {
     let mut stream = TcpStream::connect(address).unwrap();
 
     poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge).unwrap();
-    poller.deregister(&mut stream).unwrap();
     poller.reregister(&mut stream, EventedId(1), Interests::WRITABLE, PollOption::Edge).unwrap();
 
     expect_events(&mut poller, &mut events, vec![
@@ -418,7 +417,7 @@ fn tcp_stream_edge_poll_option_drain() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     let mut seen_events = 0;
@@ -472,7 +471,7 @@ fn tcp_stream_edge_poll_option_no_drain() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     let mut seen_event = false;
@@ -518,7 +517,7 @@ fn tcp_stream_level_poll_option() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.reregister(&mut stream, EventedId(0), Interests::READABLE, PollOption::Level)
+    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Level)
         .expect("unable to register TCP stream");
 
     let mut seen_events = 0;
