@@ -17,6 +17,11 @@ use crate::sys::unix::EventedIo;
 /// in each process, e.g. the parent process has the sending end to send command
 /// to the child process.
 ///
+/// # Deregistering
+///
+/// Both `Sender` and `Receiver` will deregister themselves when dropped,
+/// **iff** the file descriptors are not duplicated (via `dup(2)`).
+///
 /// # Examples
 ///
 /// ```

@@ -27,6 +27,12 @@ use crate::poll::{Interests, PollOption, Poller};
 /// [`Poller.register`]: ../poll/struct.Poller.html#method.register
 /// [`EventedIo`]: struct.EventedIo.html
 ///
+/// # Deregistering
+///
+/// The file descriptor doesn't need to be deregistered **iff** the file
+/// descriptor is unique (i.e. it is not duplicated via `dup(2)`) and will be
+/// deregistered when it is `close`d.
+///
 /// # Examples
 ///
 /// Basic usage
