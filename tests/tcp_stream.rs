@@ -61,6 +61,48 @@ fn tcp_stream() {
 }
 
 #[test]
+fn tcp_stream_ipv6() {
+    let (mut poller, mut events) = init_with_poller();
+
+    let (sender, receiver) = channel();
+
+    let thread_handle = thread::spawn(move || {
+        let address: SocketAddr = "[::1]:0".parse().unwrap();
+        let listener = net::TcpListener::bind(address).unwrap();
+        let listener_address = listener.local_addr().unwrap();
+        sender.send(listener_address).unwrap();
+
+        let (stream, address) = listener.accept().unwrap();
+        assert_eq!(stream.local_addr().unwrap(), listener_address);
+
+        let peer_address = stream.peer_addr().unwrap();
+        assert_eq!(peer_address, address);
+        sender.send(peer_address).unwrap();
+    });
+
+    let listener_address = receiver.recv().unwrap();
+    assert!(listener_address.is_ipv6());
+    let mut stream = TcpStream::connect(listener_address).unwrap();
+
+    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+        .expect("unable to register TCP stream");
+
+    // Connect is non-blocking, so wait until the other thread accepted the
+    // connection at which point we should receive an event that the connection
+    // is ready.
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(EventedId(0), Ready::READABLE),
+    ]);
+    assert_eq!(stream.peer_addr().unwrap(), listener_address);
+
+    let accepted_peer_address = receiver.recv().unwrap();
+    assert_eq!(stream.local_addr().unwrap(), accepted_peer_address);
+    assert!(stream.take_error().unwrap().is_none());
+
+    thread_handle.join().expect("unable to join thread");
+}
+
+#[test]
 fn tcp_stream_ttl() {
     init();
 
