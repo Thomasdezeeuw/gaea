@@ -17,6 +17,10 @@ use crate::poll::{Interests, PollOption, Poller};
 /// [`Write`]: #impl-Write
 /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 ///
+/// # Deregistering
+///
+/// `TcpStream` will deregister itself when dropped.
+///
 /// # Examples
 ///
 /// ```
@@ -182,6 +186,13 @@ impl AsRawFd for TcpStream {
 ///
 /// [`accept`]: #method.accept
 /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
+///
+/// # Deregistering
+///
+/// `TcpListener` will deregister itself when dropped, **iff** it is not cloned
+/// (via [`try_clone`]).
+///
+/// [`try_clone`]: #method.try_clone
 ///
 /// # Examples
 ///

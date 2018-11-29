@@ -18,6 +18,10 @@ use crate::poll::{Interests, PollOption, Poller};
 /// [`peek_from`]: #method.peek_from
 /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 ///
+/// # Deregistering
+///
+/// `UdpSocket` will deregister itself when dropped.
+///
 /// # Examples
 ///
 /// An simple echo program, the `sender` sends a message and the `echoer`
@@ -287,6 +291,10 @@ impl FromRawFd for UdpSocket {
 ///
 /// [`connect`]: struct.UdpSocket.html#method.connect
 /// [`UdpSocket`]: struct.UdpSocket.html
+///
+/// # Deregistering
+///
+/// `ConnectedUdpSocket` will deregister itself when dropped.
 ///
 /// # Examples
 ///

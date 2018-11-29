@@ -18,6 +18,11 @@ use crate::sys::unix::EventedFd;
 ///
 /// `EventedIo` can be created by calling `from_raw_fd`, see the examples below.
 ///
+/// # Deregistering
+///
+/// `EventedIo` will deregister itself when dropped, **iff** the file descriptor
+/// is unique (i.e. it is not duplicated via `dup(2)`).
+///
 /// # Examples
 ///
 /// ```
