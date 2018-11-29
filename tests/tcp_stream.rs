@@ -12,7 +12,7 @@ use mio_st::poll::{Interests, PollOption};
 
 mod util;
 
-use self::util::{any_local_address, assert_would_block, expect_events, init, init_with_poller};
+use self::util::{any_local_address, any_local_ipv6_address, assert_would_block, expect_events, init, init_with_poller};
 
 /// Data used in reading and writing tests.
 const DATA: &'static [u8; 12] = b"Hello world!";
@@ -68,8 +68,7 @@ fn tcp_stream_ipv6() {
     let (sender, receiver) = channel();
 
     let thread_handle = thread::spawn(move || {
-        let address: SocketAddr = "[::1]:0".parse().unwrap();
-        let listener = net::TcpListener::bind(address).unwrap();
+        let listener = net::TcpListener::bind(any_local_ipv6_address()).unwrap();
         let listener_address = listener.local_addr().unwrap();
         sender.send(listener_address).unwrap();
 

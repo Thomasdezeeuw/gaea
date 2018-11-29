@@ -1,4 +1,4 @@
-use std::net::{self, SocketAddr};
+use std::net;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 use std::sync::{Arc, Barrier};
 use std::thread::{self, sleep};
@@ -10,7 +10,7 @@ use mio_st::poll::{Interests, PollOption, Poller};
 
 mod util;
 
-use self::util::{any_local_address, assert_would_block, expect_events, init, init_with_poller};
+use self::util::{any_local_address, any_local_ipv6_address, assert_would_block, expect_events, init, init_with_poller};
 
 #[test]
 fn tcp_listener() {
@@ -51,9 +51,7 @@ fn tcp_listener() {
 fn tcp_listener_ipv6() {
     let (mut poller, mut events) = init_with_poller();
 
-    let address: SocketAddr = "[::1]:0".parse().unwrap();
-    assert!(address.is_ipv6());
-    let mut listener = TcpListener::bind(address).unwrap();
+    let mut listener = TcpListener::bind(any_local_ipv6_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
     poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)
