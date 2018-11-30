@@ -7,8 +7,6 @@ env:
   - RUST_BACKTRACE=full
 matrix:
   fast_finish: false
-  allow_failures:
-    - os: osx
 language: rust
 rust:
 # - stable # Enable once Rust 2018 compiles on stable.
