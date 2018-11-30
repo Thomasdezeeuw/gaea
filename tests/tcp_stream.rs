@@ -445,6 +445,7 @@ fn tcp_stream_edge_poll_option_drain() {
             }
         }
     }
+    assert!(seen_events == 2, "didn't see any events");
 
     // Unblock the thread.
     barrier.wait();
@@ -491,6 +492,7 @@ fn tcp_stream_edge_poll_option_no_drain() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     // Unblock the thread.
     barrier.wait();
@@ -544,6 +546,7 @@ fn tcp_stream_level_poll_option() {
             }
         }
     }
+    assert!(seen_events == 2, "didn't see any events");
 
     // Unblock the thread.
     barrier.wait();
@@ -584,6 +587,7 @@ fn tcp_stream_oneshot_poll_option() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     barrier.wait();
     thread_handle.join().unwrap();
@@ -626,6 +630,7 @@ fn tcp_stream_oneshot_poll_option_reregister() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     // Unblock the second write.
     barrier.wait();
@@ -645,6 +650,7 @@ fn tcp_stream_oneshot_poll_option_reregister() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     barrier.wait();
     thread_handle.join().unwrap();
