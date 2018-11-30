@@ -34,8 +34,8 @@ impl UdpSocket {
         self.socket.peek_from(buf)
     }
 
-    pub fn connect(&self, addr: SocketAddr) -> io::Result<()> {
-        self.socket.connect(addr)
+    pub fn connect(&self, address: SocketAddr) -> io::Result<()> {
+        self.socket.connect(address)
     }
 
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {

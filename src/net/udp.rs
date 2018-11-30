@@ -123,13 +123,13 @@ impl UdpSocket {
 
     /// Connects the UDP socket by setting the default destination and limiting
     /// packets that are read, written and peeked to the address specified in
-    /// `addr`.
+    /// `address`.
     ///
     /// See [`ConnectedUdpSocket`] for more information.
     ///
     /// [`ConnectedUdpSocket`]: struct.ConnectedUdpSocket.html
-    pub fn connect(self, addr: SocketAddr) -> io::Result<ConnectedUdpSocket> {
-        self.socket.connect(addr)
+    pub fn connect(self, address: SocketAddr) -> io::Result<ConnectedUdpSocket> {
+        self.socket.connect(address)
             .map(|_| ConnectedUdpSocket { socket: self.socket })
     }
 
@@ -141,10 +141,10 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7003".parse()?;
-    /// let mut socket = UdpSocket::bind(addr)?;
+    /// let address = "127.0.0.1:7003".parse()?;
+    /// let mut socket = UdpSocket::bind(address)?;
     ///
-    /// assert_eq!(socket.local_addr()?, addr);
+    /// assert_eq!(socket.local_addr()?, address);
     /// #    Ok(())
     /// # }
     pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
@@ -160,14 +160,14 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7004".parse()?;
-    /// let mut socket = UdpSocket::bind(addr)?;
+    /// let address = "127.0.0.1:7004".parse()?;
+    /// let mut socket = UdpSocket::bind(address)?;
     ///
     /// // We must check if the socket is writable before calling send_to,
     /// // or we could run into a WouldBlock error.
     ///
-    /// let other_addr = "127.0.0.1:7005".parse()?;
-    /// let bytes_sent = socket.send_to(&[9; 9], other_addr)?;
+    /// let other_address = "127.0.0.1:7005".parse()?;
+    /// let bytes_sent = socket.send_to(&[9; 9], other_address)?;
     /// assert_eq!(bytes_sent, 9);
     /// #
     /// #    Ok(())
@@ -186,8 +186,8 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7006".parse()?;
-    /// let mut socket = UdpSocket::bind(addr)?;
+    /// let address = "127.0.0.1:7006".parse()?;
+    /// let mut socket = UdpSocket::bind(address)?;
     ///
     /// // We must check if the socket is readable before calling recv_from,
     /// // or we could run into a WouldBlock error.
@@ -213,8 +213,8 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7007".parse()?;
-    /// let mut socket = UdpSocket::bind(addr)?;
+    /// let address = "127.0.0.1:7007".parse()?;
+    /// let mut socket = UdpSocket::bind(address)?;
     ///
     /// // We must check if the socket is readable before calling recv_from,
     /// // or we could run into a WouldBlock error.
@@ -330,8 +330,8 @@ impl FromRawFd for UdpSocket {
 ///         match event.id() {
 ///             ECHOER_ID => {
 ///                 let mut buf = [0; 20];
-///                 let (recv_n, addr) = echoer.recv_from(&mut buf)?;
-///                 println!("Received: {:?} from {}", &buf[0..recv_n], addr);
+///                 let (recv_n, address) = echoer.recv_from(&mut buf)?;
+///                 println!("Received: {:?} from {}", &buf[0..recv_n], address);
 /// #               return Ok(());
 ///             },
 ///             SENDER_ID => {
@@ -356,12 +356,12 @@ impl ConnectedUdpSocket {
 
     /// Creates a connected UDP socket.
     ///
-    /// This method first binds a UDP socket to the `bind_addr`ess, then connects
-    /// that socket to `connect_addr`ess. The is convenience method for a call
+    /// This method first binds a UDP socket to the `bind_address`, then connects
+    /// that socket to `connect_address`. The is convenience method for a call
     /// to `UdpSocket::bind` followed by a call to `connect`.
-    pub fn connect(bind_addr: SocketAddr, connect_addr: SocketAddr) -> io::Result<ConnectedUdpSocket> {
-        UdpSocket::bind(bind_addr)
-            .and_then(|socket| socket.connect(connect_addr))
+    pub fn connect(bind_address: SocketAddr, connect_address: SocketAddr) -> io::Result<ConnectedUdpSocket> {
+        UdpSocket::bind(bind_address)
+            .and_then(|socket| socket.connect(connect_address))
     }
 
     /// Returns the socket address that this socket was created from.
@@ -372,10 +372,10 @@ impl ConnectedUdpSocket {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
-    /// let addr = "127.0.0.1:7010".parse()?;
-    /// let mut socket = UdpSocket::bind(addr)?;
+    /// let address = "127.0.0.1:7010".parse()?;
+    /// let mut socket = UdpSocket::bind(address)?;
     ///
-    /// assert_eq!(socket.local_addr()?, addr);
+    /// assert_eq!(socket.local_addr()?, address);
     /// #    Ok(())
     /// # }
     pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
