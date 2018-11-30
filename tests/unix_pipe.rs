@@ -1,4 +1,6 @@
 use std::io::{Read, Write};
+use std::thread::sleep;
+use std::time::Duration;
 
 use mio_st::event::{Event, EventedId, Ready};
 use mio_st::poll::{Interests, PollOption, Poller};
@@ -29,6 +31,9 @@ fn unix_pipe() {
     ]);
 
     assert_eq!(sender.write(DATA).unwrap(), DATA.len());
+
+    // Ensure that the sending half is ready for writing again.
+    sleep(Duration::from_millis(10));
 
     expect_events(&mut poller, &mut events, vec![
         Event::new(RECEIVER_ID, Ready::READABLE),
