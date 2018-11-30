@@ -58,8 +58,8 @@ impl TcpStream {
 
     /// Create a new TCP stream and issue a non-blocking connect to the
     /// specified address.
-    pub fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
-        sys::TcpStream::connect(addr).map(|inner| TcpStream { inner })
+    pub fn connect(address: SocketAddr) -> io::Result<TcpStream> {
+        sys::TcpStream::connect(address).map(|inner| TcpStream { inner })
     }
 
     /// Returns the socket address of the remote peer of this TCP connection.
@@ -255,7 +255,7 @@ impl TcpListener {
     ///
     /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
     pub fn accept(&mut self) -> io::Result<(TcpStream, SocketAddr)> {
-        self.inner.accept().map(|(inner, addr)| (TcpStream{ inner }, addr))
+        self.inner.accept().map(|(inner, address)| (TcpStream{ inner }, address))
     }
 
     /// Returns the local socket address of this listener.

@@ -52,8 +52,8 @@
 //! let mut events = Events::new();
 //!
 //! // Setup the server listener.
-//! let addr = "127.0.0.1:12345".parse()?;
-//! let mut server = TcpListener::bind(addr)?;
+//! let address = "127.0.0.1:12345".parse()?;
+//! let mut server = TcpListener::bind(address)?;
 //!
 //! // Register our TCP listener with `Poller`, this allows us to receive
 //! // notifications about incoming connections.
