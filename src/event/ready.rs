@@ -69,10 +69,10 @@ impl Ready {
         self.0 |= other.0;
     }
 
-    /// Whether or not all flags in `other`are contained within `self`.
+    /// Whether or not all flags in `other` are contained within `self`.
     #[inline]
     pub fn contains(self, other: Ready) -> bool {
-        self.0 & other.0 != 0
+        (self.0 & other.0) == other.0
     }
 
     /// Returns true if the value includes readable readiness.
@@ -200,6 +200,14 @@ mod tests {
             assert!(!Ready::HUP.is_timer());
             assert!(Ready::HUP.is_hup());
         }
+    }
+
+    #[test]
+    fn contains() {
+        assert!(!Ready::READABLE.contains(Ready::READABLE | Ready::WRITABLE));
+        assert!(!Ready::WRITABLE.contains(Ready::READABLE | Ready::WRITABLE));
+        assert!((Ready::READABLE | Ready::WRITABLE).contains(Ready::READABLE | Ready::WRITABLE));
+        assert!((Ready::READABLE | Ready::WRITABLE).contains(Ready::READABLE));
     }
 
     #[test]
