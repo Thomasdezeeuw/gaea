@@ -285,13 +285,13 @@ fn tcp_listener_edge_poll_option_drain() {
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
 
-    let mut seen_edge = 0;
+    let mut seen_event = 0;
     for _ in 0..2 {
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events {
             match event.id() {
-                ID if seen_edge == 0 => {
+                ID if seen_event == 0 => {
                     // After the first call to poll we expect 2 connections to
                     // be ready.
                     assert!(listener.accept().is_ok());
@@ -301,14 +301,14 @@ fn tcp_listener_edge_poll_option_drain() {
                     // Unblock the second connection.
                     barrier.wait();
 
-                    seen_edge += 2;
+                    seen_event += 2;
                 },
-                ID if seen_edge == 2 => {
+                ID if seen_event == 2 => {
                     // After the second poll we expect 1 more connection to be
                     // ready.
                     assert!(listener.accept().is_ok());
                     assert_would_block(listener.accept());
-                    seen_edge += 1;
+                    seen_event += 1;
 
                     // Unblock the connection thread.
                     barrier.wait();
@@ -318,6 +318,7 @@ fn tcp_listener_edge_poll_option_drain() {
             }
         }
     }
+    assert!(seen_event == 3, "didn't see any events");
 
     thread_handle1.join().unwrap();
     thread_handle2.join().unwrap();
@@ -337,7 +338,7 @@ fn tcp_listener_edge_poll_option_no_drain() {
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
 
-    let mut seen_edge = false;
+    let mut seen_event = false;
     for _ in 0..2 {
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
@@ -347,15 +348,16 @@ fn tcp_listener_edge_poll_option_no_drain() {
                 // poll. We'll only accept one connection and then we don't
                 // expect any more events, since we didn't drain the queue of
                 // ready connections at the listener.
-                ID if !seen_edge => {
+                ID if !seen_event => {
                     assert!(listener.accept().is_ok());
-                    seen_edge = true;
+                    seen_event = true;
                 },
                 ID => panic!("unexpected event for edge TCP listener"),
                 _ => unreachable!(),
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     thread_handle1.join().unwrap();
     thread_handle2.join().unwrap();
@@ -394,6 +396,7 @@ fn tcp_listener_level_poll_option() {
             }
         }
     }
+    assert!(seen_events == 4, "didn't see any events");
 
     thread_handle1.join().unwrap();
     thread_handle2.join().unwrap();
@@ -424,6 +427,7 @@ fn tcp_listener_oneshot_poll_option() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     thread_handle.join().unwrap();
 }
@@ -454,6 +458,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     // Give the second connection some time to run.
     sleep(Duration::from_millis(20));
@@ -473,6 +478,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     thread_handle.join().unwrap();
 }

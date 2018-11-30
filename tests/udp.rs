@@ -386,6 +386,7 @@ fn udp_socket_edge_poll_option_drain() {
             }
         }
     }
+    assert!(seen_events == 2, "didn't see any events");
 
     thread_handle.join().expect("unable to join thread");
 }
@@ -423,6 +424,7 @@ fn udp_socket_oneshot_poll_option() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     thread_handle.join().expect("unable to join thread");
 }
@@ -455,6 +457,7 @@ fn udp_socket_oneshot_poll_option_reregister() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     // Reregister the socket and we expect to see more events.
     poller.reregister(&mut socket, ID2, Interests::READABLE, PollOption::Oneshot).unwrap();
@@ -474,6 +477,7 @@ fn udp_socket_oneshot_poll_option_reregister() {
             }
         }
     }
+    assert!(seen_event, "didn't see any events");
 
     thread_handle.join().expect("unable to join thread");
 }
