@@ -14,7 +14,7 @@ include       = ["Cargo.toml", "src/**/*.rs", "LICENSE"]
 edition       = "2018"
 
 [badges]
-travis-ci = { repository = "https://github.com/Thomasdezeeuw/mio-st", branch = "master" }
+travis-ci = { repository = "Thomasdezeeuw/mio-st", branch = "master" }
 
 [dependencies]
 arrayvec = { version = "0.4.7", default-features = false, features = ["use_union"] }
