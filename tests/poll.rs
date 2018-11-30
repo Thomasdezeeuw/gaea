@@ -228,6 +228,7 @@ fn poller_add_multiple_deadlines_same_time() {
 }
 
 #[test]
+#[cfg_attr(feature="disable_test_deadline", ignore = "skipping deadline test")]
 fn poller_add_multiple_deadlines_same_id() {
     let (mut poller, mut events) = init_with_poller();
 
