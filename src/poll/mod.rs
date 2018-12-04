@@ -419,8 +419,6 @@ impl Poller {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use std::time::Duration;
-    ///
     /// use mio_st::event::{Event, Events, EventedId, Ready};
     /// use mio_st::poll::Poller;
     ///
@@ -430,7 +428,6 @@ impl Poller {
     /// // Add a custom user space notification.
     /// poller.notify(EventedId(0), Ready::READABLE);
     ///
-    /// // Set a timeout because this poll should never receive any events.
     /// poller.poll(&mut events, None)?;
     /// assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(0), Ready::READABLE));
     /// #     Ok(())
