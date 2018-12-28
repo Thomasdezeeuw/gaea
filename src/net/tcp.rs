@@ -243,6 +243,12 @@ impl TcpListener {
     /// The returned `TcpListener` is a reference to the same socket as `self`.
     /// Both handles can be used to accept incoming connections and options set
     /// on one listener will affect the other.
+    ///
+    /// # Notes
+    ///
+    /// On Linux when a `TcpListener` is cloned it must deregistered. If its not
+    /// deregistered explicitly and one listener is closed (dropped) and onother
+    /// is still open the poller will still receive events.
     pub fn try_clone(&self) -> io::Result<TcpListener> {
         self.inner.try_clone().map(|inner| TcpListener { inner })
     }
