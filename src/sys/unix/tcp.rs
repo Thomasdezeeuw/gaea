@@ -1,5 +1,5 @@
-use std::mem::size_of_val;
 use std::io::{self, Read, Write};
+use std::mem::size_of_val;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
@@ -159,8 +159,39 @@ pub struct TcpListener {
 
 impl TcpListener {
     pub fn bind(address: SocketAddr) -> io::Result<TcpListener> {
-        let listener = net::TcpListener::bind(address)?;
-        listener.set_nonblocking(true)?;
+        // Create a raw socket file descriptor.
+        let socket_family = match address {
+            SocketAddr::V4(..) => libc::AF_INET,
+            SocketAddr::V6(..) => libc::AF_INET6,
+        };
+        let socket_fd = unsafe { libc::socket(socket_family, libc::SOCK_STREAM, 0) };
+        if socket_fd == -1 {
+            return Err(io::Error::last_os_error());
+        }
+
+        // Set the `SO_REUSEPORT` and `SO_REUSEADDR` options.
+        unsafe {
+            enable_socket_option(socket_fd, libc::SOL_SOCKET, libc::SO_REUSEPORT)?;
+            enable_socket_option(socket_fd, libc::SOL_SOCKET, libc::SO_REUSEADDR)?;
+        }
+
+        // Set non blocking mode.
+        if unsafe { libc::fcntl(socket_fd, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
+            return Err(io::Error::last_os_error());
+        }
+
+        // Bind to the address
+        let (raw_address, raw_address_length) = raw_address(&address);
+        if unsafe { libc::bind(socket_fd, raw_address, raw_address_length) } == -1 {
+            return Err(io::Error::last_os_error());
+        }
+
+        // Mark the socket as passive.
+        if unsafe { libc::listen(socket_fd, 128) } == -1 {
+            return Err(io::Error::last_os_error());
+        }
+
+        let listener = unsafe { net::TcpListener::from_raw_fd(socket_fd) };
         Ok(TcpListener { listener })
     }
 
@@ -188,6 +219,20 @@ impl TcpListener {
 
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.listener.take_error()
+    }
+}
+
+/// Enable a socket option via `setsockopt`.
+#[allow(trivial_casts)]
+unsafe fn enable_socket_option(fd: RawFd, level: libc::c_int, name: libc::c_int) -> io::Result<()> {
+    let enable: libc::c_int = 1;
+    let err = libc::setsockopt(fd, level, name,
+        (&enable as *const i32) as *const libc::c_void,
+        size_of_val(&enable) as libc::socklen_t);
+    if err == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
     }
 }
 

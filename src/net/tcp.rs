@@ -231,6 +231,9 @@ impl TcpListener {
 
     /// Convenience method to bind a new TCP listener to the specified address
     /// to receive new connections.
+    ///
+    /// This also sets the `SO_REUSEPORT` and `SO_REUSEADDR` options on the
+    /// socket.
     pub fn bind(address: SocketAddr) -> io::Result<TcpListener> {
         sys::TcpListener::bind(address).map(|inner| TcpListener { inner })
     }
