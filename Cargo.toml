@@ -1,6 +1,6 @@
 [package]
 name          = "mio-st"
-version       = "0.2.0"
+version       = "0.2.1"
 authors       = ["Carl Lerche <me@carllerche.com>", "Thomas de Zeeuw <thomasdezeeuw@gmail.com>"]
 license       = "MIT"
 description   = "Single threaded, lightweight non-blocking IO"

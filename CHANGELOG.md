@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1
+
+### Changes
+
+ * `SO_REUSEPORT` and `SO_REUSEADDR` options are now set on `TcpListener`.
+
 ## v0.2.0
 
 ### New features:
