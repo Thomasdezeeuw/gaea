@@ -113,11 +113,11 @@ pub use self::option::PollOption;
 /// // This actually does nothing.
 /// thread::sleep(Duration::from_secs(1));
 ///
-/// let mut poll = Poller::new()?;
+/// let mut poller = Poller::new()?;
 ///
 /// // The connect is not guaranteed to have started until it is registered at
 /// // this point.
-/// poll.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
+/// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
