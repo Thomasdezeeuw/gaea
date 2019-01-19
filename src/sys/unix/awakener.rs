@@ -29,7 +29,7 @@ mod eventfd {
                 return Err(io::Error::last_os_error());
             }
 
-            selector.register(fd, id, Interests::READABLE, PollOption::Edge)?;
+            selector.register(fd, id, Interests::READABLE, PollOption::Level)?;
             Ok(Awakener {
                 fd: unsafe { File::from_raw_fd(fd) },
             })
