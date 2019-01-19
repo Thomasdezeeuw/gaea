@@ -6,6 +6,7 @@
 //! - `TcpStream`: TCP stream, used in the net module.
 //! - `TcpListener`: TCP listener, used in the net module.
 //! - `UdpSocket`: UDP socket, used in the net module.
+//! - `Awakener`: cross-thread awakener, used in `poll::Awakener`.
 
 #[cfg(unix)]
 mod unix;
