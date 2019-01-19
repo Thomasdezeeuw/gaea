@@ -16,9 +16,11 @@ use log::{trace, debug};
 use crate::event::{Event, Evented, EventedId, Events, Ready};
 use crate::sys;
 
+mod awakener;
 mod interests;
 mod option;
 
+pub use self::awakener::Awakener;
 pub use self::interests::Interests;
 pub use self::option::PollOption;
 

@@ -154,6 +154,30 @@ impl Selector {
 
         kevent_register(self.kq, &mut changes, &[libc::ENOENT as kevent_data_t])
     }
+
+    // Used by `Awakener`.
+    pub fn setup_awakener(&self, id: EventedId) -> io::Result<()> {
+        // First attempt to accept user space notifications.
+        let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD, id);
+        kevent.fflags = libc::NOTE_TRIGGER;
+        kevent_register(self.kq, &mut [kevent], &[])
+    }
+
+    // Used by `Awakener`.
+    pub fn try_clone(&self) -> io::Result<Selector> {
+        let new_kq = unsafe { libc::dup(self.kq) };
+        if new_kq == -1 {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(Selector { kq: new_kq })
+        }
+    }
+
+    // Used by `Awakener`.
+    pub fn awake(&self, id: EventedId) -> io::Result<()> {
+        let kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR, id);
+        kevent_register(self.kq, &mut [kevent], &[])
+    }
 }
 
 /// Create a `timespec` from a duration.
@@ -190,6 +214,12 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
         libc::EVFILT_READ => readiness.insert(Ready::READABLE),
         libc::EVFILT_WRITE => readiness.insert(Ready::WRITABLE),
         _ => {},
+    }
+
+    // Used by the `Awakener`. On platforms that use `eventfd` it will emit a
+    // readable event so we'll fake that here as well.
+    if kevent.filter == libc::EVFILT_USER {
+        readiness.insert(Ready::READABLE);
     }
 
     Event::new(id, readiness)
