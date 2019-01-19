@@ -48,7 +48,13 @@ mod eventfd {
 
         pub fn drain(&self) -> io::Result<()> {
             let mut buf: [u8; 8] = [0; 8];
-            (&self.fd).read(&mut buf).map(|_| ())
+            match (&self.fd).read(&mut buf) {
+                Ok(_) => Ok(()),
+                // If the `Awakener` hasn't been awoken yet this will return a
+                // `WouldBlock` error which we can safely ignore.
+                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => Ok(()),
+                Err(err) => Err(err),
+            }
         }
     }
 }
