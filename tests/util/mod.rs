@@ -53,7 +53,7 @@ pub fn expect_userspace_events(poller: &mut Poller, mut events: &mut Events, mut
 /// This test is looser then `expect_userspace_events`, it only check if an
 /// events readiness contains the expected readiness and the ids match.
 pub fn expect_events(poller: &mut Poller, events: &mut Events, mut expected: Vec<Event>) {
-    poller.poll(events, Some(Duration::from_millis(200)))
+    poller.poll(events, Some(Duration::from_millis(500)))
         .expect("unable to poll");
 
     for event in &mut *events {
