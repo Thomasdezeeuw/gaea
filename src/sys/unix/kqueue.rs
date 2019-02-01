@@ -216,12 +216,9 @@ fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_fla
 }
 
 fn kevent_register(kq: RawFd, changes: &mut [libc::kevent], ignored_errors: &[kevent_data_t]) -> io::Result<()> {
-    // No blocking.
-    let timeout = libc::timespec { tv_sec: 0, tv_nsec: 0 };
-
     let ok = unsafe {
         libc::kevent(kq, changes.as_ptr(), changes.len() as nchanges_t,
-            changes.as_mut_ptr(), changes.len() as nchanges_t, &timeout)
+            changes.as_mut_ptr(), changes.len() as nchanges_t, ptr::null())
     };
 
     if ok == -1 {
