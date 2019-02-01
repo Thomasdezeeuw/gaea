@@ -8,6 +8,7 @@ matrix:
   fast_finish: false
 language: rust
 rust:
+  - 1.31.1
   - stable
   - beta
   - nightly
