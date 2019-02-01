@@ -185,12 +185,10 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
         }
     }
 
-    if kevent.filter == libc::EVFILT_READ {
-        readiness.insert(Ready::READABLE);
-    }
-
-    if kevent.filter == libc::EVFILT_WRITE {
-        readiness.insert(Ready::WRITABLE);
+    match kevent.filter {
+        libc::EVFILT_READ => readiness.insert(Ready::READABLE),
+        libc::EVFILT_WRITE => readiness.insert(Ready::WRITABLE),
+        _ => {},
     }
 
     Event::new(id, readiness)
