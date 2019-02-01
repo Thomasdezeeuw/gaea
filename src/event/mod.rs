@@ -32,7 +32,7 @@ pub use self::ready::Ready;
 /// [`EventedId`]: struct.EventedId.html
 /// [`Poller.poll`]: ../poll/struct.Poller.html#method.poll
 /// [`Poller`]: ../poll/struct.Poller.html
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Event {
     id: EventedId,
     readiness: Ready,
