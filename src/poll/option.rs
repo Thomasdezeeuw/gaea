@@ -84,6 +84,7 @@
 /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
 /// [`reregister`]: struct.Poller.html#method.reregister
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[non_exhaustive]
 pub enum PollOption {
     /// Edge-triggered notifications.
     Edge,

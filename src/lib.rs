@@ -127,6 +127,8 @@
 //! # }
 //! ```
 
+#![feature(non_exhaustive)]
+
 #![warn(anonymous_parameters,
         bare_trait_objects,
         missing_debug_implementations,
