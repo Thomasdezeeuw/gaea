@@ -77,7 +77,7 @@ fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
     let epoll = ep_event.events;
     let mut readiness = Ready::empty();
 
-    if contains_flag(epoll, libc::EPOLLIN) || contains_flag(epoll, libc::EPOLLPRI) {
+    if contains_flag(epoll, libc::EPOLLIN | libc::EPOLLPRI) {
         readiness.insert(Ready::READABLE);
     }
 
@@ -85,11 +85,11 @@ fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
         readiness.insert(Ready::WRITABLE);
     }
 
-    if contains_flag(epoll, libc::EPOLLPRI) || contains_flag(epoll, libc::EPOLLERR) {
+    if contains_flag(epoll, libc::EPOLLERR) {
         readiness.insert(Ready::ERROR);
     }
 
-    if contains_flag(epoll, libc::EPOLLRDHUP) || contains_flag(epoll, libc::EPOLLHUP) {
+    if contains_flag(epoll, libc::EPOLLRDHUP | libc::EPOLLHUP) {
         readiness.insert(Ready::HUP);
     }
 
