@@ -75,6 +75,7 @@ impl Selector {
 
     pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
         let mut kevents: [libc::kevent; EVENTS_CAP] = unsafe { mem::uninitialized() };
+        #[allow(trivial_numeric_casts)]
         let events_cap = cmp::min(events.capacity(), EVENTS_CAP) as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
@@ -215,6 +216,7 @@ fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_fla
 
 fn kevent_register(kq: RawFd, changes: &mut [libc::kevent], ignored_errors: &[kevent_data_t]) -> io::Result<()> {
     let ok = unsafe {
+        #[allow(trivial_numeric_casts)]
         libc::kevent(kq, changes.as_ptr(), changes.len() as nchanges_t,
             changes.as_mut_ptr(), changes.len() as nchanges_t, ptr::null())
     };
@@ -226,7 +228,7 @@ fn kevent_register(kq: RawFd, changes: &mut [libc::kevent], ignored_errors: &[ke
         //
         // EOPNOTSUPP (NetBSD only),
         // EACCES, EEBADF, FAULT, EINVAL and ESRCH: all have to do with invalid
-        //                                          argument, which shouldn't
+        //                                          arguments, which shouldn't
         //                                          happen or are the users
         //                                          fault, e.g. bad fd.
         // ENOMEM: can't handle.
