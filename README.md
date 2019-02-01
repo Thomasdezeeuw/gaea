@@ -10,10 +10,8 @@ This is a fork of [mio] (v0.6.12, commit
 
 [mio]: https://github.com/carllerche/mio
 
-## Note
-
-Current master only compiles with a beta/nightly compiler since Rust 2018
-edition is used.
+Rust version 1.31 or higher is required as mio-st makes use of Rust 2018 edition
+features.
 
 
 ## Differences compared to mio
