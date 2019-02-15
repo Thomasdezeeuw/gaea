@@ -66,8 +66,9 @@
 //! let mut current_id = EventedId(10);
 //!
 //! // Start the event loop.
+//! # let i = 0;
 //! loop {
-//!     # break;
+//! #   if i == 0 { break; }
 //!     // Check for new events.
 //!     poller.poll(&mut events, None)?;
 //!

@@ -26,10 +26,10 @@ use crate::sys::unix::EventedIo;
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use std::io::{self, Read, Write};
+/// use std::io::{Read, Write};
 ///
 /// use mio_st::unix::{new_pipe, Sender, Receiver};
-/// use mio_st::event::{Event, Events, EventedId, Ready};
+/// use mio_st::event::{Events, EventedId};
 /// use mio_st::poll::{Poller, PollOption};
 ///
 /// // Unique ids for the two ends of the channel.

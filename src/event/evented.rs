@@ -44,6 +44,7 @@ use crate::poll::{Interests, PollOption, Poller};
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Interests, PollOption, Poller};
 ///
+/// # #[allow(dead_code)]
 /// pub struct MyEvented {
 ///     /// Our system handle that implements `Evented`.
 ///     socket: TcpStream,

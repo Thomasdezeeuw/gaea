@@ -29,9 +29,7 @@ use crate::poll::{Interests, PollOption, Poller};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use std::time::Duration;
-///
-/// use mio_st::event::{Events, EventedId, Ready};
+/// use mio_st::event::{Events, EventedId};
 /// use mio_st::net::UdpSocket;
 /// use mio_st::poll::{Interests, PollOption, Poller};
 ///
@@ -43,8 +41,8 @@ use crate::poll::{Interests, PollOption, Poller};
 /// let echoer_address = "127.0.0.1:7001".parse()?;
 ///
 /// // Create our sockets.
-/// let mut sender_socket = UdpSocket::bind(sender_address)?;
-/// let mut echoer_socket = UdpSocket::bind(echoer_address)?;
+/// let sender_socket = UdpSocket::bind(sender_address)?;
+/// let echoer_socket = UdpSocket::bind(echoer_address)?;
 ///
 /// // Connect the sockets so we can use `send` and `recv`, rather then
 /// // `send_to` and `recv_from`.
@@ -114,6 +112,7 @@ impl UdpSocket {
     ///
     /// // Our socket was created, but we should not use it before checking it's
     /// // readiness.
+    /// #    drop(socket); // Silence unused variable warning.
     /// #    Ok(())
     /// # }
     /// ```
@@ -300,7 +299,7 @@ impl FromRawFd for UdpSocket {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event::{Events, EventedId, Ready};
+/// use mio_st::event::{Events, EventedId};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
 /// use mio_st::poll::{Interests, PollOption, Poller};
 ///

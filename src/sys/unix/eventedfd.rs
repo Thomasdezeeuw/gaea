@@ -42,7 +42,7 @@ use crate::poll::{Interests, PollOption, Poller};
 /// use std::net::TcpListener;
 /// use std::os::unix::io::AsRawFd;
 ///
-/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::event::EventedId;
 /// use mio_st::poll::{Interests, PollOption, Poller};
 /// use mio_st::unix::EventedFd;
 ///
@@ -63,10 +63,11 @@ use crate::poll::{Interests, PollOption, Poller};
 /// use std::io;
 /// use std::os::unix::io::RawFd;
 ///
-/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::event::{Evented, EventedId};
 /// use mio_st::poll::{Interests, PollOption, Poller};
 /// use mio_st::unix::EventedFd;
 ///
+/// # #[allow(dead_code)]
 /// pub struct MyIo {
 ///     fd: RawFd,
 /// }

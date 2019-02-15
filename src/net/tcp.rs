@@ -25,8 +25,6 @@ use crate::poll::{Interests, PollOption, Poller};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use std::time::Duration;
-///
 /// use mio_st::event::{Events, EventedId};
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poller, PollOption};
