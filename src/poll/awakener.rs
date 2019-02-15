@@ -60,7 +60,7 @@ use crate::sys;
 /// });
 ///
 /// // On our current thread we'll poll for events, without a timeout.
-/// poller.poll(&mut events, None);
+/// poller.poll(&mut events, None)?;
 ///
 /// // After about 500 milliseconds we should we awoken by the other thread,
 /// // getting a single event.
