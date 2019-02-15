@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.2
+
+### Changes
+
+ * Minimum Rust version is now 1.31.
+ * New `Awakener` type, used to awaken the poller from another thread.
+ * `EPOLLPRI` and `EPOLLRDHUP` are now set by default for epoll.
+ * `Ready::Readable` is not set when `EPOLLPRI` is received.
+ * Derived `Hash` for `PollOption` and `Event`.
+
 ## v0.2.1
 
 ### Changes
