@@ -12,6 +12,13 @@ use crate::sys;
 ///
 /// # Notes
 ///
+/// The `Awakener` needs to be kept alive as long as wake up notifications are
+/// required. This is due to an implementation detail where if all copies of the
+/// `Awakener` are dropped it will also drop all wake up notifications from the
+/// system queue, including wake up notifications that have been added before
+/// the `Awakener` that was dropped, resulting the `Poller` instance not being
+/// woken up.
+///
 /// Only a single `Awakener` should active per `Poller` instance, the `Awakener`
 /// can be cloned using [`try_clone`](Awakener::try_clone) if more are needed.
 /// What happens if multiple `Awakener`s are registered with the same `Poller`
@@ -35,15 +42,16 @@ use crate::sys;
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poller, Awakener};
 ///
+/// const WAKE_ID: EventedId = EventedId(10);
+///
 /// let mut poller = Poller::new()?;
 /// let mut events = Events::new();
 ///
-/// let wake_id = EventedId(10);
-/// let awakener = Awakener::new(&mut poller, wake_id)?;
-///
+/// let awakener = Awakener::new(&mut poller, WAKE_ID)?;
 /// // We need to keep the Awakener alive, so we'll create a clone for the
 /// // thread we create below.
 /// let awakener1 = awakener.try_clone()?;
+///
 /// let handle = thread::spawn(move || {
 ///     // Working hard, or hardly working?
 ///     thread::sleep(Duration::from_millis(500));
@@ -59,7 +67,7 @@ use crate::sys;
 /// // getting a single event.
 /// assert_eq!(events.len(), 1);
 /// let event = (&mut events).next().unwrap();
-/// assert_eq!(event.id(), wake_id);
+/// assert_eq!(event.id(), WAKE_ID);
 /// assert_eq!(event.readiness(), Ready::READABLE);
 ///
 /// # handle.join().unwrap();
