@@ -39,7 +39,6 @@ use crate::sys;
 /// use std::time::Duration;
 ///
 /// use mio_st::event::{Events, EventedId, Ready};
-/// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poller, Awakener};
 ///
 /// const WAKE_ID: EventedId = EventedId(10);
