@@ -34,9 +34,7 @@ mod eventfd {
         }
 
         pub fn try_clone(&self) -> io::Result<Awakener> {
-            Ok(Awakener {
-                fd: self.fd.try_clone()?,
-            })
+            self.fd.try_clone().map(|fd| Awakener { fd })
         }
 
         pub fn wake(&self) -> io::Result<()> {
@@ -82,16 +80,15 @@ mod kqueue {
 
     impl Awakener {
         pub fn new(selector: &Selector, id: EventedId) -> io::Result<Awakener> {
-            selector.setup_awakener(id)?;
-            Ok(Awakener {
-                selector: selector.try_clone()?,
-                id,
+            selector.try_clone().and_then(|selector| {
+                selector.setup_awakener(id)
+                    .map(|()| Awakener { selector, id })
             })
         }
 
         pub fn try_clone(&self) -> io::Result<Awakener> {
-            Ok(Awakener {
-                selector: self.selector.try_clone()?,
+            self.selector.try_clone().map(|selector| Awakener {
+                selector,
                 id: self.id,
             })
         }

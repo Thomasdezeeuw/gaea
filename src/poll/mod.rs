@@ -199,8 +199,8 @@ impl Poller {
     /// # }
     /// ```
     pub fn new() -> io::Result<Poller> {
-        Ok(Poller {
-            selector: sys::Selector::new()?,
+        sys::Selector::new().map(|selector| Poller {
+            selector,
             userspace_events: Vec::new(),
             deadlines: BinaryHeap::new(),
         })
