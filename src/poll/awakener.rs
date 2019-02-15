@@ -81,16 +81,12 @@ pub struct Awakener {
 impl Awakener {
     /// Create a new `Awakener`.
     pub fn new(poller: &mut Poller, id: EventedId) -> io::Result<Awakener> {
-        Ok(Awakener {
-            inner: sys::Awakener::new(poller.selector(), id)?,
-        })
+        sys::Awakener::new(poller.selector(), id).map(|inner| Awakener { inner })
     }
 
     /// Attempts to clone the `Awakener`.
     pub fn try_clone(&self) -> io::Result<Awakener> {
-        Ok(Awakener {
-            inner: self.inner.try_clone()?,
-        })
+        self.inner.try_clone().map(|inner| Awakener { inner })
     }
 
     /// Wake up the [`Poller`](Poller) instance associated with this `Awakener`.
