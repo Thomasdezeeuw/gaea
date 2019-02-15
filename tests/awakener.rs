@@ -13,11 +13,15 @@ fn awakener() {
     let (mut poller, mut events) = init_with_poller();
 
     let event_id = EventedId(10);
+    // Keep `awakener` alive on this thread and create a new awakener to move
+    // to the other thread.
     let awakener = Awakener::new(&mut poller, event_id)
         .expect("unable to create awakener");
+    let awakener1 = awakener.try_clone()
+        .expect("unable to clone awakener");
 
     let handle = thread::spawn(move || {
-        awakener.wake().expect("unable to wake");
+        awakener1.wake().expect("unable to wake");
     });
 
     expect_events(&mut poller, &mut events, vec![
@@ -32,8 +36,12 @@ fn awakener_try_clone() {
     let (mut poller, mut events) = init_with_poller();
 
     let event_id = EventedId(10);
-    let awakener1 = Awakener::new(&mut poller, event_id)
+    // Keep `awakener` alive on this thread and create two new awakeners to move
+    // to the other threads.
+    let awakener = Awakener::new(&mut poller, event_id)
         .expect("unable to create awakener");
+    let awakener1 = awakener.try_clone()
+        .expect("unable to clone awakener");
     let awakener2 = awakener1.try_clone()
         .expect("unable to clone awakener");
 

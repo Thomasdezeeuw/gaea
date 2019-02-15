@@ -41,12 +41,15 @@ use crate::sys;
 /// let wake_id = EventedId(10);
 /// let awakener = Awakener::new(&mut poller, wake_id)?;
 ///
+/// // We need to keep the Awakener alive, so we'll create a clone for the
+/// // thread we create below.
+/// let awakener1 = awakener.try_clone()?;
 /// let handle = thread::spawn(move || {
 ///     // Working hard, or hardly working?
 ///     thread::sleep(Duration::from_millis(500));
 ///
 ///     // Now we'll wake the poller instance on the other thread.
-///     awakener.wake().expect("unable to wake");
+///     awakener1.wake().expect("unable to wake");
 /// });
 ///
 /// // On our current thread we'll poll for events, without a timeout.
