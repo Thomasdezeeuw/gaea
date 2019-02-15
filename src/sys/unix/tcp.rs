@@ -3,8 +3,6 @@ use std::mem::size_of_val;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use libc;
-
 use crate::event::{Evented, EventedId};
 use crate::poll::{Interests, PollOption, Poller};
 use crate::sys::unix::eventedfd::EventedFd;

@@ -2,8 +2,6 @@ use std::mem;
 use std::io::{self, Read, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use libc;
-
 use crate::event::{Evented, EventedId};
 use crate::poll::{Interests, PollOption, Poller};
 use crate::sys::unix::EventedIo;

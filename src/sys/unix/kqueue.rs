@@ -2,7 +2,6 @@ use std::{cmp, io, mem, ptr};
 use std::os::unix::io::RawFd;
 use std::time::Duration;
 
-use libc;
 use log::error;
 
 use crate::event::{Event, EventedId, Events, Ready};

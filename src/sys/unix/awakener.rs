@@ -5,8 +5,6 @@ mod eventfd {
     use std::mem;
     use std::os::unix::io::FromRawFd;
 
-    use libc;
-
     use crate::event::EventedId;
     use crate::poll::{Interests, PollOption};
     use crate::sys::Selector;
