@@ -139,6 +139,9 @@
         variant_size_differences,
 )]
 
+// Disallow warnings when running tests.
+#![cfg_attr(test, deny(warnings))]
+
 mod sys;
 
 pub mod event;
