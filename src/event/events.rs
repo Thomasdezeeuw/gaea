@@ -23,8 +23,8 @@ use crate::event::Event;
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{EventedId, Events, Ready};
-/// use mio_st::poll::{Poller, PollOption};
+/// use mio_st::event::Events;
+/// use mio_st::poll::Poller;
 ///
 /// let mut poller = Poller::new()?;
 /// let mut events = Events::new();

@@ -28,9 +28,9 @@ use crate::sys::unix::EventedFd;
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::net::TcpListener;
-/// use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
+/// use std::os::unix::io::{FromRawFd, IntoRawFd};
 ///
-/// use mio_st::event::{Evented, EventedId, Ready};
+/// use mio_st::event::EventedId;
 /// use mio_st::poll::{Interests, PollOption, Poller};
 /// use mio_st::unix::EventedIo;
 ///

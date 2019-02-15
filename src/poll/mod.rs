@@ -103,7 +103,7 @@ pub use self::option::PollOption;
 /// use std::thread;
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{EventedId, Ready};
+/// use mio_st::event::EventedId;
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poller, PollOption};
 ///
@@ -259,9 +259,7 @@ impl Poller {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use std::time::{Duration, Instant};
-    ///
-    /// use mio_st::event::{Events, EventedId, Ready};
+    /// use mio_st::event::{Events, EventedId};
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
@@ -379,7 +377,7 @@ impl Poller {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio_st::event::{Events, EventedId, Ready};
+    /// use mio_st::event::{Events, EventedId};
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
