@@ -39,10 +39,20 @@ mod eventfd {
 
         pub fn wake(&self) -> io::Result<()> {
             let buf: [u8; 8] = unsafe { mem::transmute(1u64) };
-            (&self.fd).write(&buf).map(|_| ())
+            match (&self.fd).write(&buf) {
+                Ok(_) => Ok(()),
+                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
+                    // Writing only blocks if the counter is going to overflow.
+                    // So we'll reset the counter to 0 and wake it again.
+                    self.reset()?;
+                    self.wake()
+                },
+                Err(err) => Err(err),
+            }
         }
 
-        pub fn drain(&self) -> io::Result<()> {
+        /// Rest the eventfd object, only need to call this if `wake` fails.
+        fn reset(&self) -> io::Result<()> {
             let mut buf: [u8; 8] = [0; 8];
             match (&self.fd).read(&mut buf) {
                 Ok(_) => Ok(()),
@@ -95,11 +105,6 @@ mod kqueue {
 
         pub fn wake(&self) -> io::Result<()> {
             self.selector.awake(self.id)
-        }
-
-        pub fn drain(&self) -> io::Result<()> {
-            // Nothing needs to be done.
-            Ok(())
         }
     }
 }

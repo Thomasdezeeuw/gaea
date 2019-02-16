@@ -6,9 +6,8 @@ use crate::sys;
 
 /// Awakener allows cross-thread waking of a `Poller` instance.
 ///
-/// When created it will cause events with
-/// [`Ready::READABLE`](crate::event::Ready::READABLE) and the provided `id` if
-/// [`wake`](Awakener::wake) is called, possibly from another thread.
+/// When created it will cause events with [`Ready::READABLE`] and the provided
+/// `id` if [`wake`] is called, possibly from another thread.
 ///
 /// # Notes
 ///
@@ -20,14 +19,13 @@ use crate::sys;
 /// woken up.
 ///
 /// Only a single `Awakener` should active per `Poller` instance, the `Awakener`
-/// can be cloned using [`try_clone`](Awakener::try_clone) if more are needed.
-/// What happens if multiple `Awakener`s are registered with the same `Poller`
-/// instance is undefined.
+/// can be cloned using [`try_clone`] if more are needed. What happens if
+/// multiple `Awakener`s are registered with the same `Poller` instance is
+/// undefined.
 ///
-/// Awakener should be [`drain`]ed after its awoken a number of times, to not
-/// block the waking side. See [`drain`] for more information.
-///
-/// [`drain`]: Awakener::drain
+/// [`Ready::READABLE`]: crate::event::Ready::READABLE
+/// [`wake`]: Awakener::wake
+/// [`try_clone`]: Awakener::try_clone
 ///
 /// # Examples
 ///
@@ -92,19 +90,5 @@ impl Awakener {
     /// Wake up the [`Poller`](Poller) instance associated with this `Awakener`.
     pub fn wake(&self) -> io::Result<()> {
         self.inner.wake()
-    }
-
-    /// Drain the `Awakener` of all notifications.
-    ///
-    /// # Notes
-    ///
-    /// The requirement to call this is very platform dependent.
-    /// - On platforms that support `eventfd`, such as Linux, this needs to be
-    ///   called once before [`wake`](Awakener::wake) is called 2^64 times,
-    ///   otherwise calls to `wake` will block.
-    /// - On platforms that support kqueue, such as macOS, FreeBSD, NetBSD and
-    ///   OpenBSD, this does nothing and thus doesn't have to be called.
-    pub fn drain(&self) -> io::Result<()> {
-        self.inner.drain()
     }
 }

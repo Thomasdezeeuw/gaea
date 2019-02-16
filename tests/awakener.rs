@@ -18,9 +18,20 @@ fn awakener() {
     // to the other thread.
     let awakener = Awakener::new(&mut poller, event_id)
         .expect("unable to create awakener");
+
+    // Waking on the same thread.
+    for _ in 0..3 {
+        awakener.wake().expect("unable to wake");
+    }
+
+    // Depending on the platform we can get 3 or 1 event.
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    // Waking on another thread.
     let awakener1 = awakener.try_clone()
         .expect("unable to clone awakener");
-
     let handle = thread::spawn(move || {
         awakener1.wake().expect("unable to wake");
     });
@@ -67,37 +78,6 @@ fn awakener_try_clone() {
 }
 
 #[test]
-fn awakener_drain() {
-    let (mut poller, mut events) = init_with_poller();
-
-    let event_id = EventedId(10);
-    let awakener = Awakener::new(&mut poller, event_id)
-        .expect("unable to create awakener");
-
-    for _ in 0..3 {
-        awakener.wake().expect("unable to wake");
-    }
-
-    // Depending on the platform we can get 3 or 1 event.
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(event_id, Ready::READABLE),
-    ]);
-
-    awakener.drain().expect("unable to drain awakener");
-}
-
-#[test]
-fn awakener_drain_empty() {
-    let (mut poller, _) = init_with_poller();
-
-    let event_id = EventedId(10);
-    let awakener = Awakener::new(&mut poller, event_id)
-        .expect("unable to create awakener");
-
-    awakener.drain().expect("unable to drain awakener");
-}
-
-#[test]
 fn awakener_multiple_wakeups() {
     let (mut poller, mut events) = init_with_poller();
 
@@ -128,7 +108,7 @@ fn awakener_multiple_wakeups() {
     // Unblock thread 2.
     barrier.wait();
 
-    // We don't drain the awakener and now we need to receive another event from thread 2.
+    // Now we need to receive another event from thread 2.
     expect_events(&mut poller, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
