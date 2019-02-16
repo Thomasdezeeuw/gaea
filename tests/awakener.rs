@@ -49,21 +49,21 @@ fn awakener_try_clone() {
     let handle1 = thread::spawn(move || {
         awakener1.wake().expect("unable to wake");
     });
+
+    handle1.join().unwrap();
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
     let handle2 = thread::spawn(move || {
         thread::sleep(Duration::from_millis(500));
         awakener2.wake().expect("unable to wake");
     });
 
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(event_id, Ready::READABLE),
-    ]);
-
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(event_id, Ready::READABLE),
-    ]);
-
-    handle1.join().unwrap();
     handle2.join().unwrap();
+    expect_events(&mut poller, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
 }
 
 #[test]
