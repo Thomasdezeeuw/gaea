@@ -5,7 +5,7 @@ mod eventfd {
     use std::mem;
     use std::os::unix::io::FromRawFd;
 
-    use crate::event::EventedId;
+    use crate::event;
     use crate::os::{Interests, PollOption};
     use crate::sys::Selector;
 
@@ -21,7 +21,7 @@ mod eventfd {
     }
 
     impl Awakener {
-        pub fn new(selector: &Selector, id: EventedId) -> io::Result<Awakener> {
+        pub fn new(selector: &Selector, id: event::Id) -> io::Result<Awakener> {
             let fd = unsafe { libc::eventfd(0, libc::EFD_CLOEXEC | libc::EFD_NONBLOCK) };
             if fd == -1 {
                 return Err(io::Error::last_os_error());
@@ -73,7 +73,7 @@ pub use self::eventfd::Awakener;
 mod kqueue {
     use std::io;
 
-    use crate::event::EventedId;
+    use crate::event;
     use crate::sys::Selector;
 
     /// Awakener backed by kqueue user space notifications (`EVFILT_USER`).
@@ -85,11 +85,11 @@ mod kqueue {
     #[derive(Debug)]
     pub struct Awakener {
         selector: Selector,
-        id: EventedId,
+        id: event::Id,
     }
 
     impl Awakener {
-        pub fn new(selector: &Selector, id: EventedId) -> io::Result<Awakener> {
+        pub fn new(selector: &Selector, id: event::Id) -> io::Result<Awakener> {
             selector.try_clone().and_then(|selector| {
                 selector.setup_awakener(id)
                     .map(|()| Awakener { selector, id })

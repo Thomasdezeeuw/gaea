@@ -3,9 +3,8 @@ use std::net::SocketAddr;
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use crate::event::EventedId;
+use crate::{event, sys};
 use crate::os::{Evented, Interests, PollOption, OsQueue};
-use crate::sys;
 
 /// A User Datagram Protocol socket.
 ///
@@ -29,13 +28,13 @@ use crate::sys;
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event::EventedId;
+/// use mio_st::event;
 /// use mio_st::net::UdpSocket;
 /// use mio_st::poll::{Interests, PollOption, OsQueue};
 ///
 /// // Unique ids and address for both the sender and echoer.
-/// const SENDER_ID: EventedId = EventedId(0);
-/// const ECHOER_ID: EventedId = EventedId(1);
+/// const SENDER_ID: event::Id = event::Id(0);
+/// const ECHOER_ID: event::Id = event::Id(1);
 ///
 /// let sender_address = "127.0.0.1:7000".parse()?;
 /// let echoer_address = "127.0.0.1:7001".parse()?;
@@ -242,11 +241,11 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.socket.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.socket.reregister(poller, id, interests, opt)
     }
 
@@ -297,12 +296,12 @@ impl FromRawFd for UdpSocket {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event::EventedId;
+/// use mio_st::event;
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
 /// use mio_st::poll::{Interests, PollOption, OsQueue};
 ///
-/// const ECHOER_ID: EventedId = EventedId(0);
-/// const SENDER_ID: EventedId = EventedId(1);
+/// const ECHOER_ID: event::Id = event::Id(0);
+/// const SENDER_ID: event::Id = event::Id(1);
 ///
 /// // Create our echoer.
 /// let echoer_addr = "127.0.0.1:7008".parse()?;
@@ -470,11 +469,11 @@ impl ConnectedUdpSocket {
 }
 
 impl Evented for ConnectedUdpSocket {
-    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.socket.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.socket.reregister(poller, id, interests, opt)
     }
 
