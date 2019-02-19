@@ -6,7 +6,7 @@ mod eventfd {
     use std::os::unix::io::FromRawFd;
 
     use crate::event::EventedId;
-    use crate::poll::{Interests, PollOption};
+    use crate::os::{Interests, PollOption};
     use crate::sys::Selector;
 
     /// Awakener backed by `eventfd`.
