@@ -1,122 +1,25 @@
-//! Types related to polling.
+//! Operating System backed readiness event queue.
 //!
-//! This module contains two types:
-//! - [`Poll`] the trait that defines how an events source can be poller, and
-//! - [`BlockingPoll`] a blocking variant of `Poll`.
-
-use std::io;
-use std::time::Duration;
-
-use crate::event::Events;
-
-/// A readiness event source that can be polled readiness events.
-pub trait Poll<Evts>
-    where Evts: Events,
-{
-    /// The duration until the next event will be available.
-    ///
-    /// This is used to determine what timeout to use in a blocking call to
-    /// poll. For example if we have a queue of timers, of which the next one
-    /// expires in one second, we don't want to block for more then one second
-    /// and thus we should return `Some(1 second)` to ensure that.
-    ///
-    /// If the duration until the next available event is unknown `None` should
-    /// be returned.
-    fn next_event_available(&self) -> Option<Duration>;
-
-    /// Poll for events.
-    ///
-    /// Any available readiness events must be added to `events`. The pollable
-    /// source may not block.
-    ///
-    /// Some implementation of `Events` have a limited available capacity.
-    /// This method may not add more events then `Events::capacity_left`
-    /// returns, if it returns a capacity limit.
-    fn poll(&mut self, events: &mut Evts) -> io::Result<()>;
-}
-
-/// A blocking variant of [`Poll`].
-pub trait BlockingPoll<Evts>: Poll<Evts>
-    where Evts: Events,
-{
-    /// A blocking poll for readiness events.
-    ///
-    /// This is the same as [`Poll::poll`] and all requirements of that method
-    /// apply to this method as well. Different to `poll` is that this method
-    /// may block up `timeout` duration, if one is provided, or block forever if
-    /// no timeout is provided (assuming *something* wakes up the poll source).
-    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>;
-}
-
-/*
-// Poller uses three subsystems to bring a complete event system to the user.
-//
-// 1. Operating System specific event queue. This is currently kqueue or epoll.
-//    All the relevant code is in the `sys` module. This mainly deals with file
-//    descriptors, e.g. for sockets.
-//
-// 2. User space events. This is simply a vector in the `Poller` instance,
-//    adding an new event is a simple push onto it. `Events` hold both the
-//    system events and user space events. Each call to `Poller.poll` simply
-//    flushes all user space events to the provided `Events`.
-//
-// 3. Deadline system. The third subsystem is used for deadlines and timeouts.
-//    Each deadline is a pair of `Instant` and `EventedId` in a binary heap.
-//    Each call to `Poller.poll` will get the first deadline, if any, and use it
-//    as a timeout to the system selector. Then after the system selector
-//    returns exceeded deadlines are popped and converted into `Event`s and
-//    added to the provided `Events`.
-
-/// Polls for readiness events on all registered handles.
-///
-/// `Poller` allows a program to monitor a large number of [`Evented`] handles,
-/// waiting until one or more become "ready" for some class of operations; e.g.
-/// [reading] or [writing]. An `Evented` type is considered ready if it is
-/// possible to immediately perform a corresponding operation; e.g. read or
-/// write.
-///
-/// To use `Poller` an `Evented` handle must first be registered with the
-/// `Poller` instance using the [`register`] method, supplying an associated id,
-/// readiness interests and polling option. The associated id, or [`EventedId`],
-/// is used to associate an readiness event with an `Evented` handle. The
-/// readiness interests, or [`Interests`], tells `Poller` which specific operations
-/// on the handle to monitor for readiness. And the final argument,
-/// [`PollOption`], tells `Poller` how to deliver the readiness events, see
-/// [`PollOption`] for more information.
-///
-/// [`Evented`]: ../event/trait.Evented.html
-/// [reading]: ../event/struct.Ready.html#associatedconstant.READABLE
-/// [writing]: ../event/struct.Ready.html#associatedconstant.WRITABLE
-/// [`register`]: #method.register
-/// [`EventedId`]: ../event/struct.EventedId.html
-/// [`Interests`]: struct.Interests.html
-/// [`PollOption`]: enum.PollOption.html
-///
-/// # Portability
-///
-/// Using `Poller` provides a portable interface across supported platforms as
-/// long as the caller takes the following into consideration:
-///
-/// ### Spurious events
-///
-/// [`Poller.poll`] may return readiness events even if the associated
-/// [`Evented`] handle is not actually ready. Given the same code, this may
-/// happen more on some platforms than others. It is important to never assume
-/// that, just because a readiness notification was received, that the
-/// associated operation will as well.
-///
-/// If operation fails with a [`WouldBlock`] error, then the caller should not
-/// treat this as an error and wait until another readiness event is received.
-///
-/// ### Draining readiness
-///
-/// When using edge-triggered mode, once a readiness event is received, the
-/// corresponding operation must be performed repeatedly until it returns
-/// [`WouldBlock`]. Unless this is done, there is no guarantee that another
-/// readiness event will be delivered, even if further data is received for the
-/// [`Evented`] handle. See [`PollOption`] for more.
-///
-/// ### Registering handles
+//! [`OsQueue`] provides an abstraction over platform specific Operating System
+//! backed readiness event queue, such as kqueue or epoll.
+//!
+//! # Portability
+//!
+//! Using `Poller` provides a portable interface across supported platforms as
+//! long as the caller takes the following into consideration:
+//!
+//! ## Spurious events
+//!
+//! [`Poller.poll`] may return readiness events even if the associated
+//! [`Evented`] handle is not actually ready. Given the same code, this may
+//! happen more on some platforms than others. It is important to never assume
+//! that, just because a readiness notification was received, that the
+//! associated operation will as well.
+//!
+//! If operation fails with a [`WouldBlock`] error, then the caller should not
+//! treat this as an error and wait until another readiness event is received.
+//!
+/// ## Registering handles
 ///
 /// Unless otherwise noted, it should be assumed that types implementing
 /// [`Evented`] will never become ready unless they are registered with `Poller`.
@@ -185,15 +88,103 @@ pub trait BlockingPoll<Evts>: Poll<Evts>
 ///
 /// [`EventedFd`]: ../unix/struct.EventedFd.html
 /// [`signalfd`]: http://man7.org/linux/man-pages/man2/signalfd.2.html
+
+use std::io;
+use std::time::Duration;
+
+use log::trace;
+
+use crate::event::{EventedId, Events};
+use crate::poll::{BlockingPoll, Poll};
+use crate::sys;
+
+//mod awakener;
+mod evented;
+mod interests;
+mod option;
+
+//pub use self::awakener::Awakener;
+pub use self::evented::Evented;
+pub use self::interests::Interests;
+pub use self::option::PollOption;
+
+
+
+// TODO: update docs.
+/// Readiness events queue backed by the OS.
+///
+/// This queue allows a program to monitor a large number of [`Evented`]
+/// handles, waiting until one or more become "ready" for some class of
+/// operations; e.g. [reading] or [writing]. An `Evented` type is considered
+/// ready if it is possible to immediately perform a corresponding operation;
+/// e.g. read or write.
+///
+/// To use this queue an `Evented` handle must first be registered with the
+/// `Queue` using the [`register`] method, supplying an associated id, readiness
+/// interests and polling option. The associated id, or [`EventedId`], is used
+/// to associate a readiness event with an `Evented` handle. The readiness
+/// interests, or [`Interests`], defines which specific operations on the handle
+/// to monitor for readiness. And the final argument, [`PollOption`], defines
+/// how to deliver the readiness events, see [`PollOption`] for more
+/// information.
+///
+/// [reading]: Ready::READABLE
+/// [writing]: Ready::WRITABLE
+/// [`register`]: Queue::register
+///
+/// ### Draining readiness
+///
+/// When using edge-triggered mode, once a readiness event is received, the
+/// corresponding operation must be performed repeatedly until it returns
+/// [`WouldBlock`]. Unless this is done, there is no guarantee that another
+/// readiness event will be delivered, even if further data is received for the
+/// [`Evented`] handle. See [`PollOption`] for more.
+///
+/// ### Registering handles
+///
+/// Unless otherwise noted, it should be assumed that types implementing
+/// [`Evented`] will never become ready unless they are registered with `Poller`.
+///
+/// For example:
+///
+/// ```
+/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::thread;
+/// use std::time::Duration;
+///
+/// use mio_st::event::EventedId;
+/// use mio_st::net::TcpStream;
+/// use mio_st::poll::{Poller, PollOption};
+///
+/// let address = "216.58.193.100:80".parse()?;
+/// let mut stream = TcpStream::connect(address)?;
+///
+/// // This actually does nothing.
+/// thread::sleep(Duration::from_secs(1));
+///
+/// let mut poller = Poller::new()?;
+///
+/// // The connect is not guaranteed to have started until it is registered at
+/// // this point.
+/// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// [`Poller.poll`]: struct.Poller.html#method.poll
+/// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
+/// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
+/// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
+/// [error]: ../event/struct.Ready.html#associatedconstant.ERROR
+/// [timer]: ../event/struct.Ready.html#associatedconstant.TIMER
+/// [hup]: ../event/struct.Ready.html#associatedconstant.HUP
 #[derive(Debug)]
-pub struct Poller {
+pub struct OsQueue {
     selector: sys::Selector,
-    userspace_events: Vec<Event>,
-    deadlines: BinaryHeap<Reverse<Deadline>>,
 }
 
-impl Poller {
-    /// Return a new `Poller` handle.
+impl OsQueue {
+    /// Return a new OS backed readiness events source.
     ///
     /// This function will make a syscall to the operating system to create the
     /// system selector. If this syscall fails, `Poller::new` will return with
@@ -222,11 +213,9 @@ impl Poller {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn new() -> io::Result<Poller> {
-        sys::Selector::new().map(|selector| Poller {
+    pub fn new() -> io::Result<OsQueue> {
+        sys::Selector::new().map(|selector| OsQueue {
             selector,
-            userspace_events: Vec::new(),
-            deadlines: BinaryHeap::new(),
         })
     }
 
@@ -433,91 +422,7 @@ impl Poller {
         handle.deregister(self)
     }
 
-    /// Notify an evented handle of an user space event.
-    ///
-    /// This uses the user space event system.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::event::{Event, EventedId, Ready};
-    /// use mio_st::poll::Poller;
-    ///
-    /// let mut poller = Poller::new()?;
-    /// let mut events = Vec::new();
-    ///
-    /// // Add a custom user space notification.
-    /// poller.notify(EventedId(0), Ready::READABLE);
-    ///
-    /// poller.poll(&mut events, None)?;
-    /// assert_eq!(events[0], Event::new(EventedId(0), Ready::READABLE));
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub fn notify(&mut self, id: EventedId, ready: Ready) {
-        trace!("adding user space event: id={}, ready={:?}", id, ready);
-        self.userspace_events.push(Event::new(id, ready));
-    }
-
-    /// Add a new deadline to Poller.
-    ///
-    /// This will cause an event to trigger after the `deadline` has passed with
-    /// the [`Ready::TIMER`] readiness and provided `id`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use std::time::{Duration, Instant};
-    ///
-    /// use mio_st::event::{Event, EventedId, Ready};
-    /// use mio_st::poll::Poller;
-    ///
-    /// // Our `Poller` instance and events.
-    /// let mut poller = Poller::new()?;
-    /// let mut events = Vec::new();
-    ///
-    /// // Add our deadline, to trigger an event 10 milliseconds from now.
-    /// let deadline = Instant::now() + Duration::from_millis(10);
-    /// let id = EventedId(0);
-    /// poller.add_deadline(id, deadline);
-    ///
-    /// // Even though we don't provide a timeout to poll this will return in
-    /// // roughly 10 milliseconds and return an event with our deadline.
-    /// poller.poll(&mut events, None)?;
-    ///
-    /// assert_eq!(events[0], Event::new(id, Ready::TIMER));
-    /// #     Ok(())
-    /// # }
-    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
-        trace!("adding deadline: id={}, deadline={:?}", id, deadline);
-        self.deadlines.push(Reverse(Deadline { id, deadline }));
-    }
-
-    /// Remove a previously added deadline.
-    ///
-    /// # Notes
-    ///
-    /// Removing a deadline is a costly operation. For better performance it is
-    /// advised to not bother with removing and instead ignore the event when it
-    /// comes up.
-    pub fn remove_deadline(&mut self, id: EventedId) {
-        trace!("removing deadline: id={}", id);
-
-        // TODO: optimize this.
-        let index = self.deadlines.iter()
-            .position(|deadline| deadline.0.id == id);
-
-        if let Some(index) = index {
-            let deadlines = mem::replace(&mut self.deadlines, BinaryHeap::new());
-            let mut deadlines_vec = deadlines.into_vec();
-            let removed_deadline = deadlines_vec.swap_remove(index);
-            debug_assert_eq!(removed_deadline.0.id, id, "remove_deadline: removed incorrect deadline");
-            drop(mem::replace(&mut self.deadlines, BinaryHeap::from(deadlines_vec)));
-        }
-    }
-
+    /* TODO: old docs from Poller.poll
     /// Poll for readiness events.
     ///
     /// Blocks the current thread and waits for readiness events for any of the
@@ -553,125 +458,7 @@ impl Poller {
     /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
     /// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
-    pub fn poll<Evts>(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
-        where Evts: Events,
-    {
-        let mut timeout = self.determine_timeout(timeout);
-        trace!("polling: timeout={:?}", timeout);
-
-        loop {
-            let start = Instant::now();
-            // Get the selector events.
-            match self.selector.select(events, timeout) {
-                Ok(()) => break,
-                Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {
-                    debug!("polling interrupted, trying again");
-                    // Interrupted by a signal; update timeout if necessary and
-                    // retry.
-                    if let Some(to) = timeout {
-                        let elapsed = start.elapsed();
-                        if elapsed >= to {
-                            // Timeout elapsed so we need to return.
-                            break;
-                        } else {
-                            timeout = Some(to - elapsed);
-                        }
-                    }
-                },
-                Err(e) => return Err(e),
-            }
-        }
-
-        self.poll_userspace_internal(events);
-        self.poll_deadlines(events);
-        Ok(())
-    }
-
-    /// Poll for user space readiness events.
-    ///
-    /// The regular call to [`poll`] uses a system call to read readiness events
-    /// for system resources such as sockets. This method **does not** do that,
-    /// it will only read user space readiness events, including deadlines.
-    ///
-    /// Because no system call is used this method is faster then calling
-    /// `poll`, even with a 0 ms timeout, and never blocks.
-    ///
-    /// [`poll`]: #method.poll
-    pub fn poll_userspace<Evts>(&mut self, events: &mut Evts)
-        where Evts: Events,
-    {
-        trace!("polling user space");
-
-        self.poll_userspace_internal(events);
-        self.poll_deadlines(events);
-    }
-
-    /// Compute the timeout value to be passed to the system selector. If the
-    /// user space queue has pending events, we still want to poll the system
-    /// selector for new events, but we don't want to block the thread to wait
-    /// for new events.
-    ///
-    /// If we have any deadlines the first one will also cap the timeout.
-    fn determine_timeout(&mut self, timeout: Option<Duration>) -> Option<Duration> {
-        if !self.userspace_events.is_empty() {
-            // User space queue has events, so no blocking.
-            return Some(Duration::from_millis(0));
-        } else if let Some(deadline) = self.deadlines.peek() {
-            let now = Instant::now();
-            if deadline.0.deadline <= now {
-                // Deadline has already expired, so no blocking.
-                return Some(Duration::from_millis(0));
-            }
-
-            // Determine the timeout for the next deadline.
-            let deadline_timeout = deadline.0.deadline.duration_since(now);
-            match timeout {
-                // The provided timeout is smaller then the deadline timeout, so
-                // we'll keep the original timeout.
-                Some(timeout) if timeout < deadline_timeout => {},
-                // Deadline timeout is sooner, use that.
-                _ => return Some(deadline_timeout),
-            }
-        }
-
-        timeout
-    }
-
-    /// Poll user space events.
-    fn poll_userspace_internal<Evts>(&mut self, events: &mut Evts)
-        where Evts: Events,
-    {
-        trace!("polling user space events");
-        // Determine the maximum number of events we can add.
-        let len = self.userspace_events.len();
-        let n = min(events.capacity_left().unwrap_or(usize::max_value()), len);
-
-        events.extend_from_slice(&self.userspace_events[..n]);
-
-        if len == n {
-            self.userspace_events.clear();
-        } else {
-            drop(self.userspace_events.drain(..n));
-        }
-    }
-
-    /// Add expired deadlines to the provided `events`.
-    fn poll_deadlines<Evts>(&mut self, events: &mut Evts)
-        where Evts: Events,
-    {
-        trace!("polling deadlines");
-        let now = Instant::now();
-
-        for _ in 0..events.capacity_left().unwrap_or(usize::max_value()) {
-            match self.deadlines.peek() {
-                Some(deadline) if deadline.0.deadline <= now => {
-                    let deadline = self.deadlines.pop().unwrap().0;
-                    events.push(Event::new(deadline.id, Ready::TIMER));
-                },
-                _ => return,
-            }
-        }
-    }
+    */
 
     /// Get access to the system selector. Used by platform specific code, e.g.
     /// `EventedFd`.
@@ -680,12 +467,23 @@ impl Poller {
     }
 }
 
-/// A deadline in `Poller`.
-///
-/// This must be ordered by `deadline`, then `id`.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
-struct Deadline {
-    deadline: Instant,
-    id: EventedId,
+impl<Evts> Poll<Evts> for OsQueue
+    where Evts: Events,
+{
+    fn next_event_available(&self) -> Option<Duration> {
+        None
+    }
+
+    fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
+        self.blocking_poll(events, Some(Duration::from_millis(0)))
+    }
 }
-*/
+
+impl<Evts> BlockingPoll<Evts> for OsQueue
+    where Evts: Events,
+{
+    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()> {
+        trace!("polling OS selector: timeout={:?}", timeout);
+        self.selector.select(events, timeout)
+    }
+}

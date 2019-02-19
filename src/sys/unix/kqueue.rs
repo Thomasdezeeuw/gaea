@@ -6,7 +6,7 @@ use std::{io, mem, ptr};
 use log::error;
 
 use crate::event::{Event, EventedId, Events, Ready};
-use crate::poll::{Interests, PollOption};
+use crate::os::{Interests, PollOption};
 use crate::sys::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types

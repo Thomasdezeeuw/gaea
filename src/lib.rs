@@ -155,9 +155,11 @@ use log::trace;
 mod sys;
 
 pub mod event;
-pub mod net;
+pub mod os;
+//pub mod net;
 pub mod poll;
 
+/*
 #[cfg(unix)]
 pub mod unix {
     //! Unix only extensions.
@@ -166,11 +168,12 @@ pub mod unix {
     pub use crate::sys::EventedIo;
     pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
 }
+*/
 
 #[doc(no_inline)]
 pub use crate::event::{EventedId, Events, Ready};
 #[doc(no_inline)]
-pub use crate::poll::{BlockingPoll, Poll, Poller, PollOption};
+pub use crate::poll::{BlockingPoll, Poll};
 
 /// Poll a number of event sources for new events.
 ///
