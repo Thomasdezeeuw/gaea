@@ -512,9 +512,9 @@ impl Poller {
     /// scheduling delays mean that the blocking interval may be overrun by a
     /// small amount.
     ///
-    /// The supplied `events` will be cleared and newly received readiness
-    /// events will be stored in it. If not all events fit into the `events`,
-    /// they will be returned on the next call to `poll`.
+    /// In the supplied `events` received readiness events will be stored. If
+    /// not all events fit into the `events`, they will be returned on the next
+    /// call to `poll`.
     ///
     /// A single call to `poll` may result in multiple readiness events being
     /// returned for a single `Evented` handle. For example, if a TCP socket
@@ -533,7 +533,6 @@ impl Poller {
         let mut timeout = self.determine_timeout(timeout);
         trace!("polling: timeout={:?}", timeout);
 
-        events.clear();
         loop {
             let start = Instant::now();
             // Get the selector events.
@@ -574,7 +573,6 @@ impl Poller {
     /// [`poll`]: #method.poll
     pub fn poll_userspace(&mut self, events: &mut Events) {
         trace!("polling user space");
-        events.clear();
 
         self.poll_userspace_internal(events);
         self.poll_deadlines(events);

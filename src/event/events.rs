@@ -77,7 +77,7 @@ impl Events {
     }
 
     /// Clear the events to allow it to be filled again.
-    pub(crate) fn clear(&mut self) {
+    pub fn clear(&mut self) {
         // TODO: Use `events.clear` in the future: see
         // https://github.com/bluss/arrayvec/pull/98.
         // This is safe because `Event` doesn't implement `Drop`.
