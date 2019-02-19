@@ -52,6 +52,19 @@ pub trait Poll<Evts>
     fn poll(&mut self, events: &mut Evts) -> io::Result<()>;
 }
 
+/// A blocking variant of [`Poll`].
+pub trait BlockingPoll<Evts>: Poll<Evts>
+    where Evts: Events,
+{
+    /// A blocking poll for readiness events.
+    ///
+    /// This is the same as [`Poll::poll`] and all requirements of that method
+    /// apply to this method as well. Different to `poll` is that this method
+    /// may block up `timeout` duration, if one is provided, or block forever if
+    /// no timeout is provided (assuming *something* wakes up the poll source).
+    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>;
+}
+
 // Poller uses three subsystems to bring a complete event system to the user.
 //
 // 1. Operating System specific event queue. This is currently kqueue or epoll.
