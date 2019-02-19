@@ -1,8 +1,7 @@
 use std::io;
 
-use crate::event::EventedId;
+use crate::{event, sys};
 use crate::os::OsQueue;
-use crate::sys;
 
 /// Awakener allows cross-thread waking of [`OsQueue`].
 ///
@@ -35,10 +34,10 @@ use crate::sys;
 /// use std::thread;
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Event, EventedId, Ready};
+/// use mio_st::event::{Event, event::Id, Ready};
 /// use mio_st::poll::{Poller, Awakener};
 ///
-/// const WAKE_ID: EventedId = EventedId(10);
+/// const WAKE_ID: event::Id = event::Id(10);
 ///
 /// let mut poller = Poller::new()?;
 /// let mut events = Vec::new();
@@ -74,7 +73,7 @@ pub struct Awakener {
 
 impl Awakener {
     /// Create a new `Awakener`.
-    pub fn new(os_queue: &mut OsQueue, id: EventedId) -> io::Result<Awakener> {
+    pub fn new(os_queue: &mut OsQueue, id: event::Id) -> io::Result<Awakener> {
         sys::Awakener::new(os_queue.selector(), id).map(|inner| Awakener { inner })
     }
 

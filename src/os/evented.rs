@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::event::EventedId;
+use crate::event;
 use crate::os::{Interests, PollOption, OsQueue};
 
 /// A value that may be registered with [`OsQueue`].
@@ -40,7 +40,7 @@ use crate::os::{Interests, PollOption, OsQueue};
 /// ```
 /// use std::io;
 ///
-/// use mio_st::event::{Evented, EventedId};
+/// use mio_st::event::{Evented, event::Id};
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Interests, PollOption, OsQueue};
 ///
@@ -51,12 +51,12 @@ use crate::os::{Interests, PollOption, OsQueue};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, selector: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+///     fn register(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`.
 ///         self.socket.register(selector, id, interests, opt)
 ///     }
 ///
-///     fn reregister(&mut self, selector: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+///     fn reregister(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`.
 ///         self.socket.reregister(selector, id, interests, opt)
 ///     }
@@ -74,7 +74,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`OsQueue.register`]: crate::os::OsQueue::register
-    fn register(&mut self, selector: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>;
+    fn register(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()>;
 
     /// Reregister `self` with the given `OsQueue` instance.
     ///
@@ -82,7 +82,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`OsQueue.reregister`]: crate::os::OsQueue::reregister
-    fn reregister(&mut self, selector: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>;
+    fn reregister(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()>;
 
     /// Deregister `self` from the given `OsQueue` instance
     ///

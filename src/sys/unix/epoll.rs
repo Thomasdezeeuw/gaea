@@ -5,7 +5,7 @@ use std::{io, mem, ptr};
 
 use log::error;
 
-use crate::event::{Event, EventedId, Events, Ready};
+use crate::event::{self, Event, Events, Ready};
 use crate::os::{Interests, PollOption};
 use crate::sys::EVENTS_CAP;
 
@@ -47,12 +47,12 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    pub fn register(&self, fd: RawFd, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         let mut epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_ADD, fd, &mut epoll_event)
     }
 
-    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    pub fn reregister(&self, fd: RawFd, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         let mut epoll_event = new_epoll_event(interests, opt, id);
         epoll_ctl(self.epfd, libc::EPOLL_CTL_MOD, fd, &mut epoll_event)
     }
@@ -74,7 +74,7 @@ pub fn duration_to_millis(duration: Duration) -> libc::c_int {
 
 /// Convert a `epoll_event` into an `Event`.
 fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
-    let id = EventedId(ep_event.u64 as usize);
+    let id = event::Id(ep_event.u64 as usize);
     let epoll = ep_event.events;
     let mut readiness = Ready::empty();
 
@@ -103,7 +103,7 @@ fn contains_flag(flags: libc::uint32_t, flag: libc::c_int) -> bool {
 }
 
 /// Create a new `epoll_event`.
-fn new_epoll_event(interests: Interests, opt: PollOption, id: EventedId) -> libc::epoll_event {
+fn new_epoll_event(interests: Interests, opt: PollOption, id: event::Id) -> libc::epoll_event {
     libc::epoll_event {
         events: to_epoll_events(interests, opt),
         u64: id.0 as u64,

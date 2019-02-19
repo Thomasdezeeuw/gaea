@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use crate::event::EventedId;
+use crate::event;
 use crate::os::{Evented, Interests, PollOption, OsQueue};
 use crate::sys::unix::EventedFd;
 
@@ -30,7 +30,7 @@ use crate::sys::unix::EventedFd;
 /// use std::net::TcpListener;
 /// use std::os::unix::io::{FromRawFd, IntoRawFd};
 ///
-/// use mio_st::event::EventedId;
+/// use mio_st::event::event::Id;
 /// use mio_st::poll::{Interests, PollOption, OsQueue};
 /// use mio_st::unix::EventedIo;
 ///
@@ -47,7 +47,7 @@ use crate::sys::unix::EventedFd;
 /// let mut poller = OsQueue::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poller.register(&mut evented_listener, EventedId(0), Interests::READABLE, PollOption::Edge)?;
+/// poller.register(&mut evented_listener, event::Id(0), Interests::READABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -75,11 +75,11 @@ impl AsRawFd for EventedIo {
 }
 
 impl Evented for EventedIo {
-    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
     }
 

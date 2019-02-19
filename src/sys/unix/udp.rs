@@ -2,7 +2,7 @@ use std::io;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use crate::event::EventedId;
+use crate::event;
 use crate::os::{Evented, Interests, PollOption, OsQueue};
 use crate::sys::unix::EventedFd;
 
@@ -56,11 +56,11 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
     }
 

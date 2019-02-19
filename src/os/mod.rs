@@ -94,7 +94,7 @@ use std::time::Duration;
 
 use log::trace;
 
-use crate::event::{self, EventedId, Events};
+use crate::event::{self, Events};
 use crate::sys;
 
 mod awakener;
@@ -271,7 +271,7 @@ impl OsQueue {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::event::EventedId;
+    /// use mio_st::event;
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
@@ -284,14 +284,14 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `poller`.
-    /// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
+    /// poller.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
     ///
     /// // Start the event loop.
     /// loop {
     ///     poller.poll(&mut events, None)?;
     ///
     ///     for event in &mut events {
-    ///         if event.id() == EventedId(0) {
+    ///         if event.id() == event::Id(0) {
     ///             // Connection is (likely) ready for use.
     ///             # return Ok(());
     ///         }
@@ -299,7 +299,7 @@ impl OsQueue {
     /// }
     /// # }
     /// ```
-    pub fn register<E>(&mut self, handle: &mut E, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>
+    pub fn register<E>(&mut self, handle: &mut E, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized,
     {
         trace!("registering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
@@ -335,7 +335,7 @@ impl OsQueue {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::event::EventedId;
+    /// use mio_st::event;
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Interests, PollOption, Poller};
     ///
@@ -346,16 +346,16 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poller`, only with readable interest.
-    /// poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)?;
+    /// poller.register(&mut stream, event::Id(0), Interests::READABLE, PollOption::Edge)?;
     ///
     /// // Reregister the connection specifying a different id and write interest
     /// // instead. `PollOption::Edge` must be specified even though that value
     /// // is not being changed.
-    /// poller.reregister(&mut stream, EventedId(2), Interests::WRITABLE, PollOption::Edge)?;
+    /// poller.reregister(&mut stream, event::Id(2), Interests::WRITABLE, PollOption::Edge)?;
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn reregister<E>(&mut self, handle: &mut E, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()>
+    pub fn reregister<E>(&mut self, handle: &mut E, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()>
         where E: Evented + ?Sized,
     {
         trace!("reregistering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
@@ -389,7 +389,7 @@ impl OsQueue {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio_st::event::EventedId;
+    /// use mio_st::event;
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
@@ -401,7 +401,7 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `Poller`.
-    /// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
+    /// poller.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
     ///
     /// // Do stuff with the connection etc.
     ///

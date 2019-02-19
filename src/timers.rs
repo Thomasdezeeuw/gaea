@@ -8,7 +8,7 @@ use std::mem::replace;
 
 use log::trace;
 
-use crate::event::{self, Event, Events, EventedId, Ready};
+use crate::event::{self, Event, Events, Ready};
 
 pub struct Timers {
     deadlines: BinaryHeap<Reverse<Deadline>>,
@@ -20,7 +20,7 @@ pub struct Timers {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct Deadline {
     deadline: Instant,
-    id: EventedId,
+    id: event::Id,
 }
 
 impl Timers {
@@ -35,7 +35,7 @@ impl Timers {
     ///
     /// This will cause an event to trigger after the `deadline` has passed with
     /// the [`Ready::TIMER`] readiness and provided `id`.
-    pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
+    pub fn add_deadline(&mut self, id: event::Id, deadline: Instant) {
         trace!("adding deadline: id={}, deadline={:?}", id, deadline);
         self.deadlines.push(Reverse(Deadline { id, deadline }));
     }
@@ -47,7 +47,7 @@ impl Timers {
     /// Removing a deadline is a costly operation. For better performance it is
     /// advised to not bother with removing and instead ignore the event when it
     /// comes up.
-    pub fn remove_deadline(&mut self, id: EventedId) {
+    pub fn remove_deadline(&mut self, id: event::Id) {
         trace!("removing deadline: id={}", id);
 
         // TODO: optimize this.

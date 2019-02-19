@@ -5,7 +5,7 @@ use std::{io, mem, ptr};
 
 use log::error;
 
-use crate::event::{Event, EventedId, Events, Ready};
+use crate::event::{self, Event, Events, Ready};
 use crate::os::{Interests, PollOption};
 use crate::sys::EVENTS_CAP;
 
@@ -102,7 +102,7 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    pub fn register(&self, fd: RawFd, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         let flags = opt_to_flags(opt) | libc::EV_ADD;
         // At most we need two changes, but maybe we only need 1.
         let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
@@ -123,7 +123,7 @@ impl Selector {
         kevent_register(self.kq, &mut changes[0..n_changes], &[])
     }
 
-    pub fn reregister(&self, fd: RawFd, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    pub fn reregister(&self, fd: RawFd, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         let flags = opt_to_flags(opt);
         let write_flags = if interests.is_writable() {
             flags | libc::EV_ADD
@@ -148,15 +148,15 @@ impl Selector {
         let flags = libc::EV_DELETE | libc::EV_RECEIPT;
         // id is not used.
         let mut changes: [libc::kevent; 2] = [
-            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, EventedId(::std::usize::MAX)),
-            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, EventedId(::std::usize::MAX)),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, event::Id(::std::usize::MAX)),
+            new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, event::Id(::std::usize::MAX)),
         ];
 
         kevent_register(self.kq, &mut changes, &[libc::ENOENT as kevent_data_t])
     }
 
     // Used by `Awakener`.
-    pub fn setup_awakener(&self, id: EventedId) -> io::Result<()> {
+    pub fn setup_awakener(&self, id: event::Id) -> io::Result<()> {
         // First attempt to accept user space notifications.
         let kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
         kevent_register(self.kq, &mut [kevent], &[])
@@ -173,7 +173,7 @@ impl Selector {
     }
 
     // Used by `Awakener`.
-    pub fn wake(&self, id: EventedId) -> io::Result<()> {
+    pub fn wake(&self, id: event::Id) -> io::Result<()> {
         let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
         kevent.fflags = libc::NOTE_TRIGGER;
         kevent_register(self.kq, &mut [kevent], &[])
@@ -190,7 +190,7 @@ fn timespec_from_duration(duration: Duration) -> libc::timespec {
 
 /// Convert a `kevent` into an `Event`.
 fn kevent_to_event(kevent: &libc::kevent) -> Event {
-    let id = EventedId(kevent.udata as usize);
+    let id = event::Id(kevent.udata as usize);
     let mut readiness = Ready::empty();
 
     if contains_flag(kevent.flags, libc::EV_ERROR)  {
@@ -235,7 +235,7 @@ fn opt_to_flags(opt: PollOption) -> kevent_flags_t {
 }
 
 /// Create a new `kevent`.
-fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_flags_t, id: EventedId) -> libc::kevent {
+fn new_kevent(ident: libc::uintptr_t, filter: kevent_filter_t, flags: kevent_flags_t, id: event::Id) -> libc::kevent {
     libc::kevent {
         ident, filter, flags,
         fflags: 0,

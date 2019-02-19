@@ -111,10 +111,9 @@ impl Events for Vec<Event> {
     }
 }
 
-
 /// A readiness event.
 ///
-/// `Event` is a [readiness state] paired with a [`EventedId`]. It is returned by
+/// `Event` is a [readiness state] paired with a [`Id`]. It is returned by
 /// [`poll`].
 ///
 /// For more documentation on polling and events, see [`poll`].
@@ -125,27 +124,27 @@ impl Events for Vec<Event> {
 /// # Examples
 ///
 /// ```
-/// use mio_st::event::{Event, EventedId, Ready};
+/// use mio_st::event::{Event, Id, Ready};
 ///
-/// let event = Event::new(EventedId(0), Ready::READABLE | Ready::WRITABLE);
+/// let event = Event::new(Id(0), Ready::READABLE | Ready::WRITABLE);
 ///
-/// assert_eq!(event.id(), EventedId(0));
+/// assert_eq!(event.id(), Id(0));
 /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Event {
-    id: EventedId,
+    id: Id,
     readiness: Ready,
 }
 
 impl Event {
     /// Creates a new `Event` containing `id` and `readiness`.
-    pub fn new(id: EventedId, readiness: Ready) -> Event {
+    pub fn new(id: Id, readiness: Ready) -> Event {
         Event { id, readiness }
     }
 
     /// Returns the event's id.
-    pub fn id(&self) -> EventedId {
+    pub fn id(&self) -> Id {
         self.id
     }
 
@@ -163,30 +162,30 @@ impl Event {
 ///
 /// [`poll`]: fn@crate::poll
 ///
-/// # Uniqueness of `EventedId`
+/// # Uniqueness of `Id`
 ///
-/// `EventedId` does not have to be unique, it is purely a tool for the user to
+/// `Id` does not have to be unique, it is purely a tool for the user to
 /// associate an `Event` with an event handle. It is advised for example to use
-/// the same `EventedId` for say a `TcpStream` and any related timeout or
-/// deadline for the same connection. The `EventedId` is effectively opaque to
-/// any readiness event sources.
+/// the same `Id` for say a `TcpStream` and any related timeout or deadline for
+/// the same connection. The `Id` is effectively opaque to any readiness event
+/// sources.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
-pub struct EventedId(pub usize);
+pub struct Id(pub usize);
 
-impl From<usize> for EventedId {
-    fn from(val: usize) -> EventedId {
-        EventedId(val)
+impl From<usize> for Id {
+    fn from(val: usize) -> Id {
+        Id(val)
     }
 }
 
-impl From<EventedId> for usize {
-    fn from(val: EventedId) -> usize {
+impl From<Id> for usize {
+    fn from(val: Id) -> usize {
         val.0
     }
 }
 
-impl fmt::Display for EventedId {
+impl fmt::Display for Id {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }

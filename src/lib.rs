@@ -38,13 +38,13 @@
 //! use std::io;
 //! use std::collections::HashMap;
 //!
-//! use mio_st::event::EventedId;
+//! use mio_st::event;
 //! use mio_st::net::{TcpListener, TcpStream};
 //! use mio_st::poll::{Poller, PollOption};
 //!
 //! // An unique id to associate an event with a handle, in this case for our
 //! // TCP listener.
-//! const SERVER_ID: EventedId = EventedId(0);
+//! const SERVER_ID: event::Id = event::Id(0);
 //!
 //! // Create a `Poller` instance.
 //! let mut poller = Poller::new()?;
@@ -59,11 +59,11 @@
 //! // notifications about incoming connections.
 //! poller.register(&mut server, SERVER_ID, TcpListener::INTERESTS, PollOption::Edge)?;
 //!
-//! // A hashmap with `EventedId` -> `TcpStream` connections.
+//! // A hashmap with `event::Id` -> `TcpStream` connections.
 //! let mut connections = HashMap::with_capacity(512);
 //!
 //! // A simple "counter" to create new unique ids for each incoming connection.
-//! let mut current_id = EventedId(10);
+//! let mut current_id = event::Id(10);
 //!
 //! // Start the event loop.
 //! # let i = 0;
@@ -95,7 +95,7 @@
 //!     }
 //! }
 //!
-//! fn accept_connections(server: &mut TcpListener, poller: &mut Poller, connections: &mut HashMap<EventedId, TcpStream>, current_id: &mut EventedId) -> io::Result<()> {
+//! fn accept_connections(server: &mut TcpListener, poller: &mut Poller, connections: &mut HashMap<event::Id, TcpStream>, current_id: &mut event::Id) -> io::Result<()> {
 //!     // Since we registered with edge-triggered events for our server we need
 //!     // to accept connections until we hit a would block "error".
 //!     loop {
@@ -107,7 +107,7 @@
 //!
 //!         // Generate a new id for the connection.
 //!         let id = *current_id;
-//!         *current_id = EventedId(current_id.0 + 1);
+//!         *current_id = event::Id(current_id.0 + 1);
 //!
 //!         println!("got a new connection from: {}, id: {:?}", address, id);
 //!
