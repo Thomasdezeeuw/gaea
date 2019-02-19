@@ -3,7 +3,7 @@ use std::iter::repeat;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use mio_st::event::{Event, EventedId, Events, Evented, Ready};
+use mio_st::event::{Event, EventedId, Evented, Ready};
 use mio_st::poll::{Interests, PollOption, Poller};
 
 mod util;
@@ -303,19 +303,6 @@ fn poller_poll_userspace_internal() {
         .collect();
     expect_events(&mut poller, &mut events, expected);
     expect_events(&mut poller, &mut events, Vec::new());
-
-    // More events then `Events` can handle, the remaining events should be
-    // returned in the next call to poll.
-    let mut expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::READABLE))
-        .take(EVENTS_CAP + 1)
-        .map(|event| {
-            poller.notify(event.id(), event.readiness());
-            event
-        })
-        .collect();
-    let last = vec![expected.pop().unwrap()];
-    expect_events(&mut poller, &mut events, expected);
-    expect_events(&mut poller, &mut events, last);
 }
 
 #[test]
@@ -339,21 +326,11 @@ fn poller_poll_deadlines_internal() {
         .collect();
     expect_events(&mut poller, &mut events, expected);
     expect_events(&mut poller, &mut events, Vec::new());
-
-    // More deadlines then `Events` can handle, the remaining deadlines should
-    // be returned in the next call to poll.
-    let mut expected: Vec<Event> = repeat(Event::new(EventedId(0), Ready::TIMER))
-        .take(EVENTS_CAP + 1)
-        .map(|event| { poller.add_deadline(event.id(), now); event})
-        .collect();
-    let last = vec![expected.pop().unwrap()];
-    expect_events(&mut poller, &mut events, expected);
-    expect_events(&mut poller, &mut events, last);
 }
 
 /// A wrapper function around `expect_events` to check that elapsed time doesn't
 /// exceed `max_elapsed`.
-fn expect_events_elapsed(poller: &mut Poller, events: &mut Events, max_elapsed: Duration, expected: Vec<Event>) {
+fn expect_events_elapsed(poller: &mut Poller, events: &mut Vec<Event>, max_elapsed: Duration, expected: Vec<Event>) {
     let start = Instant::now();
     expect_events(poller, events, expected);
     let elapsed = start.elapsed();

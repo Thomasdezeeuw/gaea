@@ -1,6 +1,7 @@
-use std::{cmp, io, mem, ptr};
+use std::cmp::min;
 use std::os::unix::io::RawFd;
 use std::time::Duration;
+use std::{io, mem, ptr};
 
 use log::error;
 
@@ -23,9 +24,11 @@ impl Selector {
         }
     }
 
-    pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
+    pub fn select<Evts>(&self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
+        where Evts: Events,
+    {
         let mut ep_events: [libc::epoll_event; EVENTS_CAP] = unsafe { mem::uninitialized() };
-        let events_cap = cmp::min(events.capacity(), EVENTS_CAP) as libc::c_int;
+        let events_cap = min(events.capacity_left().unwrap_or(EVENTS_CAP), EVENTS_CAP) as libc::c_int;
 
         let timeout_ms = timeout.map(duration_to_millis).unwrap_or(-1);
 
@@ -36,10 +39,9 @@ impl Selector {
             -1 => Err(io::Error::last_os_error()),
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
-                for ep_event in ep_events.iter().take(n as usize) {
-                    let event = ep_event_to_event(ep_event);
-                    events.push(event);
-                }
+                let ep_events = ep_events[0..n as usize].iter()
+                    .map(|e| ep_event_to_event(e));
+                events.extend(ep_events);
                 Ok(())
             },
         }
@@ -67,7 +69,7 @@ const NANOS_PER_MILLI: u64 = 1_000_000;
 pub fn duration_to_millis(duration: Duration) -> libc::c_int {
     let millis = duration.as_secs().saturating_mul(MILLIS_PER_SEC)
         .saturating_add((duration.subsec_nanos() as u64 / NANOS_PER_MILLI) + 1);
-    cmp::min(millis, libc::c_int::max_value() as u64) as libc::c_int
+    min(millis, libc::c_int::max_value() as u64) as libc::c_int
 }
 
 /// Convert a `epoll_event` into an `Event`.

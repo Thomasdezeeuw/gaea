@@ -1,6 +1,7 @@
-use std::{cmp, io, mem, ptr};
+use std::cmp::min;
 use std::os::unix::io::RawFd;
 use std::time::Duration;
+use std::{io, mem, ptr};
 
 use log::error;
 
@@ -72,10 +73,11 @@ impl Selector {
         }
     }
 
-    pub fn select(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
+    pub fn select<Evts>(&self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
+        where Evts: Events,
+    {
         let mut kevents: [libc::kevent; EVENTS_CAP] = unsafe { mem::uninitialized() };
-        #[allow(trivial_numeric_casts)]
-        let events_cap = cmp::min(events.capacity(), EVENTS_CAP) as nchanges_t;
+        let events_cap = min(events.capacity_left().unwrap_or(EVENTS_CAP), EVENTS_CAP) as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
         #[allow(trivial_casts)]
@@ -92,10 +94,9 @@ impl Selector {
             -1 => Err(io::Error::last_os_error()),
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
-                for kevent in kevents.iter().take(n as usize) {
-                    let event = kevent_to_event(kevent);
-                    events.push(event);
-                }
+                let kevents = kevents[0..n as usize].iter()
+                    .map(|e| kevent_to_event(e));
+                events.extend(kevents);
                 Ok(())
             },
         }
@@ -182,7 +183,7 @@ impl Selector {
 /// Create a `timespec` from a duration.
 fn timespec_from_duration(duration: Duration) -> libc::timespec {
     libc::timespec {
-        tv_sec: cmp::min(duration.as_secs(), libc::time_t::max_value() as u64) as libc::time_t,
+        tv_sec: min(duration.as_secs(), libc::time_t::max_value() as u64) as libc::time_t,
         tv_nsec: libc::c_long::from(duration.subsec_nanos()),
     }
 }

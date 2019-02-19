@@ -6,7 +6,7 @@
 //! [`Poller`]: struct.Poller.html
 //! [root of the crate]: ../index.html
 
-use std::cmp::Reverse;
+use std::cmp::{Reverse, min};
 use std::collections::BinaryHeap;
 use std::time::{Duration, Instant};
 use std::{io, mem};
@@ -184,13 +184,12 @@ impl Poller {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio_st::event::Events;
     /// use mio_st::poll::Poller;
     ///
     /// let mut poller = Poller::new()?;
     ///
     /// // Create a structure to receive polled events.
-    /// let mut events = Events::new();
+    /// let mut events = Vec::new();
     ///
     /// // Wait for events, but none will be received because no `Evented`
     /// // handles have been registered with this `Poller` instance.
@@ -259,13 +258,13 @@ impl Poller {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::event::{Events, EventedId};
+    /// use mio_st::event::EventedId;
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
     /// // Create a new `Poller` instance as well a containers for the vents.
     /// let mut poller = Poller::new()?;
-    /// let mut events = Events::new();
+    /// let mut events = Vec::new();
     ///
     /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
     /// let address = "216.58.193.100:80".parse()?;
@@ -377,12 +376,12 @@ impl Poller {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::Duration;
     ///
-    /// use mio_st::event::{Events, EventedId};
+    /// use mio_st::event::EventedId;
     /// use mio_st::net::TcpStream;
     /// use mio_st::poll::{Poller, PollOption};
     ///
     /// let mut poller = Poller::new()?;
-    /// let mut events = Events::new();
+    /// let mut events = Vec::new();
     ///
     /// // Create a TCP connection. `TcpStream` implements the `Evented` trait.
     /// let address = "216.58.193.100:80".parse()?;
@@ -417,17 +416,17 @@ impl Poller {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::event::{Event, Events, EventedId, Ready};
+    /// use mio_st::event::{Event, EventedId, Ready};
     /// use mio_st::poll::Poller;
     ///
     /// let mut poller = Poller::new()?;
-    /// let mut events = Events::new();
+    /// let mut events = Vec::new();
     ///
     /// // Add a custom user space notification.
     /// poller.notify(EventedId(0), Ready::READABLE);
     ///
     /// poller.poll(&mut events, None)?;
-    /// assert_eq!((&mut events).next().unwrap(), Event::new(EventedId(0), Ready::READABLE));
+    /// assert_eq!(events[0], Event::new(EventedId(0), Ready::READABLE));
     /// #     Ok(())
     /// # }
     /// ```
@@ -447,12 +446,12 @@ impl Poller {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use std::time::{Duration, Instant};
     ///
-    /// use mio_st::event::{Event, Events, EventedId, Ready};
+    /// use mio_st::event::{Event, EventedId, Ready};
     /// use mio_st::poll::Poller;
     ///
     /// // Our `Poller` instance and events.
     /// let mut poller = Poller::new()?;
-    /// let mut events = Events::new();
+    /// let mut events = Vec::new();
     ///
     /// // Add our deadline, to trigger an event 10 milliseconds from now.
     /// let deadline = Instant::now() + Duration::from_millis(10);
@@ -463,7 +462,7 @@ impl Poller {
     /// // roughly 10 milliseconds and return an event with our deadline.
     /// poller.poll(&mut events, None)?;
     ///
-    /// assert_eq!((&mut events).next(), Some(Event::new(id, Ready::TIMER)));
+    /// assert_eq!(events[0], Event::new(id, Ready::TIMER));
     /// #     Ok(())
     /// # }
     pub fn add_deadline(&mut self, id: EventedId, deadline: Instant) {
@@ -529,7 +528,9 @@ impl Poller {
     /// [readable]: ../event/struct.Ready.html#associatedconstant.READABLE
     /// [writable]: ../event/struct.Ready.html#associatedconstant.WRITABLE
     /// [struct]: #
-    pub fn poll(&mut self, events: &mut Events, timeout: Option<Duration>) -> io::Result<()> {
+    pub fn poll<Evts>(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
+        where Evts: Events,
+    {
         let mut timeout = self.determine_timeout(timeout);
         trace!("polling: timeout={:?}", timeout);
 
@@ -571,7 +572,9 @@ impl Poller {
     /// `poll`, even with a 0 ms timeout, and never blocks.
     ///
     /// [`poll`]: #method.poll
-    pub fn poll_userspace(&mut self, events: &mut Events) {
+    pub fn poll_userspace<Evts>(&mut self, events: &mut Evts)
+        where Evts: Events,
+    {
         trace!("polling user space");
 
         self.poll_userspace_internal(events);
@@ -610,10 +613,17 @@ impl Poller {
     }
 
     /// Poll user space events.
-    fn poll_userspace_internal(&mut self, events: &mut Events) {
+    fn poll_userspace_internal<Evts>(&mut self, events: &mut Evts)
+        where Evts: Events,
+    {
         trace!("polling user space events");
-        let n = events.extend_events(&self.userspace_events);
-        if self.userspace_events.len() - n == 0 {
+        // Determine the maximum number of events we can add.
+        let len = self.userspace_events.len();
+        let n = min(events.capacity_left().unwrap_or(usize::max_value()), len);
+
+        events.extend_from_slice(&self.userspace_events[..n]);
+
+        if len == n {
             self.userspace_events.clear();
         } else {
             drop(self.userspace_events.drain(..n));
@@ -621,11 +631,13 @@ impl Poller {
     }
 
     /// Add expired deadlines to the provided `events`.
-    fn poll_deadlines(&mut self, events: &mut Events) {
+    fn poll_deadlines<Evts>(&mut self, events: &mut Evts)
+        where Evts: Events,
+    {
         trace!("polling deadlines");
         let now = Instant::now();
 
-        for _ in 0..events.capacity_left() {
+        for _ in 0..events.capacity_left().unwrap_or(usize::max_value()) {
             match self.deadlines.peek() {
                 Some(deadline) if deadline.0.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap().0;

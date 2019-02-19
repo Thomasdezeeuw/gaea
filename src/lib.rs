@@ -38,7 +38,7 @@
 //! use std::io;
 //! use std::collections::HashMap;
 //!
-//! use mio_st::event::{Events, EventedId};
+//! use mio_st::event::EventedId;
 //! use mio_st::net::{TcpListener, TcpStream};
 //! use mio_st::poll::{Poller, PollOption};
 //!
@@ -49,7 +49,7 @@
 //! // Create a `Poller` instance.
 //! let mut poller = Poller::new()?;
 //! // Also create a container for all events.
-//! let mut events = Events::new();
+//! let mut events = Vec::new();
 //!
 //! // Setup the server listener.
 //! let address = "127.0.0.1:12345".parse()?;
