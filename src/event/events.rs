@@ -2,15 +2,13 @@ use crate::event::Event;
 
 /// `Events` represents an events container to which events can be added.
 ///
-/// `Events` is passed as an argument to [`Poller.poll`] and will be used to
+/// `Events` is passed as an argument to [`poll`] and will be used to
 /// receive any new readiness events received since the last poll. Usually, a
-/// single `Events` instance is created at the same time as a [`Poller`] and
-/// reused on each call to [`Poller.poll`].
+/// single `Events` instance is created and reused on each call to [`poll`].
 ///
-/// See [`Poller`] for more documentation on polling.
+/// See [`poll`] for more documentation on polling.
 ///
-/// [`Poller.poll`]: ../poll/struct.Poller.html#method.poll
-/// [`Poller`]: ../poll/struct.Poller.html
+/// [`poll`]: fn@crate::poll
 ///
 /// # Examples
 ///

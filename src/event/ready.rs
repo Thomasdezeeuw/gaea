@@ -10,11 +10,9 @@ use std::ops::{BitOr, BitOrAssign};
 /// `Ready` values can be combined together using the various bitwise operators,
 /// see examples below.
 ///
-/// For high level documentation on polling and readiness, see [`Poller`].
+/// For high level documentation on polling and readiness, see [`poll`].
 ///
-/// [`Poller`]: ../poll/struct.Poller.html
-/// [`register`]: ../poll/struct.Poller.html#method.register
-/// [`reregister`]: ../poll/struct.Poller.html#method.reregister
+/// [`poll`]: fn@crate::poll
 ///
 /// # Examples
 ///
@@ -48,9 +46,7 @@ impl Ready {
     /// Error readiness.
     pub const ERROR: Ready = Ready(ERROR);
 
-    /// Deadline was elapsed, see [`Poller.add_deadline`].
-    ///
-    /// [`Poller.add_deadline`]: ../poll/struct.Poller.html#method.add_deadline
+    /// Deadline was elapsed.
     pub const TIMER: Ready = Ready(TIMER);
 
     /// Hup readiness, this signal is Unix specific.

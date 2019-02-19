@@ -11,9 +11,12 @@ pub use self::ready::Ready;
 /// A readiness event.
 ///
 /// `Event` is a [readiness state] paired with a [`EventedId`]. It is returned by
-/// [`Poller.poll`].
+/// [`poll`].
 ///
-/// For more documentation on polling and events, see [`Poller`].
+/// For more documentation on polling and events, see [`poll`].
+///
+/// [readiness state]: Ready
+/// [`poll`]: fn@crate::poll
 ///
 /// # Examples
 ///
@@ -25,11 +28,6 @@ pub use self::ready::Ready;
 /// assert_eq!(event.id(), EventedId(0));
 /// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// ```
-///
-/// [readiness state]: struct.Ready.html
-/// [`EventedId`]: struct.EventedId.html
-/// [`Poller.poll`]: ../poll/struct.Poller.html#method.poll
-/// [`Poller`]: ../poll/struct.Poller.html
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Event {
     id: EventedId,
