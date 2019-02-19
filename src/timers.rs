@@ -8,8 +8,7 @@ use std::mem::replace;
 
 use log::trace;
 
-use crate::event::{Event, Events, EventedId, Ready};
-use crate::poll::Poll;
+use crate::event::{self, Event, Events, EventedId, Ready};
 
 pub struct Timers {
     deadlines: BinaryHeap<Reverse<Deadline>>,
@@ -65,7 +64,7 @@ impl Timers {
     }
 }
 
-impl<Evts> Poll<Evts> for Timers
+impl<Evts> event::Source<Evts> for Timers
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
@@ -82,7 +81,7 @@ impl<Evts> Poll<Evts> for Timers
     }
 
     fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
-        trace!("polling deadlines");
+        trace!("polling timers");
         let now = Instant::now();
 
         for _ in 0..events.capacity_left().unwrap_or(usize::max_value()) {

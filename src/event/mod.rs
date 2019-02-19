@@ -1,5 +1,8 @@
 //! Readiness event types and utilities.
 
+use std::io;
+use std::time::Duration;
+
 mod events;
 mod id;
 mod ready;
@@ -49,6 +52,45 @@ impl Event {
     pub fn readiness(&self) -> Ready {
         self.readiness
     }
+}
+
+/// A readiness event source that can be polled for readiness events.
+pub trait Source<Evts>
+    where Evts: Events,
+{
+    /// The duration until the next event will be available.
+    ///
+    /// This is used to determine what timeout to use in a blocking call to
+    /// poll. For example if we have a queue of timers, of which the next one
+    /// expires in one second, we don't want to block for more then one second
+    /// and thus we should return `Some(1 second)` to ensure that.
+    ///
+    /// If the duration until the next available event is unknown `None` should
+    /// be returned.
+    fn next_event_available(&self) -> Option<Duration>;
+
+    /// Poll for events.
+    ///
+    /// Any available readiness events must be added to `events`. The pollable
+    /// source may not block.
+    ///
+    /// Some implementation of `Events` have a limited available capacity.
+    /// This method may not add more events then `Events::capacity_left`
+    /// returns, if it returns a capacity limit.
+    fn poll(&mut self, events: &mut Evts) -> io::Result<()>;
+}
+
+/// A blocking variant of [`Source`].
+pub trait BlockingSource<Evts>: Source<Evts>
+    where Evts: Events,
+{
+    /// A blocking poll for readiness events.
+    ///
+    /// This is the same as [`Source::poll`] and all requirements of that method
+    /// apply to this method as well. Different to `poll` is that this method
+    /// may block up `timeout` duration, if one is provided, or block forever if
+    /// no timeout is provided (assuming *something* wakes up the poll source).
+    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>;
 }
 
 #[cfg(test)]

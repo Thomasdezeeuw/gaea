@@ -94,8 +94,7 @@ use std::time::Duration;
 
 use log::trace;
 
-use crate::event::{EventedId, Events};
-use crate::poll::{BlockingPoll, Poll};
+use crate::event::{self, EventedId, Events};
 use crate::sys;
 
 mod awakener;
@@ -467,7 +466,7 @@ impl OsQueue {
     }
 }
 
-impl<Evts> Poll<Evts> for OsQueue
+impl<Evts> event::Source<Evts> for OsQueue
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
@@ -475,11 +474,12 @@ impl<Evts> Poll<Evts> for OsQueue
     }
 
     fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
+        use crate::event::BlockingSource;
         self.blocking_poll(events, Some(Duration::from_millis(0)))
     }
 }
 
-impl<Evts> BlockingPoll<Evts> for OsQueue
+impl<Evts> event::BlockingSource<Evts> for OsQueue
     where Evts: Events,
 {
     fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()> {

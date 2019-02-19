@@ -6,8 +6,7 @@ use std::time::Duration;
 
 use log::trace;
 
-use crate::event::{Event, Events, EventedId, Ready};
-use crate::poll::Poll;
+use crate::event::{self, Event, Events, EventedId, Ready};
 
 #[derive(Debug)]
 pub struct Queue {
@@ -32,7 +31,7 @@ impl Queue {
     }
 }
 
-impl<Evts> Poll<Evts> for Queue
+impl<Evts> event::Source<Evts> for Queue
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
