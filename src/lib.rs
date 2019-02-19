@@ -156,7 +156,7 @@ mod sys;
 
 pub mod event;
 pub mod os;
-//pub mod net;
+pub mod net;
 pub mod poll;
 
 #[cfg(unix)]
