@@ -3,9 +3,9 @@ use std::net::{Shutdown, SocketAddr};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
+use crate::event::EventedId;
+use crate::os::{Evented, Interests, PollOption, OsQueue};
 use crate::sys;
-use crate::event::{Evented, EventedId};
-use crate::poll::{Interests, PollOption, Poller};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -13,9 +13,7 @@ use crate::poll::{Interests, PollOption, Poller};
 /// [`Read`] and [`Write`] implementation don't block and instead return a
 /// [`WouldBlock`] error.
 ///
-/// [`Read`]: #impl-Read
-/// [`Write`]: #impl-Write
-/// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
+/// [`WouldBlock`]: std::io::ErrorKind::WouldBlock
 ///
 /// # Deregistering
 ///
@@ -27,15 +25,15 @@ use crate::poll::{Interests, PollOption, Poller};
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use mio_st::event::EventedId;
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Poller, PollOption};
+/// use mio_st::poll::{OsQueue, PollOption};
 ///
 /// let address = "127.0.0.1:8000".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
 ///
-/// let mut poller = Poller::new()?;
+/// let mut poller = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
-/// // Register the socket with `Poller`.
+/// // Register the socket with `OsQueue`.
 /// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
 ///
 /// poller.poll(&mut events, None)?;
@@ -105,8 +103,6 @@ impl TcpStream {
     /// This function will cause all pending and future I/O on the specified
     /// portions to return immediately with an appropriate value (see the
     /// documentation of [`Shutdown`]).
-    ///
-    /// [`Shutdown`]: https://doc.rust-lang.org/nightly/std/net/enum.Shutdown.html
     pub fn shutdown(&mut self, how: Shutdown) -> io::Result<()> {
         self.inner.shutdown(how)
     }
@@ -138,15 +134,15 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.inner.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         self.inner.reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
         self.inner.deregister(poller)
     }
 }
@@ -182,15 +178,15 @@ impl AsRawFd for TcpStream {
 /// doesn't block when calling [`accept`] and instead returns a [`WouldBlock`]
 /// error.
 ///
-/// [`accept`]: #method.accept
-/// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
+/// [`accept`]: TcpListener::accept
+/// [`WouldBlock`]: std::io::ErrorKind::WouldBlock
 ///
 /// # Deregistering
 ///
 /// `TcpListener` will deregister itself when dropped, **iff** it is not cloned
 /// (via [`try_clone`]).
 ///
-/// [`try_clone`]: #method.try_clone
+/// [`try_clone`]: TcpListener::try_clone
 ///
 /// # Examples
 ///
@@ -200,15 +196,15 @@ impl AsRawFd for TcpStream {
 ///
 /// use mio_st::event::EventedId;
 /// use mio_st::net::TcpListener;
-/// use mio_st::poll::{Poller, PollOption};
+/// use mio_st::poll::{OsQueue, PollOption};
 ///
 /// let address = "127.0.0.1:8001".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
 ///
-/// let mut poller = Poller::new()?;
+/// let mut poller = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
-/// // Register the socket with `Poller`
+/// // Register the socket with `OsQueue`
 /// poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)?;
 ///
 /// poller.poll(&mut events, Some(Duration::from_millis(100)))?;
@@ -245,8 +241,8 @@ impl TcpListener {
     /// # Notes
     ///
     /// On Linux when a `TcpListener` is cloned it must deregistered. If its not
-    /// deregistered explicitly and one listener is closed (dropped) and onother
-    /// is still open the poller will still receive events.
+    /// deregistered explicitly and one listener is closed (dropped) and another
+    /// is still open the os queue will still receive events.
     pub fn try_clone(&self) -> io::Result<TcpListener> {
         self.inner.try_clone().map(|inner| TcpListener { inner })
     }
@@ -260,7 +256,7 @@ impl TcpListener {
     /// If an accepted stream is returned, the remote address of the peer is
     /// returned along with it.
     ///
-    /// [`WouldBlock`]: https://doc.rust-lang.org/nightly/std/io/enum.ErrorKind.html#variant.WouldBlock
+    /// [`WouldBlock`]: std::io::ErrorKind::WouldBlock
     pub fn accept(&mut self) -> io::Result<(TcpStream, SocketAddr)> {
         self.inner.accept().map(|(inner, address)| (TcpStream{ inner }, address))
     }
@@ -291,17 +287,17 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
         self.inner.register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
         self.inner.reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
         self.inner.deregister(poller)
     }
 }

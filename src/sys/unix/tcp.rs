@@ -3,8 +3,8 @@ use std::mem::size_of_val;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
-use crate::event::{Evented, EventedId};
-use crate::poll::{Interests, PollOption, Poller};
+use crate::event::EventedId;
+use crate::os::{Evented, Interests, PollOption, OsQueue};
 use crate::sys::unix::eventedfd::EventedFd;
 
 #[derive(Debug)]
@@ -111,15 +111,15 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).deregister(poller)
     }
 }
@@ -235,15 +235,15 @@ unsafe fn enable_socket_option(fd: RawFd, level: libc::c_int, name: libc::c_int)
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut Poller, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, poller: &mut OsQueue, id: EventedId, interests: Interests, opt: PollOption) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut Poller) -> io::Result<()> {
+    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
         EventedFd(&self.as_raw_fd()).deregister(poller)
     }
 }
