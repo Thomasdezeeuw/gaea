@@ -159,7 +159,6 @@ pub mod os;
 //pub mod net;
 pub mod poll;
 
-/*
 #[cfg(unix)]
 pub mod unix {
     //! Unix only extensions.
@@ -168,7 +167,6 @@ pub mod unix {
     pub use crate::sys::EventedIo;
     pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
 }
-*/
 
 #[doc(no_inline)]
 pub use crate::event::{EventedId, Events, Ready};
