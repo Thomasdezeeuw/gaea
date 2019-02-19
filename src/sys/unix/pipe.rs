@@ -27,7 +27,7 @@ use crate::sys::unix::EventedIo;
 /// use std::io::{Read, Write};
 ///
 /// use mio_st::unix::{new_pipe, Sender, Receiver};
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::EventedId;
 /// use mio_st::poll::{Poller, PollOption};
 ///
 /// // Unique ids for the two ends of the channel.
@@ -36,7 +36,7 @@ use crate::sys::unix::EventedIo;
 ///
 /// // Create a `Poller` instance and the events container.
 /// let mut poller = Poller::new()?;
-/// let mut events = Events::new();
+/// let mut events = Vec::new();
 ///
 /// // Create a new pipe.
 /// let (mut sender, mut receiver) = new_pipe()?;

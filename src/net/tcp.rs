@@ -25,7 +25,7 @@ use crate::poll::{Interests, PollOption, Poller};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::EventedId;
 /// use mio_st::net::TcpStream;
 /// use mio_st::poll::{Poller, PollOption};
 ///
@@ -33,7 +33,7 @@ use crate::poll::{Interests, PollOption, Poller};
 /// let mut stream = TcpStream::connect(address)?;
 ///
 /// let mut poller = Poller::new()?;
-/// let mut events = Events::new();
+/// let mut events = Vec::new();
 ///
 /// // Register the socket with `Poller`.
 /// poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge)?;
@@ -198,7 +198,7 @@ impl AsRawFd for TcpStream {
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::EventedId;
 /// use mio_st::net::TcpListener;
 /// use mio_st::poll::{Poller, PollOption};
 ///
@@ -206,7 +206,7 @@ impl AsRawFd for TcpStream {
 /// let mut listener = TcpListener::bind(address)?;
 ///
 /// let mut poller = Poller::new()?;
-/// let mut events = Events::new();
+/// let mut events = Vec::new();
 ///
 /// // Register the socket with `Poller`
 /// poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)?;

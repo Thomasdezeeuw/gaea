@@ -29,7 +29,7 @@ use crate::poll::{Interests, PollOption, Poller};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::EventedId;
 /// use mio_st::net::UdpSocket;
 /// use mio_st::poll::{Interests, PollOption, Poller};
 ///
@@ -51,7 +51,7 @@ use crate::poll::{Interests, PollOption, Poller};
 ///
 /// // As always create our poll and events.
 /// let mut poller = Poller::new()?;
-/// let mut events = Events::new();
+/// let mut events = Vec::new();
 ///
 /// // Register our sockets
 /// poller.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
@@ -299,7 +299,7 @@ impl FromRawFd for UdpSocket {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event::{Events, EventedId};
+/// use mio_st::event::EventedId;
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
 /// use mio_st::poll::{Interests, PollOption, Poller};
 ///
@@ -316,7 +316,7 @@ impl FromRawFd for UdpSocket {
 ///
 /// // Create our poll instance and events container.
 /// let mut poller = Poller::new()?;
-/// let mut events = Events::new();
+/// let mut events = Vec::new();
 ///
 /// // Register our echoer and sender.
 /// poller.register(&mut echoer, ECHOER_ID, Interests::READABLE, PollOption::Level)?;

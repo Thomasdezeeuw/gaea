@@ -17,7 +17,6 @@ edition       = "2018"
 travis-ci = { repository = "Thomasdezeeuw/mio-st", branch = "master" }
 
 [dependencies]
-arrayvec = { version = "0.4.7", default-features = false, features = ["use_union"] }
 libc     = "0.2.44"
 log      = "0.4.6"
 

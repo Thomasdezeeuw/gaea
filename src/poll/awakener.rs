@@ -36,13 +36,13 @@ use crate::sys;
 /// use std::thread;
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Events, EventedId, Ready};
+/// use mio_st::event::{Event, EventedId, Ready};
 /// use mio_st::poll::{Poller, Awakener};
 ///
 /// const WAKE_ID: EventedId = EventedId(10);
 ///
 /// let mut poller = Poller::new()?;
-/// let mut events = Events::new();
+/// let mut events = Vec::new();
 ///
 /// let awakener = Awakener::new(&mut poller, WAKE_ID)?;
 /// // We need to keep the Awakener alive, so we'll create a clone for the
@@ -63,10 +63,7 @@ use crate::sys;
 /// // After about 500 milliseconds we should we awoken by the other thread,
 /// // getting a single event.
 /// assert_eq!(events.len(), 1);
-/// let event = (&mut events).next().unwrap();
-/// assert_eq!(event.id(), WAKE_ID);
-/// assert_eq!(event.readiness(), Ready::READABLE);
-///
+/// assert_eq!(events[0], Event::new(WAKE_ID, Ready::READABLE));
 /// # handle.join().unwrap();
 /// #     Ok(())
 /// # }

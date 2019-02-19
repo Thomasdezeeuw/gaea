@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use log::error;
 
-use mio_st::event::{Event, Events};
+use mio_st::event::Event;
 use mio_st::poll::Poller;
 
 /// Initialise the test setup, things like logging etc.
@@ -22,22 +22,22 @@ pub fn init() {
 
 /// Initialise the test setup (same as init) and create a `Poller` instance and
 /// `Events` at the same time.
-pub fn init_with_poller() -> (Poller, Events) {
+pub fn init_with_poller() -> (Poller, Vec<Event>) {
     init();
 
     let poller = Poller::new().expect("unable to create Poller instance");
-    let events = Events::new();
+    let events = Vec::new();
     (poller, events)
 }
 
 /// Poll the user space events of `poller` and test if all and only the
 /// `expected` events are present. This is strict test and fails if any events
 /// are missing or if more events are returned.
-pub fn expect_userspace_events(poller: &mut Poller, mut events: &mut Events, mut expected: Vec<Event>) {
+pub fn expect_userspace_events(poller: &mut Poller, events: &mut Vec<Event>, mut expected: Vec<Event>) {
     events.clear();
-    poller.poll_userspace(&mut events);
+    poller.poll_userspace(events);
 
-    for event in &mut *events {
+    for event in events.drain(..) {
         let index = expected.iter().position(|expected| *expected == event);
         if let Some(index) = index {
             assert_eq!(event, expected.swap_remove(index));
@@ -53,12 +53,12 @@ pub fn expect_userspace_events(poller: &mut Poller, mut events: &mut Events, mut
 /// Poll `poller` and compare the retrieved events with the `expected` ones.
 /// This test is looser then `expect_userspace_events`, it only check if an
 /// events readiness contains the expected readiness and the ids match.
-pub fn expect_events(poller: &mut Poller, events: &mut Events, mut expected: Vec<Event>) {
+pub fn expect_events(poller: &mut Poller, events: &mut Vec<Event>, mut expected: Vec<Event>) {
     events.clear();
     poller.poll(events, Some(Duration::from_millis(500)))
         .expect("unable to poll");
 
-    for event in &mut *events {
+    for event in events.drain(..) {
         let index = expected.iter()
             .position(|expected| {
                 event.id() == expected.id() &&
