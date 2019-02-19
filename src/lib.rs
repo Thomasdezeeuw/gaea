@@ -6,7 +6,7 @@
 //! * Fast - minimal overhead over the equivalent OS facilities (epoll, kqueue, etc.).
 //! * Zero allocations at runtime.
 //! * A scalable readiness-based API.
-//! * Provide utilities such as a timers.
+//! * Provide utilities such as a timers and user space event queues.
 //!
 //! # Usage
 //!
@@ -159,6 +159,7 @@ pub mod net;
 pub mod os;
 pub mod poll;
 pub mod timers;
+pub mod user_space;
 
 #[cfg(unix)]
 pub mod unix {
