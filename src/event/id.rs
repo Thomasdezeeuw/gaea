@@ -1,26 +1,20 @@
 use std::fmt;
 
-/// Associates readiness notifications with [`Evented`] handles.
+/// Identifier of an event.
 ///
-/// `EventedId` is used as an argument to [`Poller.register`] and
-/// [`Poller.reregister`] and is used to associate an [`Event`] with an
-/// [`Evented`] handle.
+/// This is used to associate a readiness notifications with event handle.
 ///
-/// See [`Poller`] for more documentation on polling.
+/// See [`poll`] for more documentation on polling.
+///
+/// [`poll`]: fn@crate::poll
 ///
 /// # Uniqueness of `EventedId`
 ///
-/// `EventedId` does not have to be unique within a `Poller` instance, it is
-/// purely a tool for the user of `Poller` to associate an `Event` with an
-/// `Evented` handle. It is advised for example to use the same `EventedId` for
-/// say a `TcpStream` and any related timeout or deadline for the same
-/// connection. The `EventedID` is effectively opaque to `Poller`.
-///
-/// [`Evented`]: ../event/trait.Evented.html
-/// [`Poller.register`]: ../poll/struct.Poller.html#method.register
-/// [`Poller.reregister`]: ../poll/struct.Poller.html#method.reregister
-/// [`Event`]: ../event/struct.Event.html
-/// [`Poller`]: ../poll/struct.Poller.html
+/// `EventedId` does not have to be unique, it is purely a tool for the user to
+/// associate an `Event` with an event handle. It is advised for example to use
+/// the same `EventedId` for say a `TcpStream` and any related timeout or
+/// deadline for the same connection. The `EventedID` is effectively opaque to
+/// any readiness event sources.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct EventedId(pub usize);
