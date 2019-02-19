@@ -1,10 +1,10 @@
 use std::io;
 
 use crate::event::EventedId;
-use crate::poll::Poller;
+use crate::os::OsQueue;
 use crate::sys;
 
-/// Awakener allows cross-thread waking of a `Poller` instance.
+/// Awakener allows cross-thread waking of [`OsQueue`].
 ///
 /// When created it will cause events with [`Ready::READABLE`] and the provided
 /// `id` if [`wake`] is called, possibly from another thread.
@@ -15,13 +15,12 @@ use crate::sys;
 /// required. This is due to an implementation detail where if all copies of the
 /// `Awakener` are dropped it will also drop all wake up notifications from the
 /// system queue, including wake up notifications that have been added before
-/// the `Awakener` that was dropped, resulting the `Poller` instance not being
-/// woken up.
+/// the `Awakener` that was dropped, resulting the [`OsQueue`] not being woken
+/// up.
 ///
-/// Only a single `Awakener` should active per `Poller` instance, the `Awakener`
-/// can be cloned using [`try_clone`] if more are needed. What happens if
-/// multiple `Awakener`s are registered with the same `Poller` instance is
-/// undefined.
+/// Only a single `Awakener` should active per [`OsQueue`], the `Awakener` can
+/// be cloned using [`try_clone`] if more are needed. What happens if multiple
+/// `Awakener`s are registered with the same `Poller` instance is undefined.
 ///
 /// [`Ready::READABLE`]: crate::event::Ready::READABLE
 /// [`wake`]: Awakener::wake
@@ -29,7 +28,7 @@ use crate::sys;
 ///
 /// # Examples
 ///
-/// Wake a `Poller` instance from another thread.
+/// Wake an [`OsQueue`] from another thread.
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
@@ -75,8 +74,8 @@ pub struct Awakener {
 
 impl Awakener {
     /// Create a new `Awakener`.
-    pub fn new(poller: &mut Poller, id: EventedId) -> io::Result<Awakener> {
-        sys::Awakener::new(poller.selector(), id).map(|inner| Awakener { inner })
+    pub fn new(os_queue: &mut OsQueue, id: EventedId) -> io::Result<Awakener> {
+        sys::Awakener::new(os_queue.selector(), id).map(|inner| Awakener { inner })
     }
 
     /// Attempts to clone the `Awakener`.
@@ -84,7 +83,7 @@ impl Awakener {
         self.inner.try_clone().map(|inner| Awakener { inner })
     }
 
-    /// Wake up the [`Poller`](Poller) instance associated with this `Awakener`.
+    /// Wake up the [`OsQueue`] associated with this `Awakener`.
     pub fn wake(&self) -> io::Result<()> {
         self.inner.wake()
     }

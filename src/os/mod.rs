@@ -98,12 +98,12 @@ use crate::event::{EventedId, Events};
 use crate::poll::{BlockingPoll, Poll};
 use crate::sys;
 
-//mod awakener;
+mod awakener;
 mod evented;
 mod interests;
 mod option;
 
-//pub use self::awakener::Awakener;
+pub use self::awakener::Awakener;
 pub use self::evented::Evented;
 pub use self::interests::Interests;
 pub use self::option::PollOption;
