@@ -170,16 +170,16 @@ pub mod unix {
 }
 
 #[doc(no_inline)]
-pub use crate::event::{BlockingSource, EventedId, Events, Ready, Source};
+pub use crate::event::{Events, Ready};
 
 /// Poll a number of event sources for new events.
 ///
 /// This will first poll `blocking_source` for readiness events, blocking at
 /// most for a duration specified in `timeout`. Next it will poll all the other
 /// `sources` for readiness events.
-pub fn poll<BP, Evts>(blocking_source: &mut BP, sources: &mut [&mut dyn Source<Evts>], events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
+pub fn poll<BP, Evts>(blocking_source: &mut BP, sources: &mut [&mut dyn event::Source<Evts>], events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
     where Evts: Events,
-          BP: BlockingSource<Evts>,
+          BP: event::BlockingSource<Evts>,
 {
     trace!("polling: timeout={:?}", timeout);
 
