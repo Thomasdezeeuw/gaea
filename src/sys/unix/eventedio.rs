@@ -51,9 +51,6 @@ use crate::sys::unix::EventedFd;
 /// #     Ok(())
 /// # }
 /// ```
-///
-/// [`Evented`]: ../event/trait.Evented.html
-/// [`EventedFd`]: struct.EventedFd.html
 #[derive(Debug)]
 pub struct EventedIo {
     fd: File,

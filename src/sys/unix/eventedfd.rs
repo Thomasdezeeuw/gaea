@@ -9,23 +9,20 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// `EventedFd` enables registering any type with an file descriptor with
 /// [`OsQueue`].
 ///
-/// While only implementations for TCP and UDP are provided, Mio supports
-/// registering any file descriptor that can be registered with the underlying
-/// OS selector. `EventedFd` provides the necessary bridge.
+/// While only implementations for TCP and UDP are provided, registering any
+/// file descriptor, that can be registered with the underlying OS selector, can
+/// be registered with `OsQueue`. `EventedFd` provides the necessary bridge.
 ///
 /// Note that `EventedFd` takes a reference to a `RawFd`. This is because
 /// `EventedFd` **does not** take ownership of the file descriptor.
 /// Specifically, it will not manage any lifecycle related operations, such as
 /// closing the file descriptor on drop. It is expected that the `EventedFd` is
-/// constructed right before a call to [`OsQueue.register`]. See the examples
+/// constructed right before a call to [`OsQueue::register`]. See the examples
 /// below for more detail.
 ///
 /// For a owned, or managed, type see [`EventedIo`].
 ///
-/// [`Evented`]: ../event/trait.Evented.html
-/// [`OsQueue`]: ../poll/struct.OsQueue.html
-/// [`OsQueue.register`]: ../poll/struct.OsQueue.html#method.register
-/// [`EventedIo`]: struct.EventedIo.html
+/// [`EventedIo`]: crate::unix::EventedIo
 ///
 /// # Deregistering
 ///
