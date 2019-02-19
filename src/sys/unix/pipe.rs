@@ -84,8 +84,6 @@ pub fn new_pipe() -> io::Result<(Sender, Receiver)> {
 /// Receiving end of an unix pipe.
 ///
 /// See [`new_pipe`] for documentation, including examples.
-///
-/// [`new_pipe`]: fn.new_pipe.html
 #[derive(Debug)]
 pub struct Receiver {
     inner: EventedIo,
@@ -133,8 +131,6 @@ impl Read for Receiver {
 /// Sending end of an unix pipe.
 ///
 /// See [`new_pipe`] for documentation, including examples.
-///
-/// [`new_pipe`]: fn.new_pipe.html
 #[derive(Debug)]
 pub struct Sender {
     inner: EventedIo,
