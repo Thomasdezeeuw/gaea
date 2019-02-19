@@ -24,6 +24,29 @@ pub use self::awakener::Awakener;
 pub use self::interests::Interests;
 pub use self::option::PollOption;
 
+/// Polls for readiness events.
+///
+/// This trait defines how a `Poll` instance can be polled for readiness events.
+pub trait Poll {
+    /// The duration until the next event will be available.
+    ///
+    /// This is used to determine what timeout to use in a blocking call to
+    /// poll. For example if we have a queue of timers, of which the next one
+    /// expires in one second, we don't want to block for more then one second
+    /// and thus we should return `Some(1 second)` to ensure that.
+    fn next_event_available(&self) -> Option<Duration>;
+
+    /// Poll for events.
+    ///
+    /// Any available readiness events must be added to `events`.
+    ///
+    /// Note some implementation of `Events` have a limited available capacity.
+    /// This method may not add more events then `Events::capacity_left`
+    /// returns, if it returns a capacity limit.
+    fn poll<Evts>(&mut self, events: &mut Evts) -> io::Result<()>
+        where Evts: Events;
+}
+
 // Poller uses three subsystems to bring a complete event system to the user.
 //
 // 1. Operating System specific event queue. This is currently kqueue or epoll.

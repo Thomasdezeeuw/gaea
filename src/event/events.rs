@@ -42,7 +42,8 @@ pub trait Events: Extend<Event> {
     ///
     /// If the container is "infinite", i.e. it can grow, this should return
     /// `None`. If there is some kind of capacity limit, e.g. in case of arrays,
-    /// this must return `Some`.
+    /// this must return `Some` with the available capacity left, **not total
+    /// capacity**.
     fn capacity_left(&self) -> Option<usize>;
 
     /// Extend the events container from a slice of events.
