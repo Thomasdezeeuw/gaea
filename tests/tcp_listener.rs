@@ -217,6 +217,7 @@ fn tcp_listener_deregister() {
     });
 
     // Shouldn't get any events after deregistering.
+    events.clear();
     poller.poll(&mut events, Some(Duration::from_millis(500))).unwrap();
     assert!(events.is_empty());
 
@@ -287,6 +288,7 @@ fn tcp_listener_edge_poll_option_drain() {
 
     let mut seen_event = 0;
     for _ in 0..2 {
+        events.clear();
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events {
@@ -340,6 +342,7 @@ fn tcp_listener_edge_poll_option_no_drain() {
 
     let mut seen_event = false;
     for _ in 0..2 {
+        events.clear();
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events {
@@ -379,6 +382,7 @@ fn tcp_listener_level_poll_option() {
 
     let mut seen_events = 0;
     for _ in 0..5  {
+        events.clear();
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events {
@@ -417,6 +421,7 @@ fn tcp_listener_oneshot_poll_option() {
 
     let mut seen_event = false;
     for _ in 0..2 {
+        events.clear();
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events {
@@ -448,6 +453,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
 
     let mut seen_event = false;
     for _ in 0..2 {
+        events.clear();
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events {
@@ -468,6 +474,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
 
     seen_event = false;
     for _ in 0..2 {
+        events.clear();
         poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events {
