@@ -146,6 +146,12 @@
 // Disallow warnings in examples, we want to set a good example after all.
 #![doc(test(attr(deny(warnings))))]
 
+use std::cmp::min;
+use std::io;
+use std::time::Duration;
+
+use log::trace;
+
 mod sys;
 
 pub mod event;
@@ -165,3 +171,40 @@ pub mod unix {
 pub use crate::event::{EventedId, Events, Ready};
 #[doc(no_inline)]
 pub use crate::poll::{BlockingPoll, Poll, Poller, PollOption};
+
+/// Poll a number of event sources for new events.
+///
+/// This will first poll `blocking_source` for readiness events, blocking at
+/// most for a duration specified in `timeout`. Next it will poll all the other
+/// `sources` for readiness events.
+pub fn poll<BP, Evts>(blocking_source: &mut BP, sources: &mut [&mut dyn Poll<Evts>], events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
+    where Evts: Events,
+          BP: BlockingPoll<Evts>,
+{
+    trace!("polling: timeout={:?}", timeout);
+
+    // Compute the maximum timeout we can use.
+    let timeout = sources.iter().fold(timeout, |timeout, poller| {
+        min_timeout(timeout, poller.next_event_available())
+    });
+
+    // Start with polling the blocking source.
+    blocking_source.blocking_poll(events, timeout)?;
+
+    // Next poll all non-blocking sources.
+    for source in sources.iter_mut() {
+        source.poll(events)?;
+    }
+
+    Ok(())
+}
+
+/// Returns the smallest timeout of the two timeouts provided.
+fn min_timeout(left: Option<Duration>, right: Option<Duration>) -> Option<Duration> {
+    match (left, right) {
+        (Some(left), Some(right)) => Some(min(left, right)),
+        (Some(left), None) => Some(left),
+        (None, Some(right)) => Some(right),
+        (None, None) => None,
+    }
+}
