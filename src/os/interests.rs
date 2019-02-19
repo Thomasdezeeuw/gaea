@@ -4,16 +4,16 @@ use std::ops::BitOr;
 
 /// Interests used in registering.
 ///
-/// Interests are used in [registering][] [`Evented`] handles with [`Poller`],
+/// Interests are used in [registering][] [`Evented`] handles with [`OsQueue`],
 /// they indicate what readiness should be monitored for. For example if a
 /// socket is registered with [readable] interests and the socket becomes
 /// writable, no event will be returned from [`poll`].
 ///
-/// [registering]: struct.Poller.html#method.register
-/// [`Evented`]: ../event/trait.Evented.html
-/// [`Poller`]: struct.Poller.html
-/// [readable]: #associatedconstant.READABLE
-/// [`poll`]: struct.Poller.html#method.poll
+/// [registering]: struct.OsQueue.html#registering-handles
+/// [`Evented`]: crate::os::Evented
+/// [`OsQueue`]: crate::os::OsQueue
+/// [readable]: Interests::READABLE
+/// [`poll`]: fn@crate::poll
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Interests(NonZeroU8);
