@@ -1,3 +1,5 @@
+use std::iter::once;
+
 use crate::event::Event;
 
 /// `Events` represents an events container to which events can be added.
@@ -42,30 +44,24 @@ pub trait Events: Extend<Event> {
     /// `None`. If there is some kind of capacity limit, e.g. in case of arrays,
     /// this must return `Some` with the available capacity left, **not total
     /// capacity**.
-    fn capacity_left(&self) -> Option<usize>;
-
-    /// Extend the events container from a slice of events.
     ///
-    /// Defaults to using the [`Extend`] implementation.
-    fn extend_from_slice(&mut self, events: &[Event]) {
-        self.extend(events.into_iter().map(|e| *e))
-    }
+    /// # Notes
+    ///
+    /// If this returns `Some` and the capacity left is incorrect it will cause
+    /// missing events.
+    fn capacity_left(&self) -> Option<usize>;
 
     /// Add a single event to the events container.
     ///
     /// Defaults to using the [`Events::extend_from_slice`] implementation.
     fn push(&mut self, event: Event) {
-        self.extend_from_slice(&[event])
+        self.extend(once(event))
     }
 }
 
 impl Events for Vec<Event> {
     fn capacity_left(&self) -> Option<usize> {
         None
-    }
-
-    fn extend_from_slice(&mut self, events: &[Event]) {
-        self.extend_from_slice(events);
     }
 
     fn push(&mut self, event: Event) {
