@@ -155,9 +155,10 @@ use log::trace;
 mod sys;
 
 pub mod event;
-pub mod os;
 pub mod net;
+pub mod os;
 pub mod poll;
+pub mod timers;
 
 #[cfg(unix)]
 pub mod unix {
