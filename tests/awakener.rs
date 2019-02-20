@@ -2,21 +2,22 @@ use std::thread;
 use std::sync::{Arc, Barrier};
 use std::time::Duration;
 
-use mio_st::event::{Event, EventedId, Ready};
-use mio_st::poll::Awakener;
+use mio_st::event::{Event, Ready};
+use mio_st::os::Awakener;
+use mio_st::{event, poll};
 
 mod util;
 
-use self::util::{expect_events, init_with_poller};
+use self::util::{expect_events, init_with_os_queue};
 
 #[test]
 fn awakener() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
-    let event_id = EventedId(10);
+    let event_id = event::Id(10);
     // Keep `awakener` alive on this thread and create a new awakener to move
     // to the other thread.
-    let awakener = Awakener::new(&mut poller, event_id)
+    let awakener = Awakener::new(&mut os_queue, event_id)
         .expect("unable to create awakener");
 
     // Waking on the same thread.
@@ -25,7 +26,7 @@ fn awakener() {
     }
 
     // Depending on the platform we can get 3 or 1 event.
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
 
@@ -36,7 +37,7 @@ fn awakener() {
         awakener1.wake().expect("unable to wake");
     });
 
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
 
@@ -49,12 +50,12 @@ fn awakener() {
 
 #[test]
 fn awakener_try_clone() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
-    let event_id = EventedId(10);
+    let event_id = event::Id(10);
     // Keep `awakener` alive on this thread and create two new awakeners to move
     // to the other threads.
-    let awakener = Awakener::new(&mut poller, event_id)
+    let awakener = Awakener::new(&mut os_queue, event_id)
         .expect("unable to create awakener");
     let awakener1 = awakener.try_clone()
         .expect("unable to clone awakener");
@@ -66,7 +67,7 @@ fn awakener_try_clone() {
     });
 
     handle1.join().unwrap();
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
 
@@ -76,7 +77,7 @@ fn awakener_try_clone() {
     });
 
     handle2.join().unwrap();
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
 
@@ -87,10 +88,10 @@ fn awakener_try_clone() {
 
 #[test]
 fn awakener_multiple_wakeups() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
-    let event_id = EventedId(10);
-    let awakener = Awakener::new(&mut poller, event_id)
+    let event_id = event::Id(10);
+    let awakener = Awakener::new(&mut os_queue, event_id)
         .expect("unable to create awakener");
     let awakener1 = awakener.try_clone()
         .expect("unable to clone awakener");
@@ -109,7 +110,7 @@ fn awakener_multiple_wakeups() {
     });
 
     // Receive the event from thread 1.
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
 
@@ -117,7 +118,7 @@ fn awakener_multiple_wakeups() {
     barrier.wait();
 
     // Now we need to receive another event from thread 2.
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
 
