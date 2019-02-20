@@ -177,15 +177,19 @@ pub use crate::event::{Events, Ready};
 /// This will first poll `blocking_source` for readiness events, blocking at
 /// most for a duration specified in `timeout`. Next it will poll all the other
 /// `sources` for readiness events.
-pub fn poll<BP, Evts>(blocking_source: &mut BP, sources: &mut [&mut dyn event::Source<Evts>], events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
+pub fn poll<BS, Evts>(
+    blocking_source: &mut BS,
+    sources: &mut [&mut dyn event::Source<Evts>],
+    events: &mut Evts, timeout: Option<Duration>,
+) -> io::Result<()>
     where Evts: Events,
-          BP: event::BlockingSource<Evts>,
+          BS: event::BlockingSource<Evts>,
 {
     trace!("polling: timeout={:?}", timeout);
 
     // Compute the maximum timeout we can use.
-    let timeout = sources.iter().fold(timeout, |timeout, poller| {
-        min_timeout(timeout, poller.next_event_available())
+    let timeout = sources.iter().fold(timeout, |timeout, source| {
+        min_timeout(timeout, source.next_event_available())
     });
 
     // Start with polling the blocking source.
