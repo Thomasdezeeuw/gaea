@@ -1,8 +1,8 @@
-/// Option supplied when [registering] an `Evented` handle with [`OsQueue`].
+/// Option supplied when [registering] an [`Evented`] handle with [`OsQueue`].
 ///
 /// For high level documentation on registering see [`OsQueue`].
 ///
-/// [registering]: struct.OsQueue.html#registering-handles
+/// [registering]: crate::os::OsQueue::register
 /// [`OsQueue`]: crate::os::OsQueue
 ///
 /// # Difference

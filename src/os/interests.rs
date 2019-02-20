@@ -2,14 +2,14 @@ use std::fmt;
 use std::num::NonZeroU8;
 use std::ops::BitOr;
 
-/// Interests used in registering.
+/// Interests supplied when [registering] an [`Evented`] handle with [`OsQueue`].
 ///
 /// Interests are used in [registering][] [`Evented`] handles with [`OsQueue`],
 /// they indicate what readiness should be monitored for. For example if a
 /// socket is registered with [readable] interests and the socket becomes
 /// writable, no event will be returned from [`poll`].
 ///
-/// [registering]: struct.OsQueue.html#registering-handles
+/// [registering]: crate::os::OsQueue::register
 /// [`Evented`]: crate::os::Evented
 /// [`OsQueue`]: crate::os::OsQueue
 /// [readable]: Interests::READABLE
@@ -66,16 +66,16 @@ impl fmt::Debug for Interests {
 
 #[cfg(test)]
 mod tests {
-    use crate::poll::Interests;
+    use crate::os::Interests;
 
     #[test]
     fn is_tests() {
         assert!(Interests::READABLE.is_readable());
-        assert!(!Interests::WRITABLE.is_readable());
         assert!(!Interests::READABLE.is_writable());
+        assert!(!Interests::WRITABLE.is_readable());
         assert!(Interests::WRITABLE.is_writable());
         assert!(Interests::BOTH.is_readable());
-        assert!(Interests::BOTH.is_readable());
+        assert!(Interests::BOTH.is_writable());
     }
 
     #[test]

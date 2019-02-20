@@ -34,32 +34,33 @@ use crate::os::OsQueue;
 /// use std::thread;
 /// use std::time::Duration;
 ///
-/// use mio_st::event::{Event, event::Id, Ready};
-/// use mio_st::poll::{Poller, Awakener};
+/// use mio_st::{event, poll};
+/// use mio_st::event::{Event, Ready};
+/// use mio_st::os::{OsQueue, Awakener};
 ///
 /// const WAKE_ID: event::Id = event::Id(10);
 ///
-/// let mut poller = Poller::new()?;
+/// let mut os_queue = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
-/// let awakener = Awakener::new(&mut poller, WAKE_ID)?;
+/// let awakener = Awakener::new(&mut os_queue, WAKE_ID)?;
+///
 /// // We need to keep the Awakener alive, so we'll create a clone for the
 /// // thread we create below.
 /// let awakener1 = awakener.try_clone()?;
-///
 /// let handle = thread::spawn(move || {
 ///     // Working hard, or hardly working?
 ///     thread::sleep(Duration::from_millis(500));
 ///
-///     // Now we'll wake the poller instance on the other thread.
+///     // Now we'll wake the queue on the other thread.
 ///     awakener1.wake().expect("unable to wake");
 /// });
 ///
 /// // On our current thread we'll poll for events, without a timeout.
-/// poller.poll(&mut events, None)?;
+/// poll(&mut os_queue, &mut [], &mut events, None)?;
 ///
-/// // After about 500 milliseconds we should we awoken by the other thread,
-/// // getting a single event.
+/// // After about 500 milliseconds we should we awoken by the other thread we
+/// // started, getting a single event.
 /// assert_eq!(events.len(), 1);
 /// assert_eq!(events[0], Event::new(WAKE_ID, Ready::READABLE));
 /// # handle.join().unwrap();

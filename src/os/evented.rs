@@ -3,19 +3,19 @@ use std::io;
 use crate::event;
 use crate::os::{Interests, PollOption, OsQueue};
 
-/// A value that may be registered with [`OsQueue`].
+/// A handle that may be registered with [`OsQueue`].
 ///
-/// Values that implement `Evented` can be registered with [`OsQueue`]. The
+/// Handles that implement `Evented` can be registered with [`OsQueue`]. The
 /// methods on the trait **should not** be called directly, instead the
-/// equivalent methods should be called on an [`OsQueue`] instance.
+/// equivalent methods should be called on [`OsQueue`].
 ///
 /// See [`OsQueue` documentation] for more details.
 ///
-/// [`OsQueue` documentation]: struct.OsQueue.html#registering-handles
+/// [`OsQueue` documentation]: OsQueue
 ///
 /// # Implementing `Evented`
 ///
-/// Implementations of `Evented` are always backed by **system** handles, which
+/// Implementations of `Evented` are always backed by *system* handles, which
 /// are backed by sockets or other system handles. The `Evented` handles will be
 /// monitored by the Operating System selector. In this case, an implementation
 /// of `Evented` delegates to a lower level handle. Examples of this are
@@ -40,9 +40,9 @@ use crate::os::{Interests, PollOption, OsQueue};
 /// ```
 /// use std::io;
 ///
-/// use mio_st::event::{Evented, event::Id};
+/// use mio_st::event;
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{Interests, PollOption, OsQueue};
+/// use mio_st::os::{Evented, Interests, PollOption, OsQueue};
 ///
 /// # #[allow(dead_code)]
 /// pub struct MyEvented {
@@ -51,19 +51,19 @@ use crate::os::{Interests, PollOption, OsQueue};
 /// }
 ///
 /// impl Evented for MyEvented {
-///     fn register(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+///     fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
 ///         // Delegate the `register` call to `socket`.
-///         self.socket.register(selector, id, interests, opt)
+///         self.socket.register(os_queue, id, interests, opt)
 ///     }
 ///
-///     fn reregister(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+///     fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
 ///         // Delegate the `reregister` call to `socket`.
-///         self.socket.reregister(selector, id, interests, opt)
+///         self.socket.reregister(os_queue, id, interests, opt)
 ///     }
 ///
-///     fn deregister(&mut self, selector: &mut OsQueue) -> io::Result<()> {
+///     fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
 ///         // Delegate the `deregister` call to `socket`.
-///         self.socket.deregister(selector)
+///         self.socket.deregister(os_queue)
 ///     }
 /// }
 /// ```
