@@ -31,6 +31,19 @@ pub trait Source<Evts>
     fn poll(&mut self, events: &mut Evts) -> io::Result<()>;
 }
 
+impl<S, Evts> Source<Evts> for &mut S
+    where S: Source<Evts>,
+          Evts: Events,
+{
+    fn next_event_available(&self) -> Option<Duration> {
+        (&**self).next_event_available()
+    }
+
+    fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
+        (&mut **self).poll(events)
+    }
+}
+
 /// A blocking variant of [`Source`].
 pub trait BlockingSource<Evts>: Source<Evts>
     where Evts: Events,
@@ -42,6 +55,15 @@ pub trait BlockingSource<Evts>: Source<Evts>
     /// may block up `timeout` duration, if one is provided, or block forever if
     /// no timeout is provided (assuming *something* wakes up the poll source).
     fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>;
+}
+
+impl<S, Evts> BlockingSource<Evts> for &mut S
+    where S: BlockingSource<Evts>,
+          Evts: Events,
+{
+    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()> {
+        (&mut **self).blocking_poll(events, timeout)
+    }
 }
 
 /// `Events` represents an events container to which events can be added.
