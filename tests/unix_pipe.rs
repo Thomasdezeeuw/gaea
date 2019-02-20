@@ -2,31 +2,32 @@ use std::io::{Read, Write};
 use std::thread::sleep;
 use std::time::Duration;
 
-use mio_st::event::{Event, EventedId, Ready};
-use mio_st::poll::{Interests, PollOption, Poller};
+use mio_st::event::{Event, Ready};
+use mio_st::os::{Interests, PollOption, OsQueue};
 use mio_st::unix::{new_pipe, Sender, Receiver};
+use mio_st::event;
 
 mod util;
 
-use self::util::{expect_events, init, init_with_poller};
+use self::util::{expect_events, init, init_with_os_queue};
 
-const SENDER_ID: EventedId = EventedId(0);
-const RECEIVER_ID: EventedId = EventedId(1);
+const SENDER_ID: event::Id = event::Id(0);
+const RECEIVER_ID: event::Id = event::Id(1);
 
 const DATA: &'static [u8] = b"Hello world!";
 
 #[test]
 fn unix_pipe() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let (mut sender, mut receiver) = new_pipe().expect("can't create pipe");
 
-    poller.register(&mut sender, SENDER_ID, Sender::INTERESTS, PollOption::Level)
+    os_queue.register(&mut sender, SENDER_ID, Sender::INTERESTS, PollOption::Level)
         .expect("can't register sender");
-    poller.register(&mut receiver, RECEIVER_ID, Receiver::INTERESTS, PollOption::Level)
+    os_queue.register(&mut receiver, RECEIVER_ID, Receiver::INTERESTS, PollOption::Level)
         .expect("can't register receiver");
 
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(SENDER_ID, Ready::WRITABLE),
     ]);
 
@@ -35,7 +36,7 @@ fn unix_pipe() {
     // Ensure that the sending half is ready for writing again.
     sleep(Duration::from_millis(10));
 
-    expect_events(&mut poller, &mut events, vec![
+    expect_events(&mut os_queue, &mut events, vec![
         Event::new(RECEIVER_ID, Ready::READABLE),
         Event::new(SENDER_ID, Ready::WRITABLE),
     ]);
@@ -52,8 +53,8 @@ fn receiver_writable_interests() {
 
     let (_, mut receiver) = new_pipe().expect("can't create pipe");
 
-    let mut poller = Poller::new().unwrap();
-    poller.register(&mut receiver, RECEIVER_ID, Interests::WRITABLE, PollOption::Level)
+    let mut os_queue = OsQueue::new().unwrap();
+    os_queue.register(&mut receiver, RECEIVER_ID, Interests::WRITABLE, PollOption::Level)
         .unwrap();
 }
 
@@ -64,7 +65,7 @@ fn sender_readable_interests() {
 
     let (mut sender, _) = new_pipe().expect("can't create pipe");
 
-    let mut poller = Poller::new().unwrap();
-    poller.register(&mut sender, SENDER_ID, Interests::READABLE, PollOption::Level)
+    let mut os_queue = OsQueue::new().unwrap();
+    os_queue.register(&mut sender, SENDER_ID, Interests::READABLE, PollOption::Level)
         .unwrap();
 }
