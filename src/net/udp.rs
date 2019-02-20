@@ -28,11 +28,11 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event;
+/// use mio_st::{event, poll};
 /// use mio_st::net::UdpSocket;
-/// use mio_st::poll::{Interests, PollOption, OsQueue};
+/// use mio_st::os::{Interests, PollOption, OsQueue};
 ///
-/// // Unique ids and address for both the sender and echoer.
+/// // Unique ids and addresses for both the sender and echoer.
 /// const SENDER_ID: event::Id = event::Id(0);
 /// const ECHOER_ID: event::Id = event::Id(1);
 ///
@@ -49,12 +49,12 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// let mut echoer_socket = echoer_socket.connect(sender_address)?;
 ///
 /// // As always create our poll and events.
-/// let mut poller = OsQueue::new()?;
+/// let mut os_queue = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
 /// // Register our sockets
-/// poller.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
-/// poller.register(&mut echoer_socket, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
+/// os_queue.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
+/// os_queue.register(&mut echoer_socket, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
 ///
 /// // The message we'll send.
 /// const MSG_TO_SEND: &[u8; 11] = b"Hello world";
@@ -63,20 +63,21 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 ///
 /// // Our event loop.
 /// loop {
-///     poller.poll(&mut events, None)?;
+///     // Poll for events.
+///     poll(&mut os_queue, &mut [], &mut events, None)?;
 ///
 ///     for event in &mut events {
 ///         match event.id() {
-///             // Our sender is ready to send.
 ///             SENDER_ID => {
+///                 // Our sender is ready to send.
 ///                 let bytes_sent = sender_socket.send(MSG_TO_SEND)?;
 ///                 assert_eq!(bytes_sent, MSG_TO_SEND.len());
 ///                 println!("sent {:?} ({} bytes)", MSG_TO_SEND, bytes_sent);
 ///             },
-///             // Our echoer is ready to read.
 ///             ECHOER_ID => {
+///                 // Our echoer is ready to read.
 ///                 let bytes_recv = echoer_socket.recv(&mut buf)?;
-///                 println!("{:?} ({} bytes)", &buf[0..bytes_recv], bytes_recv);
+///                 println!("received {:?} ({} bytes)", &buf[0..bytes_recv], bytes_recv);
 ///                 # return Ok(());
 ///             }
 ///             // We shouldn't receive any event with another id then the two
@@ -241,16 +242,16 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        self.socket.register(poller, id, interests, opt)
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        self.socket.reregister(poller, id, interests, opt)
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        self.socket.deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        self.socket.deregister(os_queue)
     }
 }
 
@@ -296,43 +297,48 @@ impl FromRawFd for UdpSocket {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event;
+/// use mio_st::{event, poll};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-/// use mio_st::poll::{Interests, PollOption, OsQueue};
+/// use mio_st::os::{Interests, PollOption, OsQueue};
 ///
 /// const ECHOER_ID: event::Id = event::Id(0);
 /// const SENDER_ID: event::Id = event::Id(1);
 ///
-/// // Create our echoer.
+/// // Create our echoer, which will act as server.
 /// let echoer_addr = "127.0.0.1:7008".parse()?;
 /// let mut echoer = UdpSocket::bind(echoer_addr)?;
 ///
-/// // Then we connect to the server.
+/// // Then we connect to the echo server we create above.
 /// let sender_addr = "127.0.0.1:7009".parse()?;
 /// let mut sender = ConnectedUdpSocket::connect(sender_addr, echoer_addr)?;
 ///
-/// // Create our poll instance and events container.
-/// let mut poller = OsQueue::new()?;
+/// // Create our OS queue and events container.
+/// let mut os_queue = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
 /// // Register our echoer and sender.
-/// poller.register(&mut echoer, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
-/// poller.register(&mut sender, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
+/// os_queue.register(&mut echoer, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
+/// os_queue.register(&mut sender, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
 ///
 /// loop {
-///     poller.poll(&mut events, None)?;
+///     // Poll for events.
+///     poll(&mut os_queue, &mut [], &mut events, None)?;
 ///
 ///     for event in &mut events {
 ///         match event.id() {
+///             SENDER_ID => {
+///                 // In all likelihood still will be called after the first
+///                 // call to poll.
+///                 let msg = b"hello world";
+///                 sender.send(msg)?;
+///             },
 ///             ECHOER_ID => {
+///                 // After the sender send a message this will likely be
+///                 // called after another call to poll.
 ///                 let mut buf = [0; 20];
 ///                 let (recv_n, address) = echoer.recv_from(&mut buf)?;
 ///                 println!("Received: {:?} from {}", &buf[0..recv_n], address);
 /// #               return Ok(());
-///             },
-///             SENDER_ID => {
-///                 let msg = b"hello world";
-///                 sender.send(msg)?;
 ///             },
 ///             _ => unreachable!(),
 ///         }
@@ -469,16 +475,16 @@ impl ConnectedUdpSocket {
 }
 
 impl Evented for ConnectedUdpSocket {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        self.socket.register(poller, id, interests, opt)
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        self.socket.reregister(poller, id, interests, opt)
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.socket.reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        self.socket.deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        self.socket.deregister(os_queue)
     }
 }
 
