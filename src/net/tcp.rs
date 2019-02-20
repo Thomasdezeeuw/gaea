@@ -22,22 +22,23 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event;
+/// use mio_st::{event, poll};
 /// use mio_st::net::TcpStream;
-/// use mio_st::poll::{OsQueue, PollOption};
+/// use mio_st::os::{OsQueue, PollOption};
 ///
 /// let address = "127.0.0.1:8000".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
 ///
-/// let mut poller = OsQueue::new()?;
+/// let mut os_queue = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
 /// // Register the socket with `OsQueue`.
-/// poller.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
+/// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
 ///
-/// poller.poll(&mut events, None)?;
+/// poll(&mut os_queue, &mut [], &mut events, None)?;
 ///
-/// // The socket might be ready at this point.
+/// // If event ID 0 was returned by `poll` then the stream will be ready to
+/// // read or write.
 /// #     Ok(())
 /// # }
 /// ```
@@ -133,16 +134,16 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        self.inner.register(poller, id, interests, opt)
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.inner.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        self.inner.reregister(poller, id, interests, opt)
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        self.inner.reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        self.inner.deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        self.inner.deregister(os_queue)
     }
 }
 
@@ -193,22 +194,26 @@ impl AsRawFd for TcpStream {
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::event;
+/// use mio_st::{event, poll};
 /// use mio_st::net::TcpListener;
-/// use mio_st::poll::{OsQueue, PollOption};
+/// use mio_st::os::{OsQueue, PollOption};
 ///
 /// let address = "127.0.0.1:8001".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
 ///
-/// let mut poller = OsQueue::new()?;
+/// let mut os_queue = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
-/// // Register the socket with `OsQueue`
-/// poller.register(&mut listener, event::Id(0), TcpListener::INTERESTS, PollOption::Edge)?;
+/// const LISTENER_ID: event::Id = event::Id(0);
 ///
-/// poller.poll(&mut events, Some(Duration::from_millis(100)))?;
+/// // Register the socket with `OsQueue`.
+/// os_queue.register(&mut listener, LISTENER_ID, TcpListener::INTERESTS, PollOption::Edge)?;
 ///
-/// // There may be a socket ready to be accepted.
+/// // Poll for new events.
+/// poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
+///
+/// // If `LISTENER_ID` was returned by `poll` then the listener will be ready
+/// // to accept connection.
 /// #     Ok(())
 /// # }
 /// ```
@@ -286,18 +291,18 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
-        self.inner.register(poller, id, interests, opt)
+        self.inner.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
-        self.inner.reregister(poller, id, interests, opt)
+        self.inner.reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        self.inner.deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        self.inner.deregister(os_queue)
     }
 }
 
