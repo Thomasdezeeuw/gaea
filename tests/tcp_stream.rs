@@ -6,23 +6,24 @@ use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::Duration;
 
-use mio_st::event::{Event, EventedId, Ready};
+use mio_st::event::{Event, Ready};
 use mio_st::net::TcpStream;
-use mio_st::poll::{Interests, PollOption};
+use mio_st::os::{Interests, PollOption};
+use mio_st::{event, poll};
 
 mod util;
 
-use self::util::{any_local_address, any_local_ipv6_address, assert_would_block, expect_events, init, init_with_poller};
+use self::util::{any_local_address, any_local_ipv6_address, assert_would_block, expect_events, init, init_with_os_queue};
 
 /// Data used in reading and writing tests.
 const DATA: &'static [u8; 12] = b"Hello world!";
 
-const ID: EventedId = EventedId(0);
-const ID2: EventedId = EventedId(1);
+const ID1: event::Id = event::Id(0);
+const ID2: event::Id = event::Id(1);
 
 #[test]
 fn tcp_stream() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let (sender, receiver) = channel();
 
@@ -42,14 +43,14 @@ fn tcp_stream() {
     let listener_address = receiver.recv().unwrap();
     let mut stream = TcpStream::connect(listener_address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     // Connect is non-blocking, so wait until the other thread accepted the
     // connection at which point we should receive an event that the connection
     // is ready.
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
     assert_eq!(stream.peer_addr().unwrap(), listener_address);
 
@@ -63,7 +64,7 @@ fn tcp_stream() {
 #[test]
 #[cfg_attr(feature="disable_test_ipv6", ignore = "skipping IPv6 test")]
 fn tcp_stream_ipv6() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let (sender, receiver) = channel();
 
@@ -84,14 +85,14 @@ fn tcp_stream_ipv6() {
     assert!(listener_address.is_ipv6());
     let mut stream = TcpStream::connect(listener_address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     // Connect is non-blocking, so wait until the other thread accepted the
     // connection at which point we should receive an event that the connection
     // is ready.
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
     assert_eq!(stream.peer_addr().unwrap(), listener_address);
 
@@ -136,7 +137,7 @@ fn tcp_stream_nodelay() {
 
 #[test]
 fn tcp_stream_peek() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let (sender, receiver) = channel();
     let thread_handle = thread::spawn(move || {
@@ -151,10 +152,10 @@ fn tcp_stream_peek() {
     let address = receiver.recv().unwrap();
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
 
     let mut buf = [0; 20];
@@ -173,17 +174,17 @@ fn tcp_stream_peek() {
 
 #[test]
 fn tcp_stream_shutdown_read() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let (thread_handle, address) = start_listener(1, Some(barrier.clone()));
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::WRITABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::WRITABLE),
     ]);
 
     stream.shutdown(Shutdown::Read).unwrap();
@@ -198,17 +199,17 @@ fn tcp_stream_shutdown_read() {
 
 #[test]
 fn tcp_stream_shutdown_write() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let (thread_handle, address) = start_listener(1, Some(barrier.clone()));
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::WRITABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::WRITABLE),
     ]);
 
     stream.shutdown(Shutdown::Write).unwrap();
@@ -223,17 +224,17 @@ fn tcp_stream_shutdown_write() {
 
 #[test]
 fn tcp_stream_shutdown_both() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let (thread_handle, address) = start_listener(1, Some(barrier.clone()));
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::WRITABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::WRITABLE),
     ]);
 
     stream.shutdown(Shutdown::Both).unwrap();
@@ -252,7 +253,7 @@ fn tcp_stream_shutdown_both() {
 
 #[test]
 fn tcp_stream_read() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let barrier2 = barrier.clone();
@@ -269,10 +270,10 @@ fn tcp_stream_read() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
 
     // Should read the byte written.
@@ -292,7 +293,7 @@ fn tcp_stream_read() {
 // TODO: add test to check that writing is non-blocking.
 #[test]
 fn tcp_stream_write() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let (sender, receiver) = channel();
     let thread_handle = thread::spawn(move || {
@@ -309,10 +310,10 @@ fn tcp_stream_write() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::WRITABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::WRITABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::WRITABLE),
     ]);
 
     assert_eq!(stream.write(DATA).unwrap(), DATA.len());
@@ -344,19 +345,18 @@ fn tcp_stream_raw_fd() {
 
 #[test]
 fn tcp_stream_deregister() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let (thread_handle, address) = start_listener(1, Some(barrier.clone()));
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), TcpStream::INTERESTS, PollOption::Edge).unwrap();
-    poller.deregister(&mut stream).unwrap();
+    os_queue.register(&mut stream, ID1, TcpStream::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.deregister(&mut stream).unwrap();
 
     // Shouldn't get any events after deregistering.
-    events.clear();
-    poller.poll(&mut events, Some(Duration::from_millis(500))).unwrap();
+    poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500))).unwrap();
     assert!(events.is_empty());
 
     // But we do expect to be connected.
@@ -368,18 +368,18 @@ fn tcp_stream_deregister() {
 
 #[test]
 fn tcp_stream_reregister() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let (thread_handle, address) = start_listener(1, Some(barrier.clone()));
 
     let mut stream = TcpStream::connect(address).unwrap();
 
-    poller.register(&mut stream, EventedId(0), Interests::WRITABLE, PollOption::Edge).unwrap();
-    poller.reregister(&mut stream, EventedId(1), Interests::WRITABLE, PollOption::Edge).unwrap();
+    os_queue.register(&mut stream, ID1, Interests::WRITABLE, PollOption::Edge).unwrap();
+    os_queue.reregister(&mut stream, ID2, Interests::WRITABLE, PollOption::Edge).unwrap();
 
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(1), Ready::WRITABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID2, Ready::WRITABLE),
     ]);
 
     assert_eq!(stream.peer_addr().unwrap(), address);
@@ -390,7 +390,7 @@ fn tcp_stream_reregister() {
 
 #[test]
 fn tcp_stream_edge_poll_option_drain() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let barrier2 = barrier.clone();
@@ -410,17 +410,16 @@ fn tcp_stream_edge_poll_option_drain() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     let mut seen_events = 0;
     for _ in 0..4  {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if seen_events == 0 => {
+                ID1 if seen_events == 0 => {
                     let mut buf = [0; 20];
                     assert_eq!(stream.read(&mut buf).unwrap(), DATA.len());
                     assert_would_block(stream.read(&mut buf));
@@ -429,13 +428,13 @@ fn tcp_stream_edge_poll_option_drain() {
                     // Unblock second write.
                     barrier.wait();
                 },
-                ID if seen_events == 1 => {
+                ID1 if seen_events == 1 => {
                     let mut buf = [0; 20];
                     assert_eq!(stream.read(&mut buf).unwrap(), DATA.len());
                     assert_would_block(stream.read(&mut buf));
                     seen_events = 2;
                 },
-                ID => panic!("unexpected event for level TCP stream"),
+                ID1 => panic!("unexpected event for level TCP stream"),
                 _ => unreachable!(),
             }
         }
@@ -449,7 +448,7 @@ fn tcp_stream_edge_poll_option_drain() {
 
 #[test]
 fn tcp_stream_edge_poll_option_no_drain() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let barrier2 = barrier.clone();
@@ -466,24 +465,23 @@ fn tcp_stream_edge_poll_option_no_drain() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Edge)
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Edge)
         .expect("unable to register TCP stream");
 
     let mut seen_event = false;
     for _ in 0..3  {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if !seen_event => {
+                ID1 if !seen_event => {
                     // Don't read the entire buffer, only half. Then we
                     // shouldn't see any more events.
                     let mut buf = [0; 6];
                     assert_eq!(stream.read(&mut buf).unwrap(), 6);
                     seen_event = true;
                 },
-                ID => panic!("unexpected event for level TCP stream"),
+                ID1 => panic!("unexpected event for level TCP stream"),
                 _ => unreachable!(),
             }
         }
@@ -497,7 +495,7 @@ fn tcp_stream_edge_poll_option_no_drain() {
 
 #[test]
 fn tcp_stream_level_poll_option() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let barrier2 = barrier.clone();
@@ -514,31 +512,30 @@ fn tcp_stream_level_poll_option() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, EventedId(0), Interests::READABLE, PollOption::Level)
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Level)
         .expect("unable to register TCP stream");
 
     let mut seen_events = 0;
     for _ in 0..3  {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if seen_events == 0 => {
+                ID1 if seen_events == 0 => {
                     // Don't read the entire buffer, only half. Then we
                     // should see another event.
                     let mut buf = [0; 6];
                     assert_eq!(stream.read(&mut buf).unwrap(), 6);
                     seen_events = 1;
                 },
-                ID if seen_events == 1 => {
+                ID1 if seen_events == 1 => {
                     // Read the other half of the message.
                     let mut buf = [0; 6];
                     assert_eq!(stream.read(&mut buf).unwrap(), 6);
                     assert_would_block(stream.read(&mut buf));
                     seen_events = 2;
                 },
-                ID => panic!("unexpected event for level TCP stream"),
+                ID1 => panic!("unexpected event for level TCP stream"),
                 _ => unreachable!(),
             }
         }
@@ -552,7 +549,7 @@ fn tcp_stream_level_poll_option() {
 
 #[test]
 fn tcp_stream_oneshot_poll_option() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let barrier2 = barrier.clone();
@@ -570,17 +567,16 @@ fn tcp_stream_oneshot_poll_option() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, ID, Interests::READABLE, PollOption::Oneshot).unwrap();
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Oneshot).unwrap();
 
     let mut seen_event = false;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if !seen_event => seen_event = true,
-                ID => panic!("unexpected event for oneshot TCP stream"),
+                ID1 if !seen_event => seen_event = true,
+                ID1 => panic!("unexpected event for oneshot TCP stream"),
                 _ => unreachable!(),
             }
         }
@@ -593,7 +589,7 @@ fn tcp_stream_oneshot_poll_option() {
 
 #[test]
 fn tcp_stream_oneshot_poll_option_reregister() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let barrier = Arc::new(Barrier::new(2));
     let barrier2 = barrier.clone();
@@ -614,17 +610,16 @@ fn tcp_stream_oneshot_poll_option_reregister() {
     let address = receiver.recv().unwrap();
 
     let mut stream = TcpStream::connect(address).unwrap();
-    poller.register(&mut stream, ID, Interests::READABLE, PollOption::Oneshot).unwrap();
+    os_queue.register(&mut stream, ID1, Interests::READABLE, PollOption::Oneshot).unwrap();
 
     let mut seen_event = false;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in &mut events.drain(..) {
             match event.id() {
-                ID if !seen_event => seen_event = true,
-                ID => panic!("unexpected event for oneshot TCP stream"),
+                ID1 if !seen_event => seen_event = true,
+                ID1 => panic!("unexpected event for oneshot TCP stream"),
                 _ => unreachable!(),
             }
         }
@@ -635,14 +630,13 @@ fn tcp_stream_oneshot_poll_option_reregister() {
     barrier.wait();
 
     // Reregister the listener and we expect to see more events.
-    poller.reregister(&mut stream, ID2, Interests::READABLE, PollOption::Oneshot).unwrap();
+    os_queue.reregister(&mut stream, ID2, Interests::READABLE, PollOption::Oneshot).unwrap();
 
     seen_event = false;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
                 ID2 if !seen_event => seen_event = true,
                 ID2 => panic!("unexpected event for oneshot TCP stream"),
