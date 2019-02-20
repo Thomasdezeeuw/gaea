@@ -56,16 +56,16 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).deregister(os_queue)
     }
 }
 

@@ -39,17 +39,17 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// use std::net::TcpListener;
 /// use std::os::unix::io::AsRawFd;
 ///
-/// use mio_st::event::event::Id;
-/// use mio_st::poll::{Interests, PollOption, OsQueue};
+/// use mio_st::event;
+/// use mio_st::os::{Interests, PollOption, OsQueue};
 /// use mio_st::unix::EventedFd;
 ///
 /// // Bind a listener from the standard library.
 /// let listener = TcpListener::bind("127.0.0.1:0")?;
 ///
-/// let mut poller = OsQueue::new()?;
+/// let mut os_queue = OsQueue::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// poller.register(&mut EventedFd(&listener.as_raw_fd()), event::Id(0), Interests::READABLE, PollOption::Edge)?;
+/// os_queue.register(&mut EventedFd(&listener.as_raw_fd()), event::Id(0), Interests::READABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -60,8 +60,8 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// use std::io;
 /// use std::os::unix::io::RawFd;
 ///
-/// use mio_st::event::{Evented, event::Id};
-/// use mio_st::poll::{Interests, PollOption, OsQueue};
+/// use mio_st::event;
+/// use mio_st::os::{Evented, Interests, PollOption, OsQueue};
 /// use mio_st::unix::EventedFd;
 ///
 /// # #[allow(dead_code)]
@@ -70,16 +70,16 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// }
 ///
 /// impl Evented for MyIo {
-///     fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-///         EventedFd(&self.fd).register(poller, id, interests, opt)
+///     fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+///         EventedFd(&self.fd).register(os_queue, id, interests, opt)
 ///     }
 ///
-///     fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-///         EventedFd(&self.fd).reregister(poller, id, interests, opt)
+///     fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+///         EventedFd(&self.fd).reregister(os_queue, id, interests, opt)
 ///     }
 ///
-///     fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-///         EventedFd(&self.fd).deregister(poller)
+///     fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+///         EventedFd(&self.fd).deregister(os_queue)
 ///     }
 /// }
 /// ```
@@ -87,15 +87,15 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 pub struct EventedFd<'a>(pub &'a RawFd);
 
 impl<'a> Evented for EventedFd<'a> {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        poller.selector().register(*self.0, id, interests, opt)
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        os_queue.selector().register(*self.0, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        poller.selector().reregister(*self.0, id, interests, opt)
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        os_queue.selector().reregister(*self.0, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        poller.selector().deregister(*self.0)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        os_queue.selector().deregister(*self.0)
     }
 }
