@@ -197,29 +197,29 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
         // The actual error is stored in `kevent.data`, but we can't pass it
         // to the user from here. So the user needs to try and retrieve the
         // error themselves.
-        readiness.insert(Ready::ERROR);
+        readiness |= Ready::ERROR;
     }
 
     if contains_flag(kevent.flags, libc::EV_EOF) {
-        readiness.insert(Ready::HUP);
+        readiness |= Ready::HUP;
 
         // When the read end of the socket is closed, EV_EOF is set on
         // flags, and fflags contains the error if there is one.
         if kevent.fflags != 0 {
-            readiness.insert(Ready::ERROR);
+            readiness |= Ready::ERROR;
         }
     }
 
     match kevent.filter {
-        libc::EVFILT_READ => readiness.insert(Ready::READABLE),
-        libc::EVFILT_WRITE => readiness.insert(Ready::WRITABLE),
+        libc::EVFILT_READ => readiness |= Ready::READABLE,
+        libc::EVFILT_WRITE => readiness |= Ready::WRITABLE,
         _ => {},
     }
 
     // Used by the `Awakener`. On platforms that use `eventfd` it will emit a
     // readable event so we'll fake that here as well.
     if kevent.filter == libc::EVFILT_USER {
-        readiness.insert(Ready::READABLE);
+        readiness |= Ready::READABLE;
     }
 
     Event::new(id, readiness)
