@@ -4,22 +4,26 @@ use std::sync::{Arc, Barrier};
 use std::thread::{self, sleep};
 use std::time::Duration;
 
-use mio_st::event::{Event, EventedId, Ready};
+use mio_st::event::{Event, Ready};
 use mio_st::net::TcpListener;
-use mio_st::poll::{Interests, PollOption, Poller};
+use mio_st::os::{Interests, PollOption, OsQueue};
+use mio_st::{event, poll};
 
 mod util;
 
-use self::util::{any_local_address, any_local_ipv6_address, assert_would_block, expect_events, init, init_with_poller};
+use self::util::{any_local_address, any_local_ipv6_address, assert_would_block, expect_events, init, init_with_os_queue};
+
+const ID1: event::Id = event::Id(0);
+const ID2: event::Id = event::Id(1);
 
 #[test]
 fn tcp_listener() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Edge)
         .expect("unable to register TCP listener");
 
     // Start another thread that connects to our listener.
@@ -28,8 +32,8 @@ fn tcp_listener() {
         drop(stream);
     });
 
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
 
     // Expect a single connection.
@@ -49,12 +53,12 @@ fn tcp_listener() {
 #[test]
 #[cfg_attr(feature="disable_test_ipv6", ignore = "skipping IPv6 test")]
 fn tcp_listener_ipv6() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_ipv6_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Edge)
         .expect("unable to register TCP listener");
 
     // Start another thread that connects to our listener.
@@ -63,8 +67,8 @@ fn tcp_listener_ipv6() {
         drop(stream);
     });
 
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
 
     // Expect a single connection.
@@ -82,8 +86,8 @@ fn tcp_listener_ipv6() {
 }
 
 #[test]
-fn tcp_listener_try_clone_same_poller() {
-    let (mut poller, mut events) = init_with_poller();
+fn tcp_listener_try_clone_same_os_queue() {
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     // Cloning a listener should result in different file descriptors with the
     // same local address.
@@ -93,9 +97,9 @@ fn tcp_listener_try_clone_same_poller() {
     let address = listener1.local_addr().unwrap();
     assert_eq!(address, listener2.local_addr().unwrap());
 
-    // Should be able to register both listeners with the same poller.
-    poller.register(&mut listener1, EventedId(0), TcpListener::INTERESTS, PollOption::Edge).unwrap();
-    poller.register(&mut listener2, EventedId(1), TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    // Should be able to register both listeners with the same queue.
+    os_queue.register(&mut listener1, ID1, TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.register(&mut listener2, ID2, TcpListener::INTERESTS, PollOption::Edge).unwrap();
 
     // Start another thread that connects to our listener.
     let thread_handle = thread::spawn(move || {
@@ -104,9 +108,9 @@ fn tcp_listener_try_clone_same_poller() {
     });
 
     // We should have events for both listeners.
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
-        Event::new(EventedId(1), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
+        Event::new(ID2, Ready::READABLE),
     ]);
 
     // Expect a single connection on 1 of the listeners.
@@ -126,9 +130,9 @@ fn tcp_listener_try_clone_same_poller() {
 }
 
 #[test]
-fn tcp_listener_try_clone_different_poller() {
-    let (mut poller1, mut events) = init_with_poller();
-    let mut poller2 = Poller::new().unwrap();
+fn tcp_listener_try_clone_different_os_queue() {
+    let (mut os_queue1, mut events) = init_with_os_queue();
+    let mut os_queue2 = OsQueue::new().unwrap();
 
     // Cloning a listener should result in different file descriptors with the
     // same local address.
@@ -138,9 +142,9 @@ fn tcp_listener_try_clone_different_poller() {
     let address = listener1.local_addr().unwrap();
     assert_eq!(address, listener2.local_addr().unwrap());
 
-    // Should be able to register both listeners with the same poller.
-    poller1.register(&mut listener1, EventedId(0), TcpListener::INTERESTS, PollOption::Edge).unwrap();
-    poller2.register(&mut listener2, EventedId(0), TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    // Should be able to register both listeners with the same queue.
+    os_queue1.register(&mut listener1, ID1, TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    os_queue2.register(&mut listener2, ID1, TcpListener::INTERESTS, PollOption::Edge).unwrap();
 
     // Start another thread that connects to our listener.
     let thread_handle = thread::spawn(move || {
@@ -148,12 +152,12 @@ fn tcp_listener_try_clone_different_poller() {
         drop(stream);
     });
 
-    // Both pollers should have received an event.
-    expect_events(&mut poller1, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    // Both queues should have received an event.
+    expect_events(&mut os_queue1, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
-    expect_events(&mut poller2, &mut events, vec![
-        Event::new(EventedId(0), Ready::READABLE),
+    expect_events(&mut os_queue2, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
     ]);
 
     // Expect a single connection on 1 of the listeners.
@@ -202,13 +206,13 @@ fn tcp_listener_raw_fd() {
 
 #[test]
 fn tcp_listener_deregister() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge).unwrap();
-    poller.deregister(&mut listener).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.deregister(&mut listener).unwrap();
 
     // Start another thread that connects to our listener.
     let thread_handle = thread::spawn(move || {
@@ -218,7 +222,7 @@ fn tcp_listener_deregister() {
 
     // Shouldn't get any events after deregistering.
     events.clear();
-    poller.poll(&mut events, Some(Duration::from_millis(500))).unwrap();
+    poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500))).unwrap();
     assert!(events.is_empty());
 
     // But we do expect a single connection, even without an event.
@@ -237,13 +241,13 @@ fn tcp_listener_deregister() {
 
 #[test]
 fn tcp_listener_reregister() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    poller.register(&mut listener, EventedId(0), TcpListener::INTERESTS, PollOption::Edge).unwrap();
-    poller.reregister(&mut listener, EventedId(1), TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.reregister(&mut listener, ID2, TcpListener::INTERESTS, PollOption::Edge).unwrap();
 
     // Start another thread that connects to our listener.
     let thread_handle = thread::spawn(move || {
@@ -251,8 +255,8 @@ fn tcp_listener_reregister() {
         drop(stream);
     });
 
-    expect_events(&mut poller, &mut events, vec![
-        Event::new(EventedId(1), Ready::READABLE),
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID2, Ready::READABLE),
     ]);
 
     // Expect a single connection.
@@ -271,9 +275,8 @@ fn tcp_listener_reregister() {
 
 #[test]
 fn tcp_listener_edge_poll_option_drain() {
-    let (mut poller, mut events) = init_with_poller();
+    let (mut os_queue, mut events) = init_with_os_queue();
 
-    const ID: EventedId = EventedId(0);
     // Wait after first connection is made, to allow this test to hit
     // `WouldBlock` error when accepting after this first poll.
     let barrier = Arc::new(Barrier::new(2));
@@ -281,19 +284,18 @@ fn tcp_listener_edge_poll_option_drain() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle1 = start_connections(&mut listener, 1, None);
     let thread_handle2 = start_connections(&mut listener, 2, Some(barrier.clone()));
-    poller.register(&mut listener, ID, TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Edge).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
 
     let mut seen_event = 0;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if seen_event == 0 => {
+                ID1 if seen_event == 0 => {
                     // After the first call to poll we expect 2 connections to
                     // be ready.
                     assert!(listener.accept().is_ok());
@@ -305,7 +307,7 @@ fn tcp_listener_edge_poll_option_drain() {
 
                     seen_event += 2;
                 },
-                ID if seen_event == 2 => {
+                ID1 if seen_event == 2 => {
                     // After the second poll we expect 1 more connection to be
                     // ready.
                     assert!(listener.accept().is_ok());
@@ -315,7 +317,7 @@ fn tcp_listener_edge_poll_option_drain() {
                     // Unblock the connection thread.
                     barrier.wait();
                 }
-                ID => panic!("unexpected event for edge TCP listener"),
+                ID1 => panic!("unexpected event for edge TCP listener"),
                 _ => unreachable!(),
             }
         }
@@ -328,34 +330,31 @@ fn tcp_listener_edge_poll_option_drain() {
 
 #[test]
 fn tcp_listener_edge_poll_option_no_drain() {
-    let (mut poller, mut events) = init_with_poller();
-
-    const ID: EventedId = EventedId(0);
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle1 = start_connections(&mut listener, 1, None);
     let thread_handle2 = start_connections(&mut listener, 1, None);
-    poller.register(&mut listener, ID, TcpListener::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Edge).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
 
     let mut seen_event = false;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
                 // Here we also expect 2 connections to be ready after the first
                 // poll. We'll only accept one connection and then we don't
                 // expect any more events, since we didn't drain the queue of
                 // ready connections at the listener.
-                ID if !seen_event => {
+                ID1 if !seen_event => {
                     assert!(listener.accept().is_ok());
                     seen_event = true;
                 },
-                ID => panic!("unexpected event for edge TCP listener"),
+                ID1 => panic!("unexpected event for edge TCP listener"),
                 _ => unreachable!(),
             }
         }
@@ -368,26 +367,23 @@ fn tcp_listener_edge_poll_option_no_drain() {
 
 #[test]
 fn tcp_listener_level_poll_option() {
-    let (mut poller, mut events) = init_with_poller();
-
-    const ID: EventedId = EventedId(0);
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle1 = start_connections(&mut listener, 2, None);
     let thread_handle2 = start_connections(&mut listener, 2, None);
-    poller.register(&mut listener, ID, TcpListener::INTERESTS, PollOption::Level).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Level).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
 
     let mut seen_events = 0;
     for _ in 0..5  {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if seen_events < 4 => {
+                ID1 if seen_events < 4 => {
                     // More then 1 connection should be ready at a time, but
                     // we'll only accept 1 at a time. But since we're using
                     // level notifications we should keep receiving events
@@ -395,7 +391,7 @@ fn tcp_listener_level_poll_option() {
                     assert!(listener.accept().is_ok());
                     seen_events += 1;
                 },
-                ID => panic!("unexpected event for level TCP listener"),
+                ID1 => panic!("unexpected event for level TCP listener"),
                 _ => unreachable!(),
             }
         }
@@ -408,26 +404,23 @@ fn tcp_listener_level_poll_option() {
 
 #[test]
 fn tcp_listener_oneshot_poll_option() {
-    let (mut poller, mut events) = init_with_poller();
-
-    const ID: EventedId = EventedId(0);
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle = start_connections(&mut listener, 2, None);
-    poller.register(&mut listener, ID, TcpListener::INTERESTS, PollOption::Oneshot).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Oneshot).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(20));
 
     let mut seen_event = false;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if !seen_event => seen_event = true,
-                ID => panic!("unexpected event for oneshot TCP listener"),
+                ID1 if !seen_event => seen_event = true,
+                ID1 => panic!("unexpected event for oneshot TCP listener"),
                 _ => unreachable!(),
             }
         }
@@ -439,27 +432,23 @@ fn tcp_listener_oneshot_poll_option() {
 
 #[test]
 fn tcp_listener_oneshot_poll_option_reregister() {
-    let (mut poller, mut events) = init_with_poller();
-
-    const ID: EventedId = EventedId(0);
-    const ID2: EventedId = EventedId(2);
+    let (mut os_queue, mut events) = init_with_os_queue();
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle = start_connections(&mut listener, 2, None);
-    poller.register(&mut listener, ID, TcpListener::INTERESTS, PollOption::Oneshot).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::Oneshot).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(20));
 
     let mut seen_event = false;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
-                ID if !seen_event => seen_event = true,
-                ID => panic!("unexpected event for oneshot TCP listener"),
+                ID1 if !seen_event => seen_event = true,
+                ID1 => panic!("unexpected event for oneshot TCP listener"),
                 _ => unreachable!(),
             }
         }
@@ -470,14 +459,13 @@ fn tcp_listener_oneshot_poll_option_reregister() {
     sleep(Duration::from_millis(20));
 
     // Reregister the listener and we expect to see more events.
-    poller.reregister(&mut listener, ID2, TcpListener::INTERESTS, PollOption::Oneshot).unwrap();
+    os_queue.reregister(&mut listener, ID2, TcpListener::INTERESTS, PollOption::Oneshot).unwrap();
 
     seen_event = false;
     for _ in 0..2 {
-        events.clear();
-        poller.poll(&mut events, Some(Duration::from_millis(100))).unwrap();
+        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
-        for event in &mut events {
+        for event in events.drain(..) {
             match event.id() {
                 ID2 if !seen_event => seen_event = true,
                 ID2 => panic!("unexpected event for oneshot TCP listener"),
@@ -497,8 +485,8 @@ fn tcp_listener_writable_interests() {
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
 
-    let mut poller = Poller::new().unwrap();
-    poller.register(&mut listener, EventedId(0), Interests::WRITABLE, PollOption::Level)
+    let mut os_queue = OsQueue::new().unwrap();
+    os_queue.register(&mut listener, ID1, Interests::WRITABLE, PollOption::Level)
         .unwrap();
 }
 
