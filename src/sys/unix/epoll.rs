@@ -79,19 +79,19 @@ fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
     let mut readiness = Ready::EMPTY;
 
     if contains_flag(epoll, libc::EPOLLIN | libc::EPOLLPRI) {
-        readiness.insert(Ready::READABLE);
+        readiness |= Ready::READABLE;
     }
 
     if contains_flag(epoll, libc::EPOLLOUT) {
-        readiness.insert(Ready::WRITABLE);
+        readiness |= Ready::WRITABLE;
     }
 
     if contains_flag(epoll, libc::EPOLLERR) {
-        readiness.insert(Ready::ERROR);
+        readiness |= Ready::ERROR;
     }
 
     if contains_flag(epoll, libc::EPOLLRDHUP | libc::EPOLLHUP) {
-        readiness.insert(Ready::HUP);
+        readiness |= Ready::HUP;
     }
 
     Event::new(id, readiness)

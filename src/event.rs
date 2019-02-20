@@ -246,12 +246,6 @@ impl Ready {
     #[cfg(unix)]
     pub const HUP: Ready = Ready(HUP);
 
-    /// Insert another readiness, same operation as `|=`.
-    #[inline]
-    pub(crate) fn insert(&mut self, other: Ready) {
-        self.0 |= other.0;
-    }
-
     /// Whether or not all flags in `other` are contained within `self`.
     #[inline]
     pub fn contains(self, other: Ready) -> bool {
