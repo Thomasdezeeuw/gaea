@@ -26,38 +26,42 @@ use crate::sys::unix::EventedIo;
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::io::{Read, Write};
 ///
+/// use mio_st::os::{OsQueue, PollOption};
 /// use mio_st::unix::{new_pipe, Sender, Receiver};
-/// use mio_st::event::event::Id;
-/// use mio_st::poll::{OsQueue, PollOption};
+/// use mio_st::{event, poll};
 ///
 /// // Unique ids for the two ends of the channel.
 /// const CHANNEL_RECV_ID: event::Id = event::Id(0);
 /// const CHANNEL_SEND_ID: event::Id = event::Id(1);
 ///
-/// // Create a `OsQueue` instance and the events container.
-/// let mut poller = OsQueue::new()?;
+/// // Create a `OsQueue` and the events container.
+/// let mut os_queue = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///
 /// // Create a new pipe.
 /// let (mut sender, mut receiver) = new_pipe()?;
 ///
 /// // Register both ends of the channel.
-/// poller.register(&mut receiver, CHANNEL_RECV_ID, Receiver::INTERESTS, PollOption::Level)?;
-/// poller.register(&mut sender, CHANNEL_SEND_ID, Sender::INTERESTS, PollOption::Level)?;
+/// os_queue.register(&mut receiver, CHANNEL_RECV_ID, Receiver::INTERESTS, PollOption::Level)?;
+/// os_queue.register(&mut sender, CHANNEL_SEND_ID, Sender::INTERESTS, PollOption::Level)?;
+///
+/// const MSG: &[u8; 11] = b"Hello world";
 ///
 /// loop {
-///     // Check for new events.
-///     poller.poll(&mut events, None)?;
+///     // Poll for events.
+///     poll(&mut os_queue, &mut [], &mut events, None)?;
 ///
 ///     for event in &mut events {
 ///         match event.id() {
+///             CHANNEL_SEND_ID => sender.write_all(MSG)?,
 ///             CHANNEL_RECV_ID => {
-///                 let mut buf = Vec::with_capacity(128);
+///                 let mut buf = [0; 11];
 ///                 let n = receiver.read(&mut buf)?;
 ///                 println!("received: {:?}", &buf[0..n]);
+/// #               assert_eq!(n, MSG.len());
+/// #               assert_eq!(&buf, &*MSG);
 /// #               return Ok(());
 ///             },
-///             CHANNEL_SEND_ID => sender.write_all(b"Hello world")?,
 ///             _ => unreachable!(),
 ///         }
 ///     }
@@ -95,18 +99,18 @@ impl Receiver {
 }
 
 impl Evented for Receiver {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
-        self.inner.register(poller, id, interests, opt)
+        self.inner.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
-        self.inner.reregister(poller, id, interests, opt)
+        self.inner.reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        self.inner.deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        self.inner.deregister(os_queue)
     }
 }
 
@@ -142,18 +146,18 @@ impl Sender {
 }
 
 impl Evented for Sender {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
-        self.inner.register(poller, id, interests, opt)
+        self.inner.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
-        self.inner.reregister(poller, id, interests, opt)
+        self.inner.reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        self.inner.deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        self.inner.deregister(os_queue)
     }
 }
 

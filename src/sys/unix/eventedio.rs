@@ -30,8 +30,8 @@ use crate::sys::unix::EventedFd;
 /// use std::net::TcpListener;
 /// use std::os::unix::io::{FromRawFd, IntoRawFd};
 ///
-/// use mio_st::event::event::Id;
-/// use mio_st::poll::{Interests, PollOption, OsQueue};
+/// use mio_st::event;
+/// use mio_st::os::{Interests, PollOption, OsQueue};
 /// use mio_st::unix::EventedIo;
 ///
 /// // Bind a listener from the standard library.
@@ -44,10 +44,10 @@ use crate::sys::unix::EventedFd;
 /// // Now we can let `EventedIo` manage the lifetime for us.
 /// let mut evented_listener = unsafe { EventedIo::from_raw_fd(listener_fd) };
 ///
-/// let mut poller = OsQueue::new()?;
+/// let mut os_queue = OsQueue::new()?;
 ///
-/// // Register the listener using `EventedFd`.
-/// poller.register(&mut evented_listener, event::Id(0), Interests::READABLE, PollOption::Edge)?;
+/// // Register the listener using `EventedIo`.
+/// os_queue.register(&mut evented_listener, event::Id(0), Interests::READABLE, PollOption::Edge)?;
 /// #     Ok(())
 /// # }
 /// ```
@@ -75,16 +75,16 @@ impl AsRawFd for EventedIo {
 }
 
 impl Evented for EventedIo {
-    fn register(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).register(poller, id, interests, opt)
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, poller: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).reregister(poller, id, interests, opt)
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).reregister(os_queue, id, interests, opt)
     }
 
-    fn deregister(&mut self, poller: &mut OsQueue) -> io::Result<()> {
-        EventedFd(&self.as_raw_fd()).deregister(poller)
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
+        EventedFd(&self.as_raw_fd()).deregister(os_queue)
     }
 }
 
