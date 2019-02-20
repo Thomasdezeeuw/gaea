@@ -1,58 +1,58 @@
-
-/*
-use crate::event::{Event, EventedId, Ready};
-use crate::event::Ready;
-use crate::event::EventedId;
+use mio_st::event::{self, Event, Events, Ready};
 
 #[test]
-fn event() {
-    let id = EventedId(0);
-    assert_eq!(EventedId::from(0), EventedId(0));
-    assert_eq!(usize::from(id), 0);
-    assert_eq!(id.0, 0);
-    assert_eq!(id, id.clone());
+fn events_vec() {
+    let mut events = Vec::new();
 
-    let max_value = usize::max_value();
-    let id = EventedId(max_value);
-    assert_eq!(EventedId::from(max_value), EventedId(max_value));
-    assert_eq!(usize::from(id), max_value);
-    assert_eq!(id.0, max_value);
-    assert_eq!(id, id.clone());
+    assert_eq!(events.capacity_left(), None);
+
+    let event = Event::new(event::Id(0), Ready::READABLE);
+    events.push(event);
+    assert_eq!(events.pop(), Some(event));
 }
 
 #[test]
 fn event() {
-    let event = Event::new(EventedId(0), Ready::READABLE);
-    assert_eq!(event.id(), EventedId(0));
+    let event = Event::new(event::Id(0), Ready::READABLE);
+    assert_eq!(event.id(), event::Id(0));
     assert_eq!(event.readiness(), Ready::READABLE);
 }
 
 #[test]
-fn equality() {
-    let event = Event::new(EventedId(0), Ready::WRITABLE);
+fn event_equality() {
+    let event = Event::new(event::Id(0), Ready::WRITABLE);
     assert_eq!(event, event.clone());
 
     // Same
-    let event2 = Event::new(EventedId(0), Ready::WRITABLE);
+    let event2 = Event::new(event::Id(0), Ready::WRITABLE);
     assert_eq!(event, event2);
 
     // Different id.
-    let event3 = Event::new(EventedId(1), Ready::WRITABLE);
+    let event3 = Event::new(event::Id(1), Ready::WRITABLE);
     assert_ne!(event, event3);
 
     // Different readiness.
-    let event4 = Event::new(EventedId(0), Ready::READABLE);
+    let event4 = Event::new(event::Id(0), Ready::READABLE);
     assert_ne!(event, event4);
 }
 
 #[test]
-fn is_tests() {
-    assert!(!Ready::empty().is_readable());
-    assert!(!Ready::empty().is_writable());
-    assert!(!Ready::empty().is_error());
-    assert!(!Ready::empty().is_timer());
+fn ready_contains() {
+    assert!((Ready::READABLE | Ready::WRITABLE).contains(Ready::READABLE));
+    assert!((Ready::READABLE | Ready::WRITABLE).contains(Ready::WRITABLE));
+    assert!((Ready::READABLE | Ready::WRITABLE).contains(Ready::READABLE | Ready::WRITABLE));
+    assert!(!Ready::READABLE.contains(Ready::READABLE | Ready::WRITABLE));
+    assert!(!Ready::WRITABLE.contains(Ready::READABLE | Ready::WRITABLE));
+}
+
+#[test]
+fn ready_is_tests() {
+    assert!(!Ready::EMPTY.is_readable());
+    assert!(!Ready::EMPTY.is_writable());
+    assert!(!Ready::EMPTY.is_error());
+    assert!(!Ready::EMPTY.is_timer());
     #[cfg(unix)]
-    assert!(!Ready::empty().is_hup());
+    assert!(!Ready::EMPTY.is_hup());
 
     assert!(Ready::READABLE.is_readable());
     assert!(!Ready::READABLE.is_writable());
@@ -93,15 +93,7 @@ fn is_tests() {
 }
 
 #[test]
-fn contains() {
-    assert!(!Ready::READABLE.contains(Ready::READABLE | Ready::WRITABLE));
-    assert!(!Ready::WRITABLE.contains(Ready::READABLE | Ready::WRITABLE));
-    assert!((Ready::READABLE | Ready::WRITABLE).contains(Ready::READABLE | Ready::WRITABLE));
-    assert!((Ready::READABLE | Ready::WRITABLE).contains(Ready::READABLE));
-}
-
-#[test]
-fn bit_or() {
+fn ready_bit_or() {
     let readiness = Ready::READABLE | Ready::WRITABLE | Ready::ERROR;
     assert!(readiness.is_readable());
     assert!(readiness.is_writable());
@@ -112,7 +104,7 @@ fn bit_or() {
 }
 
 #[test]
-fn bit_or_assign() {
+fn ready_bit_or_assign() {
     let mut readiness = Ready::READABLE;
     readiness |= Ready::WRITABLE;
     assert!(readiness.is_readable());
@@ -124,7 +116,8 @@ fn bit_or_assign() {
 }
 
 #[test]
-fn fmt_debug() {
+fn ready_fmt_debug() {
+    assert_eq!(format!("{:?}", Ready::EMPTY), "(empty)");
     assert_eq!(format!("{:?}", Ready::READABLE), "READABLE");
     assert_eq!(format!("{:?}", Ready::WRITABLE), "WRITABLE");
     assert_eq!(format!("{:?}", Ready::ERROR), "ERROR");
@@ -132,11 +125,33 @@ fn fmt_debug() {
     #[cfg(unix)]
     assert_eq!(format!("{:?}", Ready::HUP), "HUP");
 
-    assert_eq!(format!("{:?}", Ready::empty()), "(empty)");
-
     assert_eq!(format!("{:?}", Ready::READABLE | Ready::WRITABLE), "READABLE | WRITABLE");
     assert_eq!(format!("{:?}", Ready::ERROR | Ready::TIMER), "ERROR | TIMER");
     assert_eq!(format!("{:?}", Ready::READABLE | Ready::WRITABLE | Ready::ERROR | Ready::TIMER),
         "READABLE | WRITABLE | ERROR | TIMER");
 }
-*/
+
+#[test]
+fn id() {
+    let id = event::Id(0);
+    assert_eq!(event::Id::from(0), event::Id(0));
+    assert_eq!(usize::from(id), 0);
+    assert_eq!(id.0, 0);
+    assert_eq!(id, id.clone());
+
+    let max_value = usize::max_value();
+    let id = event::Id(max_value);
+    assert_eq!(event::Id::from(max_value), event::Id(max_value));
+    assert_eq!(usize::from(id), max_value);
+    assert_eq!(id.0, max_value);
+    assert_eq!(id, id.clone());
+}
+
+#[test]
+fn id_fmt() {
+    assert_eq!(format!("{:?}", event::Id(0)), "Id(0)");
+    assert_eq!(format!("{:?}", event::Id(999)), "Id(999)");
+
+    assert_eq!(format!("{}", event::Id(0)), "0");
+    assert_eq!(format!("{}", event::Id(999)), "999");
+}
