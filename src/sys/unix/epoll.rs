@@ -76,7 +76,7 @@ pub fn duration_to_millis(duration: Duration) -> libc::c_int {
 fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
     let id = event::Id(ep_event.u64 as usize);
     let epoll = ep_event.events;
-    let mut readiness = Ready::empty();
+    let mut readiness = Ready::EMPTY;
 
     if contains_flag(epoll, libc::EPOLLIN | libc::EPOLLPRI) {
         readiness.insert(Ready::READABLE);
