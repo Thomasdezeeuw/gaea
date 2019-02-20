@@ -227,6 +227,9 @@ const TIMER: u8 = 1 << 3;
 const HUP: u8 = 1 << 4;
 
 impl Ready {
+    /// Empty set of readiness.
+    pub const EMPTY: Ready = Ready(0);
+
     /// Readable readiness.
     pub const READABLE: Ready = Ready(READABLE);
 
@@ -242,12 +245,6 @@ impl Ready {
     /// Hup readiness, this signal is Unix specific.
     #[cfg(unix)]
     pub const HUP: Ready = Ready(HUP);
-
-    /// Empty set of readiness.
-    #[inline]
-    pub(crate) fn empty() -> Ready {
-        Ready(0)
-    }
 
     /// Insert another readiness, same operation as `|=`.
     #[inline]

@@ -191,7 +191,7 @@ fn timespec_from_duration(duration: Duration) -> libc::timespec {
 /// Convert a `kevent` into an `Event`.
 fn kevent_to_event(kevent: &libc::kevent) -> Event {
     let id = event::Id(kevent.udata as usize);
-    let mut readiness = Ready::empty();
+    let mut readiness = Ready::EMPTY;
 
     if contains_flag(kevent.flags, libc::EV_ERROR)  {
         // The actual error is stored in `kevent.data`, but we can't pass it
