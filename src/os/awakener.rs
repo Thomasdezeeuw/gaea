@@ -19,7 +19,7 @@ use crate::os::OsQueue;
 ///
 /// Only a single `Awakener` should active per [`OsQueue`], the `Awakener` can
 /// be cloned using [`try_clone`] if more are needed. What happens if multiple
-/// `Awakener`s are registered with the same `Poller` instance is undefined.
+/// `Awakener`s are registered with the same `OsQueue` is undefined.
 ///
 /// [`Ready::READABLE`]: crate::event::Ready::READABLE
 /// [`wake`]: Awakener::wake
