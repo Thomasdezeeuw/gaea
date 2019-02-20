@@ -10,8 +10,9 @@ use std::time::Duration;
 
 use log::error;
 
+use mio_st::poll;
 use mio_st::event::Event;
-use mio_st::poll::Poller;
+use mio_st::os::OsQueue;
 
 /// Initialise the test setup, things like logging etc.
 pub fn init() {
@@ -20,42 +21,21 @@ pub fn init() {
     drop(env_logger::try_init_from_env(env));
 }
 
-/// Initialise the test setup (same as init) and create a `Poller` instance and
-/// `Events` at the same time.
-pub fn init_with_poller() -> (Poller, Vec<Event>) {
+/// Initialise the test setup (same as `init`) and create a `OsQueue` and an
+/// events container at the same time.
+pub fn init_with_os_queue() -> (OsQueue, Vec<Event>) {
     init();
 
-    let poller = Poller::new().expect("unable to create Poller instance");
-    let events = Vec::new();
-    (poller, events)
+    let os_queue = OsQueue::new().expect("unable to create OsQueue");
+    (os_queue, Vec::new())
 }
 
-/// Poll the user space events of `poller` and test if all and only the
-/// `expected` events are present. This is strict test and fails if any events
-/// are missing or if more events are returned.
-pub fn expect_userspace_events(poller: &mut Poller, events: &mut Vec<Event>, mut expected: Vec<Event>) {
+/// Poll `os_queue` and compare the retrieved events with the `expected` ones.
+/// The event is only loosely checked; it only checks if an events readiness
+/// contains the expected readiness and the ids match.
+pub fn expect_events(os_queue: &mut OsQueue, events: &mut Vec<Event>, mut expected: Vec<Event>) {
     events.clear();
-    poller.poll_userspace(events);
-
-    for event in events.drain(..) {
-        let index = expected.iter().position(|expected| *expected == event);
-        if let Some(index) = index {
-            assert_eq!(event, expected.swap_remove(index));
-        } else {
-            panic!("got unexpected user space event: {:?}", event);
-        }
-    }
-
-    assert!((&*events).is_empty(), "got extra user space events: {:?}", events);
-    assert!(expected.is_empty(), "didn't get all expected user space events, missing: {:?}", expected);
-}
-
-/// Poll `poller` and compare the retrieved events with the `expected` ones.
-/// This test is looser then `expect_userspace_events`, it only check if an
-/// events readiness contains the expected readiness and the ids match.
-pub fn expect_events(poller: &mut Poller, events: &mut Vec<Event>, mut expected: Vec<Event>) {
-    events.clear();
-    poller.poll(events, Some(Duration::from_millis(500)))
+    poll(os_queue, &mut [], events, Some(Duration::from_millis(500)))
         .expect("unable to poll");
 
     for event in events.drain(..) {
