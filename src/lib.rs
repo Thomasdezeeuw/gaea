@@ -173,7 +173,9 @@ pub use crate::timers::Timers;
 pub use crate::user_space::Queue;
 
 #[doc(no_inline)]
-pub use crate::event::{Events, Ready};
+pub use crate::event::{Event, Events};
+#[doc(no_inline)]
+pub use crate::os::OsQueue;
 
 /// Poll a number of event sources for new events.
 ///
@@ -183,7 +185,8 @@ pub use crate::event::{Events, Ready};
 pub fn poll<BS, Evts>(
     blocking_source: &mut BS,
     sources: &mut [&mut dyn event::Source<Evts>],
-    events: &mut Evts, timeout: Option<Duration>,
+    events: &mut Evts,
+    timeout: Option<Duration>,
 ) -> io::Result<()>
     where Evts: Events,
           BS: event::BlockingSource<Evts>,
