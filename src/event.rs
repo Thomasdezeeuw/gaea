@@ -5,19 +5,24 @@ use std::ops::{BitOr, BitOrAssign};
 use std::time::Duration;
 use std::{fmt, io};
 
-/// A readiness event source that can be polled for readiness events.
+/// A readiness event source that can be polled for events.
+///
+/// The trait has a generic parameter `Evts` which must implement [`Events`],
+/// this should always be a generic parameter.
 pub trait Source<Evts>
     where Evts: Events,
 {
     /// The duration until the next event will be available.
     ///
-    /// This is used to determine what timeout to use in a blocking call to
+    /// This is used to determine what timeout to use in a [blocking call] to
     /// poll. For example if we have a queue of timers, of which the next one
     /// expires in one second, we don't want to block for more then one second
     /// and thus we should return `Some(1 second)` to ensure that.
     ///
     /// If the duration until the next available event is unknown `None` should
     /// be returned.
+    ///
+    /// [blocking call]: BlockingSource::blocking_poll
     fn next_event_available(&self) -> Option<Duration>;
 
     /// Poll for events.
@@ -26,8 +31,11 @@ pub trait Source<Evts>
     /// source may not block.
     ///
     /// Some implementation of `Events` have a limited available capacity.
-    /// This method may not add more events then `Events::capacity_left`
-    /// returns, if it returns a capacity limit.
+    /// This method may not add more events then [`Events::capacity_left`]
+    /// returns, if it returns a capacity limit. Available events that don't fit
+    /// in the events container in a single call to poll should remain in the
+    /// source and should be added to the events container in future calls to
+    /// poll.
     fn poll(&mut self, events: &mut Evts) -> io::Result<()>;
 }
 
@@ -52,8 +60,9 @@ pub trait BlockingSource<Evts>: Source<Evts>
     ///
     /// This is the same as [`Source::poll`] and all requirements of that method
     /// apply to this method as well. Different to `poll` is that this method
-    /// may block up `timeout` duration, if one is provided, or block forever if
-    /// no timeout is provided (assuming *something* wakes up the poll source).
+    /// may block up to `timeout` duration, if one is provided, or block forever
+    /// if no timeout is provided (assuming *something* wakes up the poll
+    /// source).
     fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>;
 }
 
