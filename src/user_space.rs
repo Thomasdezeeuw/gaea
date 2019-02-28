@@ -7,6 +7,31 @@ use log::trace;
 
 use crate::event::{self, Capacity, Event, Events};
 
+/// User space readiness queue.
+///
+/// A simple, single threaded user space readiness event queue. This implements
+/// [`event::Source`] which can be used to poll for readiness events.
+///
+/// # Examples
+///
+/// ```
+/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use mio_st::Queue;
+/// use mio_st::event::{self, Event, Source, Ready};
+///
+/// let mut queue = Queue::new();
+/// let mut events = Vec::new();
+///
+/// // Add a new event.
+/// let event = Event::new(event::Id(0), Ready::READABLE);
+/// queue.add(event);
+///
+/// // Poll the queue.
+/// queue.poll(&mut events)?;
+/// assert_eq!(events.get(0), Some(&event));
+/// #     Ok(())
+/// # }
+/// ```
 #[derive(Debug)]
 pub struct Queue {
     events: Vec<Event>,
