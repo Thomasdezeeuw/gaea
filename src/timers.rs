@@ -40,6 +40,16 @@ impl Timers {
         self.deadlines.push(Reverse(Deadline { id, deadline }));
     }
 
+    /// Add a new timeout.
+    ///
+    /// This is the same as [`add_deadline`], but then using a `Duration`, see
+    /// [`add_deadline`] for more information.
+    ///
+    /// [`add_deadline`]: `Timers::add_deadline`
+    pub fn add_timeout(&mut self, id: event::Id, timeout: Duration) {
+        self.add_deadline(id, Instant::now() + timeout);
+    }
+
     /// Remove a previously added deadline.
     ///
     /// # Notes
