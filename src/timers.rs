@@ -1,15 +1,46 @@
 //! Module with timers.
 
-use std::io;
-use std::collections::BinaryHeap;
 use std::cmp::Reverse;
-use std::time::{Duration, Instant};
+use std::collections::BinaryHeap;
+use std::io;
 use std::mem::replace;
+use std::time::{Duration, Instant};
 
 use log::trace;
 
 use crate::event::{self, Event, Events, Ready};
 
+/// Timer readiness queue.
+///
+/// # Examples
+///
+/// ```
+/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::thread;
+/// use std::time::Duration;
+///
+/// use mio_st::{event, Event, Timers};
+/// use mio_st::event::{Ready, Source};
+///
+/// let mut timers = Timers::new();
+/// let mut events = Vec::new();
+///
+/// // Add a timeout, to trigger an event 10 milliseconds from now.
+/// let id = event::Id(0);
+/// let timeout = Duration::from_millis(10);
+/// timers.add_timeout(id, timeout);
+///
+/// // Wait until the deadline expires.
+/// thread::sleep(timeout);
+///
+/// // Now we poll for events.
+/// timers.poll(&mut events)?;
+///
+/// assert_eq!(events.get(0), Some(&Event::new(id, Ready::TIMER)));
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug)]
 pub struct Timers {
     deadlines: BinaryHeap<Reverse<Deadline>>,
 }
@@ -94,7 +125,7 @@ impl<Evts> event::Source<Evts> for Timers
         trace!("polling timers");
         let now = Instant::now();
 
-        for _ in 0..events.capacity_left().min(usize::max_value()) {
+        for _ in 0..events.capacity_left().min(self.deadlines.len()) {
             match self.deadlines.peek() {
                 Some(deadline) if deadline.0.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap().0;
