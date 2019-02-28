@@ -123,6 +123,19 @@ pub trait Events: Extend<Event> {
     }
 }
 
+impl<'a, Evts> Events for &'a mut Evts
+    where Evts: Events,
+          &'a mut Evts: Extend<Event>,
+{
+    fn capacity_left(&self) -> Option<usize> {
+        (&**self).capacity_left()
+    }
+
+    fn push(&mut self, event: Event) {
+        (&mut **self).push(event)
+    }
+}
+
 impl Events for Vec<Event> {
     fn capacity_left(&self) -> Option<usize> {
         None
