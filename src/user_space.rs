@@ -1,6 +1,5 @@
 //! Module with user space readiness event queue.
 
-use std::collections::VecDeque;
 use std::io;
 use std::time::Duration;
 
@@ -10,14 +9,14 @@ use crate::event::{self, Capacity, Event, Events, Ready};
 
 #[derive(Debug)]
 pub struct Queue {
-    events: VecDeque<Event>,
+    events: Vec<Event>,
 }
 
 impl Queue {
     /// Create a new user space readiness event queue.
     pub fn new() -> Queue {
         Queue {
-            events: VecDeque::new(),
+            events: Vec::new(),
         }
     }
 
