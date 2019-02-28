@@ -84,7 +84,7 @@ impl<Evts> event::Source<Evts> for Timers
         trace!("polling timers");
         let now = Instant::now();
 
-        for _ in 0..events.capacity_left().unwrap_or(usize::max_value()) {
+        for _ in 0..events.capacity_left().min(usize::max_value()) {
             match self.deadlines.peek() {
                 Some(deadline) if deadline.0.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap().0;

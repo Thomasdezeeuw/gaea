@@ -1,10 +1,10 @@
-use mio_st::event::{self, Event, Events, Ready};
+use mio_st::event::{self, Capacity, Event, Events, Ready};
 
 #[test]
 fn events_vec() {
     let mut events = Vec::new();
 
-    assert_eq!(events.capacity_left(), None);
+    assert_eq!(events.capacity_left(), Capacity::Growable);
 
     let event = Event::new(event::Id(0), Ready::READABLE);
     events.push(event);
