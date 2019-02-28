@@ -85,23 +85,36 @@ impl<S, Evts> BlockingSource<Evts> for &mut S
 ///
 /// [`poll`]: fn@crate::poll
 ///
+/// # Why a trait?
+///
+/// A possible question that might arise is: "why is `Events` a trait and not a
+/// concrete type?" The answer is flexibility. Previously `Events` was a vector,
+/// but most users actually have there own data structure with runnable
+/// processes, green threads, `Future`s, etc. This meant that `Events` was often
+/// an intermediate storage used to receive events only to mark processes as
+/// runnable and run them later.
+///
+/// Using a trait removes the need for this intermediate storage and allows
+/// users to direct mark processes as runnable inside there own data structure.
+///
 /// # Examples
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::time::Duration;
 ///
-/// use mio_st::poll::Poller;
+/// use mio_st::os::OsQueue;
+/// use mio_st::poll;
 ///
-/// let mut poller = Poller::new()?;
-/// // `Events` is implemented for vectors.
+/// let mut os_queue = OsQueue::new()?;
+/// // `Events` is implemented for vectors of `Event`s.
 /// let mut events = Vec::new();
 ///
-/// // Register `Evented` handles with `poller` here.
+/// // Register `Evented` handles with `OsQueue` here.
 ///
 /// // Run the event loop.
 /// loop {
-///     poller.poll(&mut events, Some(Duration::from_millis(100)))?;
+///     poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
 ///
 ///     for event in &mut events {
 ///         println!("got event: id={:?}, rediness={:?}", event.id(), event.readiness());
@@ -123,7 +136,7 @@ pub trait Events: Extend<Event> {
 
     /// Add a single event to the events container.
     ///
-    /// Defaults to using the [`Events::extend_from_slice`] implementation.
+    /// This is mainly a performance optimisation.
     fn push(&mut self, event: Event) {
         self.extend(once(event))
     }
@@ -179,12 +192,13 @@ impl Capacity {
 
 /// A readiness event.
 ///
-/// `Event` is a [readiness state] paired with a [`Id`]. It is returned by
+/// `Event` is a [readiness state] paired with an [id]. Events are returned by
 /// [`poll`].
 ///
 /// For more documentation on polling and events, see [`poll`].
 ///
 /// [readiness state]: Ready
+/// [id]: Id
 /// [`poll`]: fn@crate::poll
 ///
 /// # Examples
