@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use log::trace;
 
-use crate::event::{self, Event, Events, Ready};
+use crate::event::{self, Capacity, Event, Events, Ready};
 
 #[derive(Debug)]
 pub struct Queue {
@@ -44,7 +44,7 @@ impl<Evts> event::Source<Evts> for Queue
 
     fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
         trace!("polling user space events");
-        let drain = if let Some(capacity_left) = events.capacity_left() {
+        let drain = if let Capacity::Limited(capacity_left) = events.capacity_left() {
             self.events.drain(..capacity_left)
         } else {
             self.events.drain(..)

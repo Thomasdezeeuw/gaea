@@ -28,7 +28,7 @@ impl Selector {
         where Evts: Events,
     {
         let mut ep_events: [libc::epoll_event; EVENTS_CAP] = unsafe { mem::uninitialized() };
-        let events_cap = min(events.capacity_left().unwrap_or(EVENTS_CAP), EVENTS_CAP) as libc::c_int;
+        let events_cap = events.capacity_left().min(EVENTS_CAP) as libc::c_int;
 
         let timeout_ms = timeout.map(duration_to_millis).unwrap_or(-1);
 

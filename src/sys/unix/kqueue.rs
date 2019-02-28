@@ -77,7 +77,7 @@ impl Selector {
         where Evts: Events,
     {
         let mut kevents: [libc::kevent; EVENTS_CAP] = unsafe { mem::uninitialized() };
-        let events_cap = min(events.capacity_left().unwrap_or(EVENTS_CAP), EVENTS_CAP) as nchanges_t;
+        let events_cap = events.capacity_left().min(EVENTS_CAP) as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
         #[allow(trivial_casts)]

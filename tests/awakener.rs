@@ -2,9 +2,8 @@ use std::thread;
 use std::sync::{Arc, Barrier};
 use std::time::Duration;
 
-use mio_st::event::{Event, Ready};
+use mio_st::event::{self, Event, Ready};
 use mio_st::os::Awakener;
-use mio_st::{event, poll};
 
 mod util;
 

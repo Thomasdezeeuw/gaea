@@ -113,16 +113,13 @@ impl<S, Evts> BlockingSource<Evts> for &mut S
 pub trait Events: Extend<Event> {
     /// Capacity left in the events container.
     ///
-    /// If the container is "infinite", i.e. it can grow, this should return
-    /// `None`. If there is some kind of capacity limit, e.g. in case of arrays,
-    /// this must return `Some` with the available capacity left, **not total
-    /// capacity**.
+    /// This must return the available capacity left, **not total capacity**.
     ///
     /// # Notes
     ///
-    /// If this returns `Some` and the capacity left is incorrect it will cause
-    /// missing events.
-    fn capacity_left(&self) -> Option<usize>;
+    /// If this returns [`Capacity::Growable`] and the capacity left is
+    /// incorrect it may cause missing events.
+    fn capacity_left(&self) -> Capacity;
 
     /// Add a single event to the events container.
     ///
@@ -136,7 +133,7 @@ impl<'a, Evts> Events for &'a mut Evts
     where Evts: Events,
           &'a mut Evts: Extend<Event>,
 {
-    fn capacity_left(&self) -> Option<usize> {
+    fn capacity_left(&self) -> Capacity {
         (&**self).capacity_left()
     }
 
@@ -146,12 +143,37 @@ impl<'a, Evts> Events for &'a mut Evts
 }
 
 impl Events for Vec<Event> {
-    fn capacity_left(&self) -> Option<usize> {
-        None
+    fn capacity_left(&self) -> Capacity {
+        Capacity::Growable
     }
 
     fn push(&mut self, event: Event) {
         self.push(event);
+    }
+}
+
+/// The capacity left in the events container.
+///
+/// If the container is "infinite", i.e. it can grow, it should use `Growable`.
+/// If there is some kind of capacity limit `Limited` should be used.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub enum Capacity {
+    /// The capacity is limited.
+    Limited(usize),
+    /// The event container is growable making the container capacity
+    /// "infinite". This is for example return in the [`Events`] implements for
+    /// vectors.
+    Growable,
+}
+
+impl Capacity {
+    /// Get the maximum capacity given the event container capacity and the
+    /// available events.
+    pub(crate) fn min(self, right: usize) -> usize {
+        match self {
+            Capacity::Limited(left) => left.min(right),
+            Capacity::Growable => right,
+        }
     }
 }
 
