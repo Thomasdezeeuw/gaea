@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use log::trace;
 
-use crate::event::{self, Capacity, Event, Events, Ready};
+use crate::event::{self, Capacity, Event, Events};
 
 #[derive(Debug)]
 pub struct Queue {
@@ -20,13 +20,11 @@ impl Queue {
         }
     }
 
-    /// Notify an evented handle of an user space event.
-    ///
-    /// This uses the user space event system.
-    ///
-    pub fn notify(&mut self, id: event::Id, ready: Ready) {
-        trace!("adding user space event: id={}, ready={:?}", id, ready);
-        self.events.push_back(Event::new(id, ready));
+    /// Add a new readiness event.
+    pub fn add(&mut self, event: Event) {
+        trace!("adding user space event: id={}, readiness={:?}",
+            event.id(), event.readiness());
+        self.events.push(event);
     }
 }
 
