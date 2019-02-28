@@ -153,12 +153,12 @@ use std::time::Duration;
 use log::trace;
 
 mod sys;
+mod timers;
+mod user_space;
 
 pub mod event;
 pub mod net;
 pub mod os;
-pub mod timers;
-pub mod user_space;
 
 #[cfg(unix)]
 pub mod unix {
@@ -168,6 +168,9 @@ pub mod unix {
     pub use crate::sys::EventedIo;
     pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
 }
+
+pub use crate::timers::Timers;
+pub use crate::user_space::Queue;
 
 #[doc(no_inline)]
 pub use crate::event::{Events, Ready};
