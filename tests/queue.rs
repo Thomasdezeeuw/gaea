@@ -10,7 +10,7 @@ mod util;
 use self::util::init;
 
 #[test]
-fn os_queue_notify() {
+fn os_queue() {
     init();
     let mut queue = Queue::new();
     let mut events = Vec::new();

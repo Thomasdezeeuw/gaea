@@ -176,11 +176,27 @@ pub use crate::event::{Event, Events, Ready};
 #[doc(no_inline)]
 pub use crate::os::OsQueue;
 
-/// Poll a number of event sources for new events.
+/// Poll event sources for readiness events.
 ///
-/// This will first poll `blocking_source` for readiness events, blocking at
-/// most for a duration specified in `timeout`. Next it will poll all the other
-/// `sources` for readiness events.
+/// This first determines the maximum timeout to use based on the provided
+/// `timeout` and the provided `sources`. For example if one of the sources is a
+/// [`Timers`] with a deadline of 1 second and a supplied `timeout` of 10
+/// seconds we don't want to block for the whole 10 seconds and over run the
+/// deadline by 9 seconds. Instead internally we'll use 9 seconds as timeout.
+///
+/// Next it will use the timeout in a blocking poll call of `blocking_source`
+/// for readiness events. This call will block the current thread until a
+/// readiness event is ready or the timeout has elapsed. After the blocking poll
+/// the other `sources` will be polled for readiness events, without blocking
+/// the thread further.
+///
+/// Readiness events will be added to the supplied `events` container. If not
+/// all events fit into the `events`, they will be returned on the next call to
+/// `poll`.
+///
+/// Providing a `timeout` of `None` means that `poll` will block until the
+/// `blocking_source` is awoken by an external factor, for example a readiness
+/// event.
 pub fn poll<BS, Evts>(
     blocking_source: &mut BS,
     sources: &mut [&mut dyn event::Source<Evts>],
