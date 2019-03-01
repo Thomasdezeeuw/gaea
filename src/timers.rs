@@ -19,8 +19,8 @@ use crate::event::{self, Event, Events, Ready};
 /// use std::thread;
 /// use std::time::Duration;
 ///
-/// use mio_st::{event, Event, Timers};
-/// use mio_st::event::{Ready, Source};
+/// use mio_st::event::Source;
+/// use mio_st::{Event, Timers, Ready, event};
 ///
 /// let mut timers = Timers::new();
 /// let mut events = Vec::new();
