@@ -20,10 +20,6 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// constructed right before a call to [`OsQueue::register`]. See the examples
 /// below for more detail.
 ///
-/// For a owned, or managed, type see [`EventedIo`].
-///
-/// [`EventedIo`]: crate::unix::EventedIo
-///
 /// # Deregistering
 ///
 /// The file descriptor doesn't need to be deregistered **iff** the file

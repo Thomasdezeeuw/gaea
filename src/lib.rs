@@ -165,7 +165,6 @@ pub mod unix {
     //! Unix only extensions.
 
     pub use crate::sys::EventedFd;
-    pub use crate::sys::EventedIo;
     pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
 }
 

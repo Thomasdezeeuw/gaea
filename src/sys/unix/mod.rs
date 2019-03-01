@@ -1,6 +1,5 @@
 mod awakener;
 mod eventedfd;
-mod eventedio;
 mod tcp;
 mod udp;
 
@@ -22,6 +21,5 @@ pub use self::kqueue::Selector;
 
 pub use self::awakener::Awakener;
 pub use self::eventedfd::EventedFd;
-pub use self::eventedio::EventedIo;
 pub use self::tcp::{TcpListener, TcpStream};
 pub use self::udp::UdpSocket;
