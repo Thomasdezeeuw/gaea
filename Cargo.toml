@@ -17,8 +17,8 @@ edition       = "2018"
 travis-ci = { repository = "Thomasdezeeuw/mio-st", branch = "master" }
 
 [dependencies]
-libc     = "0.2.44"
-log      = "0.4.6"
+libc = "0.2.44"
+log  = "0.4.6"
 
 [dev-dependencies]
 env_logger = "0.6.0"
@@ -26,6 +26,3 @@ env_logger = "0.6.0"
 [features]
 # Travis doesn't support IPv6, so we disable the tests for it.
 disable_test_ipv6 = []
-# Travis' macOS machines don't always meet the set deadline, this disables the
-# tests with strict deadlines.
-disable_test_deadline = []
