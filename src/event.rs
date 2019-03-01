@@ -219,17 +219,17 @@ pub struct Event {
 
 impl Event {
     /// Creates a new `Event` containing `id` and `readiness`.
-    pub fn new(id: Id, readiness: Ready) -> Event {
+    pub const fn new(id: Id, readiness: Ready) -> Event {
         Event { id, readiness }
     }
 
     /// Returns the event's id.
-    pub fn id(&self) -> Id {
+    pub const fn id(&self) -> Id {
         self.id
     }
 
     /// Returns the event's readiness.
-    pub fn readiness(&self) -> Ready {
+    pub const fn readiness(&self) -> Ready {
         self.readiness
     }
 }
@@ -328,38 +328,38 @@ impl Ready {
 
     /// Whether or not all flags in `other` are contained within `self`.
     #[inline]
-    pub fn contains(self, other: Ready) -> bool {
+    pub const fn contains(self, other: Ready) -> bool {
         (self.0 & other.0) == other.0
     }
 
     /// Returns true if the value includes readable readiness.
     #[inline]
-    pub fn is_readable(self) -> bool {
+    pub const fn is_readable(self) -> bool {
         self.contains(Self::READABLE)
     }
 
     /// Returns true if the value includes writable readiness.
     #[inline]
-    pub fn is_writable(self) -> bool {
+    pub const fn is_writable(self) -> bool {
         self.contains(Self::WRITABLE)
     }
 
     /// Returns true if the value includes error readiness.
     #[inline]
-    pub fn is_error(self) -> bool {
+    pub const fn is_error(self) -> bool {
         self.contains(Self::ERROR)
     }
 
     /// Returns true if a deadline has elapsed.
     #[inline]
-    pub fn is_timer(self) -> bool {
+    pub const fn is_timer(self) -> bool {
         self.contains(Self::TIMER)
     }
 
     /// Returns true if the value includes HUP readiness.
     #[inline]
     #[cfg(unix)]
-    pub fn is_hup(self) -> bool {
+    pub const fn is_hup(self) -> bool {
         self.contains(Self::HUP)
     }
 }
