@@ -1,12 +1,14 @@
 use std::io;
+use std::sync::{Arc, Barrier};
+use std::thread;
 use std::time::{Duration, Instant};
 
-use mio_st::event::{self, BlockingSource, Source, Event};
-use mio_st::os::{Evented, Interests, PollOption, OsQueue};
+use mio_st::event::{self, BlockingSource, Source, Event, Ready};
+use mio_st::os::{Awakener, Evented, Interests, PollOption, OsQueue};
 
 mod util;
 
-use self::util::{TIMEOUT_MARGIN, assert_error, init, init_with_os_queue};
+use self::util::{TIMEOUT_MARGIN, assert_error, expect_events, init, init_with_os_queue};
 
 struct TestEvented {
     registrations: Vec<(event::Id, Interests, PollOption)>,
@@ -120,4 +122,124 @@ fn os_queue_empty_source() {
     os_queue.blocking_poll(&mut events, Some(timeout)).unwrap();
     assert!(start.elapsed() < timeout + TIMEOUT_MARGIN, "polling took too long.");
     assert!(events.is_empty(), "unexpected events");
+}
+
+#[test]
+fn awakener() {
+    let (mut os_queue, mut events) = init_with_os_queue();
+
+    let event_id = event::Id(10);
+    // Keep `awakener` alive on this thread and create a new awakener to move
+    // to the other thread.
+    let awakener = Awakener::new(&mut os_queue, event_id)
+        .expect("unable to create awakener");
+
+    // Waking on the same thread.
+    for _ in 0..3 {
+        awakener.wake().expect("unable to wake");
+    }
+
+    // Depending on the platform we can get 3 or 1 event.
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    // Waking on another thread.
+    let awakener1 = awakener.try_clone()
+        .expect("unable to clone awakener");
+    let handle = thread::spawn(move || {
+        awakener1.wake().expect("unable to wake");
+    });
+
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    os_queue.blocking_poll(&mut events, Some(Duration::from_millis(100)))
+        .expect("unable to poll");
+    assert!(events.is_empty());
+
+    handle.join().unwrap();
+}
+
+#[test]
+fn awakener_try_clone() {
+    let (mut os_queue, mut events) = init_with_os_queue();
+
+    let event_id = event::Id(10);
+    // Keep `awakener` alive on this thread and create two new awakeners to move
+    // to the other threads.
+    let awakener = Awakener::new(&mut os_queue, event_id)
+        .expect("unable to create awakener");
+    let awakener1 = awakener.try_clone()
+        .expect("unable to clone awakener");
+    let awakener2 = awakener1.try_clone()
+        .expect("unable to clone awakener");
+
+    let handle1 = thread::spawn(move || {
+        awakener1.wake().expect("unable to wake");
+    });
+
+    handle1.join().unwrap();
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    let handle2 = thread::spawn(move || {
+        thread::sleep(Duration::from_millis(500));
+        awakener2.wake().expect("unable to wake");
+    });
+
+    handle2.join().unwrap();
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    os_queue.blocking_poll(&mut events, Some(Duration::from_millis(100)))
+        .expect("unable to poll");
+    assert!(events.is_empty());
+}
+
+#[test]
+fn awakener_multiple_wakeups() {
+    let (mut os_queue, mut events) = init_with_os_queue();
+
+    let event_id = event::Id(10);
+    let awakener = Awakener::new(&mut os_queue, event_id)
+        .expect("unable to create awakener");
+    let awakener1 = awakener.try_clone()
+        .expect("unable to clone awakener");
+    let awakener2 = awakener1.try_clone()
+        .expect("unable to clone awakener");
+
+    let handle1 = thread::spawn(move || {
+        awakener1.wake().expect("unable to wake");
+    });
+
+    let barrier = Arc::new(Barrier::new(2));
+    let barrier2 = barrier.clone();
+    let handle2 = thread::spawn(move || {
+        barrier2.wait();
+        awakener2.wake().expect("unable to wake");
+    });
+
+    // Receive the event from thread 1.
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    // Unblock thread 2.
+    barrier.wait();
+
+    // Now we need to receive another event from thread 2.
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    os_queue.blocking_poll(&mut events, Some(Duration::from_millis(100)))
+        .expect("unable to poll");
+    assert!(events.is_empty());
+
+    handle1.join().unwrap();
+    handle2.join().unwrap();
 }
