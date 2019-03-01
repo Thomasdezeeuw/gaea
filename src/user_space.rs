@@ -16,8 +16,8 @@ use crate::event::{self, Capacity, Event, Events};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::Queue;
-/// use mio_st::event::{self, Event, Source, Ready};
+/// use mio_st::event::Source;
+/// use mio_st::{Event, Queue, Ready, event};
 ///
 /// let mut queue = Queue::new();
 /// let mut events = Vec::new();

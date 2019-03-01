@@ -172,7 +172,7 @@ pub use crate::timers::Timers;
 pub use crate::user_space::Queue;
 
 #[doc(no_inline)]
-pub use crate::event::{Event, Events};
+pub use crate::event::{Event, Events, Ready};
 #[doc(no_inline)]
 pub use crate::os::OsQueue;
 
@@ -187,8 +187,8 @@ pub fn poll<BS, Evts>(
     events: &mut Evts,
     timeout: Option<Duration>,
 ) -> io::Result<()>
-    where Evts: Events,
-          BS: event::BlockingSource<Evts>,
+    where BS: event::BlockingSource<Evts>,
+          Evts: Events,
 {
     trace!("polling: timeout={:?}", timeout);
 

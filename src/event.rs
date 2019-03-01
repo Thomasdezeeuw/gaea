@@ -204,12 +204,12 @@ impl Capacity {
 /// # Examples
 ///
 /// ```
-/// use mio_st::event::{Event, Id, Ready};
+/// use mio_st::{event, Event, Ready};
 ///
-/// let event = Event::new(Id(0), Ready::READABLE | Ready::WRITABLE);
+/// let my_event = Event::new(event::Id(0), Ready::READABLE | Ready::WRITABLE);
 ///
-/// assert_eq!(event.id(), Id(0));
-/// assert_eq!(event.readiness(), Ready::READABLE | Ready::WRITABLE);
+/// assert_eq!(my_event.id(), event::Id(0));
+/// assert_eq!(my_event.readiness(), Ready::READABLE | Ready::WRITABLE);
 /// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Event {
@@ -287,7 +287,7 @@ impl fmt::Display for Id {
 /// # Examples
 ///
 /// ```
-/// use mio_st::event::Ready;
+/// use mio_st::Ready;
 ///
 /// let ready = Ready::READABLE | Ready::WRITABLE;
 ///
