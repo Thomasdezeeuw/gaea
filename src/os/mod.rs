@@ -34,7 +34,16 @@
 //! If operation fails with a [`WouldBlock`] error, then the caller should not
 //! treat this as an error and wait until another readiness event is received.
 //!
+//! Furthermore a single call to poll may result in multiple readiness events
+//! being returned for a single `Evented` handle. For example, if a TCP socket
+//! becomes both readable and writable, it may be possible for a single
+//! readiness event to be returned with both [readable] and [writable] readiness
+//! **OR** two separate events may be returned, one with readable set and one
+//! with writable set.
+//!
 //! [`Source::poll`]: crate::event::Source::poll
+//! [readable]: crate::os::Interests::READABLE
+//! [writable]: crate::os::Interests::WRITABLE
 //!
 //! ### Registering handles
 //!
@@ -67,6 +76,14 @@
 //! #     Ok(())
 //! # }
 //! ```
+//!
+//! ### Timeout granularity
+//!
+//! The timeout provided to [`BlockingSource::blocking_poll`] will be rounded
+//! up to the system clock granularity (usually 1ms), and kernel scheduling
+//! delays mean that the blocking interval may be overrun by a small amount.
+//!
+//! [`BlockingSource::blocking_poll`]: crate::event::BlockingSource::blocking_poll
 //!
 //! # Implementation notes
 //!
