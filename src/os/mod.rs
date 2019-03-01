@@ -395,6 +395,7 @@ impl<Evts> event::Source<Evts> for OsQueue
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
+        // Can't tell if an event is available.
         None
     }
 

@@ -14,6 +14,9 @@ use mio_st::poll;
 use mio_st::event::Event;
 use mio_st::os::OsQueue;
 
+/// Allowed margin for deadlines to be overrun.
+pub const TIMEOUT_MARGIN: Duration = Duration::from_millis(10);
+
 /// Initialise the test setup, things like logging etc.
 pub fn init() {
     let env = env_logger::Env::new().filter("LOG_LEVEL");
