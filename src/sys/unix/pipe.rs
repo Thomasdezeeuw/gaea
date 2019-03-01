@@ -1,10 +1,11 @@
-use std::mem;
+use std::fs::File;
 use std::io::{self, Read, Write};
+use std::mem;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::event;
 use crate::os::{Evented, Interests, PollOption, OsQueue};
-use crate::sys::unix::EventedIo;
+use crate::sys::unix::EventedFd;
 
 /// Create a new non-blocking unix pipe.
 ///
@@ -79,8 +80,8 @@ pub fn new_pipe() -> io::Result<(Sender, Receiver)> {
                 return Err(io::Error::last_os_error());
             }
         }
-        let r = Receiver { inner: unsafe { EventedIo::from_raw_fd(fds[0]) } };
-        let w = Sender { inner: unsafe { EventedIo::from_raw_fd(fds[1]) } };
+        let r = Receiver { inner: unsafe { File::from_raw_fd(fds[0]) } };
+        let w = Sender { inner: unsafe { File::from_raw_fd(fds[1]) } };
         Ok((w, r))
     }
 }
@@ -90,7 +91,7 @@ pub fn new_pipe() -> io::Result<(Sender, Receiver)> {
 /// See [`new_pipe`] for documentation, including examples.
 #[derive(Debug)]
 pub struct Receiver {
-    inner: EventedIo,
+    inner: File,
 }
 
 impl Receiver {
@@ -101,16 +102,16 @@ impl Receiver {
 impl Evented for Receiver {
     fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
-        self.inner.register(os_queue, id, interests, opt)
+        EventedFd(&self.inner.as_raw_fd()).register(os_queue, id, interests, opt)
     }
 
     fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
-        self.inner.reregister(os_queue, id, interests, opt)
+        EventedFd(&self.inner.as_raw_fd()).reregister(os_queue, id, interests, opt)
     }
 
     fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
-        self.inner.deregister(os_queue)
+        EventedFd(&self.inner.as_raw_fd()).deregister(os_queue)
     }
 }
 
@@ -137,7 +138,7 @@ impl Read for Receiver {
 /// See [`new_pipe`] for documentation, including examples.
 #[derive(Debug)]
 pub struct Sender {
-    inner: EventedIo,
+    inner: File,
 }
 
 impl Sender {
@@ -148,16 +149,16 @@ impl Sender {
 impl Evented for Sender {
     fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
-        self.inner.register(os_queue, id, interests, opt)
+        EventedFd(&self.inner.as_raw_fd()).register(os_queue, id, interests, opt)
     }
 
     fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
-        self.inner.reregister(os_queue, id, interests, opt)
+        EventedFd(&self.inner.as_raw_fd()).reregister(os_queue, id, interests, opt)
     }
 
     fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
-        self.inner.deregister(os_queue)
+        EventedFd(&self.inner.as_raw_fd()).deregister(os_queue)
     }
 }
 
