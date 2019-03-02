@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.3
+
+### Changes
+
+ * Fix kqueue backed Awakener, previously it would always trigger an event when
+   polled.
+ * **BREAKING** Remove `Awakener.drain`, `Awakener` automatically drains itself
+   now.
+
 ## v0.2.2
 
 ### Changes
