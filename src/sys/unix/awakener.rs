@@ -104,7 +104,7 @@ mod kqueue {
         }
 
         pub fn wake(&self) -> io::Result<()> {
-            self.selector.awake(self.id)
+            self.selector.wake(self.id)
         }
     }
 }
