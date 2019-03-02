@@ -12,7 +12,7 @@ task:
     - cargo build
   test_script:
     - . $HOME/.cargo/env
-    - RUST_BACKTRACE=full cargo test --verbose
+    - RUST_BACKTRACE=full cargo test --verbose --features disable_test_deadline
   cargo_cache:
     folder: $HOME/.cargo/registry
   before_cache_script:
