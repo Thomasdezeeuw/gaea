@@ -276,13 +276,16 @@ fn kevent_register(kq: RawFd, changes: &mut [libc::kevent], ignored_errors: &[ke
 /// Check all events for possible errors, it returns the first error found.
 fn check_errors(events: &[libc::kevent], ignored_errors: &[kevent_data_t]) -> io::Result<()> {
     for event in &*events {
+        // We can't use reference to packed structs, so we copy the data out
+        // before use.
+        let data = event.data;
         // Check for the error flag, the actual error will be in the `data`
         // field.
-        if contains_flag(event.flags, libc::EV_ERROR) && event.data != 0 &&
+        if contains_flag(event.flags, libc::EV_ERROR) && data != 0 &&
             // Make sure the error is not one to ignore.
-            !ignored_errors.contains(&event.data)
+            !ignored_errors.contains(&data)
         {
-            return Err(io::Error::from_raw_os_error(event.data as i32));
+            return Err(io::Error::from_raw_os_error(data as i32));
         }
     }
     Ok(())
