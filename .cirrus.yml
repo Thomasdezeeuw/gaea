@@ -1,0 +1,19 @@
+osx_instance:
+  image: mojave-xcode-10.1
+
+task:
+  setup_script:
+    - curl https://sh.rustup.rs -sSf --output rustup.sh
+    - sh rustup.sh -y
+  build_script:
+    - . $HOME/.cargo/env
+    - cargo --version
+    - rustc --version
+    - cargo build
+  test_script:
+    - . $HOME/.cargo/env
+    - RUST_BACKTRACE=full cargo test --verbose
+  cargo_cache:
+    folder: $HOME/.cargo/registry
+  before_cache_script:
+    - rm -rf $HOME/.cargo/registry/index
