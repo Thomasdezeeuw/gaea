@@ -173,7 +173,7 @@ impl Selector {
     }
 
     // Used by `Awakener`.
-    pub fn awake(&self, id: EventedId) -> io::Result<()> {
+    pub fn wake(&self, id: EventedId) -> io::Result<()> {
         let kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR, id);
         kevent_register(self.kq, &mut [kevent], &[])
     }
