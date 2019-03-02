@@ -40,6 +40,10 @@ fn awakener() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
+    poller.poll(&mut events, Some(Duration::from_millis(100)))
+        .expect("unable to poll");
+    assert!(events.is_empty());
+
     handle.join().unwrap();
 }
 
@@ -75,6 +79,10 @@ fn awakener_try_clone() {
     expect_events(&mut poller, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
+
+    poller.poll(&mut events, Some(Duration::from_millis(100)))
+        .expect("unable to poll");
+    assert!(events.is_empty());
 }
 
 #[test]
@@ -112,6 +120,10 @@ fn awakener_multiple_wakeups() {
     expect_events(&mut poller, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
+
+    poller.poll(&mut events, Some(Duration::from_millis(100)))
+        .expect("unable to poll");
+    assert!(events.is_empty());
 
     handle1.join().unwrap();
     handle2.join().unwrap();

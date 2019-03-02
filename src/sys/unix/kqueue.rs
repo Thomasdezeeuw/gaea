@@ -157,8 +157,7 @@ impl Selector {
     // Used by `Awakener`.
     pub fn setup_awakener(&self, id: EventedId) -> io::Result<()> {
         // First attempt to accept user space notifications.
-        let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD, id);
-        kevent.fflags = libc::NOTE_TRIGGER;
+        let kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
         kevent_register(self.kq, &mut [kevent], &[])
     }
 
@@ -174,7 +173,8 @@ impl Selector {
 
     // Used by `Awakener`.
     pub fn wake(&self, id: EventedId) -> io::Result<()> {
-        let kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR, id);
+        let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
+        kevent.fflags = libc::NOTE_TRIGGER;
         kevent_register(self.kq, &mut [kevent], &[])
     }
 }
