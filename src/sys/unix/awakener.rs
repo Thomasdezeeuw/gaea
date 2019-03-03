@@ -51,7 +51,7 @@ mod eventfd {
             }
         }
 
-        /// Rest the eventfd object, only need to call this if `wake` fails.
+        /// Reset the eventfd object, only need to call this if `wake` fails.
         fn reset(&self) -> io::Result<()> {
             let mut buf: [u8; 8] = [0; 8];
             match (&self.fd).read(&mut buf) {
