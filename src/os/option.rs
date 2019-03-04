@@ -76,7 +76,7 @@
 /// [oneshot]: crate::os::PollOption::Oneshot
 /// [reregister]: crate::os::OsQueue::reregister
 /// [`TcpStream`]: crate::net::TcpStream
-/// [`poll`]: fn@crate::poll
+/// [`poll`]: crate::poll
 /// [`WouldBlock`]: std::io::ErrorKind::WouldBlock
 /// [`reregister`]: crate::os::OsQueue::reregister
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]

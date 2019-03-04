@@ -83,7 +83,7 @@ impl<S, Evts> BlockingSource<Evts> for &mut S
 ///
 /// See [`poll`] for more documentation on polling.
 ///
-/// [`poll`]: fn@crate::poll
+/// [`poll`]: crate::poll
 ///
 /// # Why a trait?
 ///
@@ -199,7 +199,7 @@ impl Capacity {
 ///
 /// [readiness state]: Ready
 /// [id]: Id
-/// [`poll`]: fn@crate::poll
+/// [`poll`]: crate::poll
 ///
 /// # Examples
 ///
@@ -240,7 +240,7 @@ impl Event {
 ///
 /// See [`poll`] for more documentation on polling.
 ///
-/// [`poll`]: fn@crate::poll
+/// [`poll`]: crate::poll
 ///
 /// # Uniqueness of `Id`
 ///
@@ -282,7 +282,7 @@ impl fmt::Display for Id {
 ///
 /// For high level documentation on polling and readiness, see [`poll`].
 ///
-/// [`poll`]: fn@crate::poll
+/// [`poll`]: crate::poll
 ///
 /// # Examples
 ///
@@ -307,7 +307,7 @@ const TIMER: u8 = 1 << 3;
 const HUP: u8 = 1 << 4;
 
 impl Ready {
-    /// Empty set of readiness.
+    /// Empty set.
     pub const EMPTY: Ready = Ready(0);
 
     /// Readable readiness.
