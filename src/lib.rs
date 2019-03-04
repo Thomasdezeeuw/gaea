@@ -1,84 +1,89 @@
-//! A fast, low-level IO library for Rust focusing on non-blocking APIs, event
-//! notification for building high performance I/O apps.
+//! A low-level library to build event driven applications. The core of the
+//! library is [`poll`], which polls multiple [event sources] for readiness
+//! events. Based on these readiness event the application will continue, e.g.
+//! by polling a [`Future`].
 //!
-//! # Goals
+//! A number of readiness event sources are provided:
 //!
-//! * Fast - minimal overhead over the equivalent OS facilities (epoll, kqueue, etc.).
-//! * Zero allocations at runtime.
-//! * A scalable readiness-based API.
-//! * Provide utilities such as a timers and user space event queues.
+//!  * [`OsQueue`]: a readiness event queue backed by the OS (epoll or kqueue).
+//!  * [`Queue`]: a single threaded, user space queue.
+//!  * [`Timers`]: a single threaded, deadline based readiness queue.
+//!
+//! [event sources]: event::Source
+//! [`Future`]: std::future::Future
 //!
 //! # Usage
 //!
-//! Using mio starts by creating a [`Poller`], which used to poll events, both
-//! from the OS (backed by epoll, kqueue, etc.) and from user space.
+//! Using the library starts by creating a [blocking event source] and zero or
+//! more (nonblocking) [event sources]. Next an [events container] is required,
+//! this used to store the events from the event source, but as it's a trait
+//! this can also be scheduler of some kind to directly schedule processes for
+//! which a readiness event is generated.
 //!
-//! For more detail, including supported platforms, see [`Poller`].
+//! Next the event source can be [polled], using the events container and a
+//! timeout. This will poll all sources and block until a readiness event is
+//! available in any of the sources or until the timeout expires. Next it's the
+//! applications turn to process each event. Do this in a loop and you've got
+//! yourself an event loop.
 //!
-//! [`Poller`]: poll/struct.Poller.html
-//!
-//! # Undefined behaviour
-//!
-//! It is undefined how `Poller` will behave after a process is forked, if you
-//! need fork a process do it before creating a `Poller` instance.
-//!
-//! As this is the single threaded version of mio, no types implement [`Sync`]
-//! or [`Send`] and sharing these types across threads will result in undefined
-//! behaviour.
-//!
-//! [`Sync`]: https://doc.rust-lang.org/nightly/std/marker/trait.Sync.html
-//! [`Send`]: https://doc.rust-lang.org/nightly/std/marker/trait.Send.html
+//! [blocking event source]: event::BlockingSource
+//! [event source]: event::Source
+//! [events container]: Events
+//! [polled]: poll
 //!
 //! # Examples
 //!
-//! A simple TCP server.
+//! The example below shows a simple non-blocking TCP server.
 //!
 //! ```
 //! # fn main() -> Result<(), Box<std::error::Error>> {
 //! use std::io;
 //! use std::collections::HashMap;
 //!
-//! use mio_st::event;
 //! use mio_st::net::{TcpListener, TcpStream};
-//! use mio_st::poll::{Poller, PollOption};
+//! use mio_st::os::{OsQueue, PollOption};
+//! use mio_st::{event, poll};
 //!
 //! // An unique id to associate an event with a handle, in this case for our
 //! // TCP listener.
 //! const SERVER_ID: event::Id = event::Id(0);
 //!
-//! // Create a `Poller` instance.
-//! let mut poller = Poller::new()?;
-//! // Also create a container for all events.
+//! // Create a Operating System backed (epoll or kqueue) queue.
+//! // This is a blocking event source as it implements `BlockingSource`.
+//! let mut os_queue = OsQueue::new()?;
+//! // Crate our events container.
 //! let mut events = Vec::new();
 //!
-//! // Setup the server listener.
+//! // Setup a TCP listener, which will act as our server.
 //! let address = "127.0.0.1:12345".parse()?;
 //! let mut server = TcpListener::bind(address)?;
 //!
-//! // Register our TCP listener with `Poller`, this allows us to receive
-//! // notifications about incoming connections.
-//! poller.register(&mut server, SERVER_ID, TcpListener::INTERESTS, PollOption::Edge)?;
+//! // Register our TCP listener with `OsQueue`, this allows us to receive
+//! // readiness events about incoming connections.
+//! os_queue.register(&mut server, SERVER_ID, TcpListener::INTERESTS, PollOption::Edge)?;
 //!
 //! // A hashmap with `event::Id` -> `TcpStream` connections.
-//! let mut connections = HashMap::with_capacity(512);
+//! let mut connections = HashMap::new();
 //!
 //! // A simple "counter" to create new unique ids for each incoming connection.
 //! let mut current_id = event::Id(10);
 //!
-//! // Start the event loop.
-//! # let i = 0;
+//! // Start our event loop.
+//! # let i = 0; // Don't run the event loop.
 //! loop {
-//! #   if i == 0 { break; }
-//!     // Check for new events.
-//!     poller.poll(&mut events, None)?;
+//! #   if i == 0 { return Ok(()) }
+//!     // Poll for events. As we only have a single event source we provided an
+//!     // empty array as second argument.
+//!     poll(&mut os_queue, &mut [], &mut events, None)?;
 //!
-//!     for event in &mut events {
+//!     // Process each event.
+//!     for event in events.drain(..) {
 //!         // Depending on the event id we need to take an action.
 //!         match event.id() {
 //!             SERVER_ID => {
 //!                 // The server is ready to accept one or more connections.
-//!                 accept_connections(&mut server, &mut poller, &mut connections, &mut current_id)?;
-//!             }
+//!                 accept_connections(&mut server, &mut os_queue, &mut connections, &mut current_id)?;
+//!             },
 //!             connection_id => {
 //!                 // A connection is possibly ready, but it might a spurious
 //!                 // event.
@@ -88,14 +93,14 @@
 //!                     None => continue,
 //!                 };
 //!
-//!                 // Do something with the connection.
+//!                 // Do something with the connection...
 //!                 # drop(connection)
 //!             },
 //!         }
 //!     }
 //! }
 //!
-//! fn accept_connections(server: &mut TcpListener, poller: &mut Poller, connections: &mut HashMap<event::Id, TcpStream>, current_id: &mut event::Id) -> io::Result<()> {
+//! fn accept_connections(server: &mut TcpListener, os_queue: &mut OsQueue, connections: &mut HashMap<event::Id, TcpStream>, current_id: &mut event::Id) -> io::Result<()> {
 //!     // Since we registered with edge-triggered events for our server we need
 //!     // to accept connections until we hit a would block "error".
 //!     loop {
@@ -113,7 +118,7 @@
 //!
 //!         // Register the TCP connection so we can handle events for it as
 //!         // well.
-//!         poller.register(&mut connection, id, TcpStream::INTERESTS, PollOption::Edge)?;
+//!         os_queue.register(&mut connection, id, TcpStream::INTERESTS, PollOption::Edge)?;
 //!
 //!         // Store our connection so we can access it later.
 //!         connections.insert(id, connection);
@@ -123,7 +128,6 @@
 //! fn would_block(err: &io::Error) -> bool {
 //!     err.kind() == io::ErrorKind::WouldBlock
 //! }
-//! #     Ok(())
 //! # }
 //! ```
 
