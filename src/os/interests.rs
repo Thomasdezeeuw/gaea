@@ -13,7 +13,7 @@ use std::ops::BitOr;
 /// [`Evented`]: crate::os::Evented
 /// [`OsQueue`]: crate::os::OsQueue
 /// [readable]: Interests::READABLE
-/// [`poll`]: fn@crate::poll
+/// [`poll`]: crate::poll
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Interests(NonZeroU8);

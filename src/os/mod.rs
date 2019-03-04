@@ -194,7 +194,7 @@ impl OsQueue {
     /// state changes. When it notices a state change, it will return a
     /// readiness event for the handle the next time the queue is [`polled`].
     ///
-    /// [`polled`]: fn@crate::poll
+    /// [`polled`]: crate::poll
     ///
     /// # Arguments
     ///
@@ -220,7 +220,7 @@ impl OsQueue {
     /// id, the option can be changed for an `Evented` handle at any time by
     /// calling [`reregister`].
     ///
-    /// [`poll`]: fn@crate::poll
+    /// [`poll`]: crate::poll
     /// [event]: crate::event::Event
     /// [included]: crate::event::Event::id
     /// [`reregister`]: OsQueue::reregister
