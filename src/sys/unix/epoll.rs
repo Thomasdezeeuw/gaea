@@ -121,11 +121,13 @@ fn to_epoll_events(interests: Interests, opt: PollOption) -> libc::uint32_t {
         events |= libc::EPOLLOUT;
     }
 
-    events |= match opt {
-        PollOption::Edge => libc::EPOLLET,
-        PollOption::Level => 0, // Default.
-        PollOption::Oneshot => libc::EPOLLONESHOT,
-    };
+    // NOTE: level is the default.
+    if opt.is_edge() {
+        events |= libc::EPOLLET;
+    }
+    if opt.is_oneshot() {
+        events |= libc::EPOLLONESHOT;
+    }
     events as libc::uint32_t
 }
 

@@ -29,9 +29,9 @@ fn udp_socket() {
     let address1 = socket1.local_addr().unwrap();
     let address2 = socket2.local_addr().unwrap();
 
-    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
-    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
 
     // Ensure the events show up.
@@ -89,9 +89,9 @@ fn udp_socket_ipv6() {
     let address1 = socket1.local_addr().unwrap();
     let address2 = socket2.local_addr().unwrap();
 
-    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
-    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
 
     // Ensure the events show up.
@@ -150,9 +150,9 @@ fn connected_udp_socket() {
 
     let mut socket1 = socket1.connect(address2).unwrap();
 
-    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
-    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
 
     // Ensure the events show up.
@@ -208,9 +208,9 @@ fn connected_udp_socket_ipv6() {
 
     let mut socket1 = socket1.connect(address2).unwrap();
 
-    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
-    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::Edge)
+    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, PollOption::EDGE)
         .expect("unable to register UDP socket");
 
     // Ensure the events show up.
@@ -298,7 +298,7 @@ fn udp_socket_deregister() {
     let barrier = Arc::new(Barrier::new(2));
     let thread_handle = send_packets(address, 1, barrier.clone());
 
-    os_queue.register(&mut socket, ID1, UdpSocket::INTERESTS, PollOption::Edge).unwrap();
+    os_queue.register(&mut socket, ID1, UdpSocket::INTERESTS, PollOption::EDGE).unwrap();
     os_queue.deregister(&mut socket).unwrap();
 
     // Let the packet be send.
@@ -329,8 +329,8 @@ fn udp_socket_reregister() {
     let barrier = Arc::new(Barrier::new(2));
     let thread_handle = send_packets(address, 1, barrier.clone());
 
-    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::Level).unwrap();
-    os_queue.reregister(&mut socket, ID2, Interests::READABLE, PollOption::Level).unwrap();
+    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::LEVEL).unwrap();
+    os_queue.reregister(&mut socket, ID2, Interests::READABLE, PollOption::LEVEL).unwrap();
 
     // Let the packet be send.
     barrier.wait();
@@ -357,7 +357,7 @@ fn udp_socket_edge_poll_option_drain() {
     let barrier = Arc::new(Barrier::new(2));
     let thread_handle = send_packets(address, 2, barrier.clone());
 
-    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::Edge)
+    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::EDGE)
         .expect("unable to register UDP socket");
 
     // Unblock the first packet.
@@ -404,7 +404,7 @@ fn udp_socket_oneshot_poll_option() {
     let barrier = Arc::new(Barrier::new(2));
     let thread_handle = send_packets(address, 2, barrier.clone());
 
-    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::Oneshot)
+    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::ONESHOT)
         .expect("unable to register UDP socket");
 
     // Unblock the first packet.
@@ -442,7 +442,7 @@ fn udp_socket_oneshot_poll_option_reregister() {
     let barrier = Arc::new(Barrier::new(2));
     let thread_handle = send_packets(address, 2, barrier.clone());
 
-    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::Oneshot)
+    os_queue.register(&mut socket, ID1, Interests::READABLE, PollOption::ONESHOT)
         .expect("unable to register UDP socket");
 
     // Unblock the first packet.
@@ -463,7 +463,7 @@ fn udp_socket_oneshot_poll_option_reregister() {
     assert!(seen_event, "didn't see any events");
 
     // Reregister the socket and we expect to see more events.
-    os_queue.reregister(&mut socket, ID2, Interests::READABLE, PollOption::Oneshot).unwrap();
+    os_queue.reregister(&mut socket, ID2, Interests::READABLE, PollOption::ONESHOT).unwrap();
 
     // Unblock the first packet.
     barrier.wait();

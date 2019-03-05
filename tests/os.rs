@@ -51,7 +51,7 @@ fn os_queue_registration() {
     let mut handle = TestEvented::new();
     let id = event::Id(0);
     let interests = Interests::READABLE;
-    let opt = PollOption::Edge;
+    let opt = PollOption::EDGE;
     os_queue.register(&mut handle, id, interests, opt)
         .expect("unable to register evented handle");
     assert_eq!(handle.registrations.len(), 1);
@@ -61,7 +61,7 @@ fn os_queue_registration() {
 
     let re_id = event::Id(0);
     let re_interests = Interests::READABLE;
-    let re_opt = PollOption::Edge;
+    let re_opt = PollOption::EDGE;
     os_queue.reregister(&mut handle, re_id, re_interests, re_opt)
         .expect("unable to reregister evented handle");
     assert_eq!(handle.registrations.len(), 1);
@@ -99,7 +99,7 @@ fn os_queue_erroneous_registration() {
     let mut handle = ErroneousTestEvented;
     let id = event::Id(0);
     let interests = Interests::READABLE;
-    let opt = PollOption::Edge;
+    let opt = PollOption::EDGE;
     assert_error(os_queue.register(&mut handle, id, interests, opt), "register");
     assert_error(os_queue.reregister(&mut handle, id, interests, opt), "reregister");
     assert_error(os_queue.deregister(&mut handle), "deregister");

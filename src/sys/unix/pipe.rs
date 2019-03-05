@@ -43,8 +43,8 @@ use crate::sys::unix::EventedFd;
 /// let (mut sender, mut receiver) = new_pipe()?;
 ///
 /// // Register both ends of the channel.
-/// os_queue.register(&mut receiver, CHANNEL_RECV_ID, Receiver::INTERESTS, PollOption::Level)?;
-/// os_queue.register(&mut sender, CHANNEL_SEND_ID, Sender::INTERESTS, PollOption::Level)?;
+/// os_queue.register(&mut receiver, CHANNEL_RECV_ID, Receiver::INTERESTS, PollOption::LEVEL)?;
+/// os_queue.register(&mut sender, CHANNEL_SEND_ID, Sender::INTERESTS, PollOption::LEVEL)?;
 ///
 /// const MSG: &[u8; 11] = b"Hello world";
 ///

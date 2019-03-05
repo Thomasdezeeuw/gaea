@@ -227,11 +227,15 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
 
 /// Convert poll options into `kevent` flags.
 fn opt_to_flags(opt: PollOption) -> kevent_flags_t {
-    libc::EV_RECEIPT | match opt {
-        PollOption::Edge => libc::EV_CLEAR,
-        PollOption::Level => 0, // Default.
-        PollOption::Oneshot => libc::EV_ONESHOT,
+    let mut flags = libc::EV_RECEIPT;
+    // NOTE: level is the default.
+    if opt.is_edge() {
+        flags |= libc::EV_CLEAR;
     }
+    if opt.is_oneshot() {
+        flags |= libc::EV_ONESHOT;
+    }
+    flags
 }
 
 /// Create a new `kevent`.
