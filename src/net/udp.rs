@@ -53,8 +53,8 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// let mut events = Vec::new();
 ///
 /// // Register our sockets
-/// os_queue.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
-/// os_queue.register(&mut echoer_socket, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
+/// os_queue.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, PollOption::LEVEL)?;
+/// os_queue.register(&mut echoer_socket, ECHOER_ID, Interests::READABLE, PollOption::LEVEL)?;
 ///
 /// // The message we'll send.
 /// const MSG_TO_SEND: &[u8; 11] = b"Hello world";
@@ -317,8 +317,8 @@ impl FromRawFd for UdpSocket {
 /// let mut events = Vec::new();
 ///
 /// // Register our echoer and sender.
-/// os_queue.register(&mut echoer, ECHOER_ID, Interests::READABLE, PollOption::Level)?;
-/// os_queue.register(&mut sender, SENDER_ID, Interests::WRITABLE, PollOption::Level)?;
+/// os_queue.register(&mut echoer, ECHOER_ID, Interests::READABLE, PollOption::LEVEL)?;
+/// os_queue.register(&mut sender, SENDER_ID, Interests::WRITABLE, PollOption::LEVEL)?;
 ///
 /// loop {
 ///     // Poll for events.

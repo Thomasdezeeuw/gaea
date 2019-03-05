@@ -33,7 +33,7 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// let mut events = Vec::new();
 ///
 /// // Register the socket with `OsQueue`.
-/// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
+/// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
 ///
 /// poll(&mut os_queue, &mut [], &mut events, None)?;
 ///
@@ -207,7 +207,7 @@ impl AsRawFd for TcpStream {
 /// const LISTENER_ID: event::Id = event::Id(0);
 ///
 /// // Register the socket with `OsQueue`.
-/// os_queue.register(&mut listener, LISTENER_ID, TcpListener::INTERESTS, PollOption::Edge)?;
+/// os_queue.register(&mut listener, LISTENER_ID, TcpListener::INTERESTS, PollOption::EDGE)?;
 ///
 /// // Poll for new events.
 /// poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;

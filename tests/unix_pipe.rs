@@ -22,9 +22,9 @@ fn unix_pipe() {
 
     let (mut sender, mut receiver) = new_pipe().expect("can't create pipe");
 
-    os_queue.register(&mut sender, SENDER_ID, Sender::INTERESTS, PollOption::Level)
+    os_queue.register(&mut sender, SENDER_ID, Sender::INTERESTS, PollOption::LEVEL)
         .expect("can't register sender");
-    os_queue.register(&mut receiver, RECEIVER_ID, Receiver::INTERESTS, PollOption::Level)
+    os_queue.register(&mut receiver, RECEIVER_ID, Receiver::INTERESTS, PollOption::LEVEL)
         .expect("can't register receiver");
 
     expect_events(&mut os_queue, &mut events, vec![
@@ -54,7 +54,7 @@ fn receiver_writable_interests() {
     let (_, mut receiver) = new_pipe().expect("can't create pipe");
 
     let mut os_queue = OsQueue::new().unwrap();
-    os_queue.register(&mut receiver, RECEIVER_ID, Interests::WRITABLE, PollOption::Level)
+    os_queue.register(&mut receiver, RECEIVER_ID, Interests::WRITABLE, PollOption::LEVEL)
         .unwrap();
 }
 
@@ -66,6 +66,6 @@ fn sender_readable_interests() {
     let (mut sender, _) = new_pipe().expect("can't create pipe");
 
     let mut os_queue = OsQueue::new().unwrap();
-    os_queue.register(&mut sender, SENDER_ID, Interests::READABLE, PollOption::Level)
+    os_queue.register(&mut sender, SENDER_ID, Interests::READABLE, PollOption::LEVEL)
         .unwrap();
 }

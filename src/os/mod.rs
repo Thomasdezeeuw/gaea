@@ -19,7 +19,7 @@
 //! [`Evented`] handle. See [`PollOption`] for more.
 //!
 //! [`WouldBlock`]: std::io::ErrorKind::WouldBlock
-//! [edge-triggered]: crate::os::PollOption::Edge
+//! [edge-triggered]: crate::os::PollOption::EDGE
 //! [`Evented`]: crate::os::Evented
 //! [`PollOption`]: crate::os::PollOption
 //!
@@ -72,7 +72,7 @@
 //!
 //! // The connect is not guaranteed to have started until it is registered at
 //! // this point.
-//! os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
+//! os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
 //! #     Ok(())
 //! # }
 //! ```
@@ -253,7 +253,7 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with queue.
-    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
+    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
     ///
     /// // Run the event loop.
     /// loop {
@@ -313,12 +313,12 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `OsQueue`, only with readable interest.
-    /// os_queue.register(&mut stream, event::Id(0), Interests::READABLE, PollOption::Edge)?;
+    /// os_queue.register(&mut stream, event::Id(0), Interests::READABLE, PollOption::EDGE)?;
     ///
     /// // Reregister the connection specifying a different id and write interest
-    /// // instead. `PollOption::Edge` must be specified even though that value
+    /// // instead. `PollOption::EDGE` must be specified even though that value
     /// // is not being changed.
-    /// os_queue.reregister(&mut stream, event::Id(2), Interests::WRITABLE, PollOption::Edge)?;
+    /// os_queue.reregister(&mut stream, event::Id(2), Interests::WRITABLE, PollOption::EDGE)?;
     ///
     /// // Run the event loop.
     /// loop {
@@ -359,7 +359,7 @@ impl OsQueue {
     /// but not all. To properly re-register a handle after deregistering use
     /// `register`, this works on all platforms.
     ///
-    /// [`oneshot`]: PollOption::Oneshot
+    /// [`oneshot`]: PollOption::ONESHOT
     /// [`register`]: OsQueue::register
     /// [`reregister`]: OsQueue::reregister
     ///
@@ -381,7 +381,7 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `OsQueue`.
-    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::Edge)?;
+    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
     ///
     /// // Do stuff with the connection etc.
     ///

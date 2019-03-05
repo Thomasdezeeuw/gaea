@@ -60,7 +60,7 @@
 //!
 //! // Register our TCP listener with `OsQueue`, this allows us to receive
 //! // readiness events about incoming connections.
-//! os_queue.register(&mut server, SERVER_ID, TcpListener::INTERESTS, PollOption::Edge)?;
+//! os_queue.register(&mut server, SERVER_ID, TcpListener::INTERESTS, PollOption::EDGE)?;
 //!
 //! // A hashmap with `event::Id` -> `TcpStream` connections.
 //! let mut connections = HashMap::new();
@@ -118,7 +118,7 @@
 //!
 //!         // Register the TCP connection so we can handle events for it as
 //!         // well.
-//!         os_queue.register(&mut connection, id, TcpStream::INTERESTS, PollOption::Edge)?;
+//!         os_queue.register(&mut connection, id, TcpStream::INTERESTS, PollOption::EDGE)?;
 //!
 //!         // Store our connection so we can access it later.
 //!         connections.insert(id, connection);

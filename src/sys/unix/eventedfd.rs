@@ -45,7 +45,7 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// let mut os_queue = OsQueue::new()?;
 ///
 /// // Register the listener using `EventedFd`.
-/// os_queue.register(&mut EventedFd(&listener.as_raw_fd()), event::Id(0), Interests::READABLE, PollOption::Edge)?;
+/// os_queue.register(&mut EventedFd(&listener.as_raw_fd()), event::Id(0), Interests::READABLE, PollOption::EDGE)?;
 /// #     Ok(())
 /// # }
 /// ```
