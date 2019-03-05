@@ -58,6 +58,7 @@ fn poll_determine_timeout() {
     poll(&mut SleepySource, &mut [&mut AvailableSource(timeout)], &mut events, None).unwrap();
     assert!(events.is_empty());
     let duration = start.elapsed();
+    #[cfg(not(feature="disable_test_deadline"))]
     assert!(duration >= timeout && duration <= timeout + TIMEOUT_MARGIN,
         "blocking time incorrect: {:?}, wanted: >= {:?} and >= {:?}.", duration, timeout, timeout + TIMEOUT_MARGIN);
 
@@ -65,6 +66,7 @@ fn poll_determine_timeout() {
     poll(&mut SleepySource, &mut [&mut AvailableSource(Duration::from_secs(1))], &mut events, Some(timeout)).unwrap();
     assert!(events.is_empty());
     let duration = start.elapsed();
+    #[cfg(not(feature="disable_test_deadline"))]
     assert!(duration >= timeout && duration <= timeout + TIMEOUT_MARGIN,
         "blocking time incorrect: {:?}, wanted: >= {:?} and >= {:?}.", duration, timeout, timeout + TIMEOUT_MARGIN);
 }
