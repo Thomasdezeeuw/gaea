@@ -8,6 +8,11 @@ use std::{fmt, io};
 ///
 /// The trait has a generic parameter `Evts` which must implement [`Events`],
 /// this should always be a generic parameter.
+///
+/// # Notes
+///
+/// The generic parameter `Evts` should remain generic to support all types
+/// of events containers.
 pub trait Source<Evts>
     where Evts: Events,
 {
