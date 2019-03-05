@@ -105,8 +105,8 @@ fn os_queue_erroneous_registration() {
     assert_error(os_queue.deregister(&mut handle), "deregister");
 }
 
-// NOTE: the `BlockingSource` and `Source` implementation are testing more in
-// the TCP and UDP tests.
+// NOTE: the `BlockingSource` and `Source` implementations are tested more
+// thoroughly in the TCP and UDP tests.
 
 #[test]
 fn os_queue_empty_source() {
@@ -120,7 +120,8 @@ fn os_queue_empty_source() {
     let timeout = Duration::from_millis(100);
     let start = Instant::now();
     os_queue.blocking_poll(&mut events, Some(timeout)).unwrap();
-    assert!(start.elapsed() < timeout + TIMEOUT_MARGIN, "polling took too long.");
+    assert!(start.elapsed() <= timeout + TIMEOUT_MARGIN,
+        "polling took too long: {:?}, wanted: <= {:?}.", start.elapsed(), timeout + TIMEOUT_MARGIN);
     assert!(events.is_empty(), "unexpected events");
 }
 
