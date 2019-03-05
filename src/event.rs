@@ -1,6 +1,5 @@
 //! Readiness event types.
 
-use std::iter::once;
 use std::ops::{BitOr, BitOrAssign};
 use std::time::Duration;
 use std::{fmt, io};
@@ -123,7 +122,7 @@ impl<S, Evts> BlockingSource<Evts> for &mut S
 /// }
 /// # }
 /// ```
-pub trait Events: Extend<Event> {
+pub trait Events {
     /// Capacity left in the events container.
     ///
     /// This must return the available capacity left, **not total capacity**.
@@ -135,10 +134,15 @@ pub trait Events: Extend<Event> {
     fn capacity_left(&self) -> Capacity;
 
     /// Add a single event to the events container.
-    ///
-    /// This is mainly a performance optimisation.
-    fn push(&mut self, event: Event) {
-        self.extend(once(event))
+    fn add(&mut self, event: Event);
+
+    /// Extend the events containers with multiple events.
+    fn extend<I>(&mut self, events: I)
+        where I: Iterator<Item = Event>,
+    {
+        for event in events {
+            self.add(event);
+        }
     }
 }
 
@@ -150,8 +154,14 @@ impl<'a, Evts> Events for &'a mut Evts
         (&**self).capacity_left()
     }
 
-    fn push(&mut self, event: Event) {
-        (&mut **self).push(event)
+    fn add(&mut self, event: Event) {
+        (&mut **self).add(event)
+    }
+
+    fn extend<I>(&mut self, events: I)
+        where I: Iterator<Item = Event>,
+    {
+        (&mut **self).extend(events)
     }
 }
 
@@ -160,8 +170,14 @@ impl Events for Vec<Event> {
         Capacity::Growable
     }
 
-    fn push(&mut self, event: Event) {
+    fn add(&mut self, event: Event) {
         self.push(event);
+    }
+
+    fn extend<I>(&mut self, events: I)
+        where I: Iterator<Item = Event>,
+    {
+        <Self as Extend<Event>>::extend(self, events);
     }
 }
 
