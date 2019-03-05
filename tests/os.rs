@@ -120,6 +120,7 @@ fn os_queue_empty_source() {
     let timeout = Duration::from_millis(100);
     let start = Instant::now();
     os_queue.blocking_poll(&mut events, Some(timeout)).unwrap();
+    #[cfg(not(feature="disable_test_deadline"))]
     assert!(start.elapsed() <= timeout + TIMEOUT_MARGIN,
         "polling took too long: {:?}, wanted: <= {:?}.", start.elapsed(), timeout + TIMEOUT_MARGIN);
     assert!(events.is_empty(), "unexpected events");
