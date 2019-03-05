@@ -129,7 +129,7 @@ impl<Evts> event::Source<Evts> for Timers
             match self.deadlines.peek() {
                 Some(deadline) if deadline.0.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap().0;
-                    events.push(Event::new(deadline.id, Ready::TIMER));
+                    events.add(Event::new(deadline.id, Ready::TIMER));
                 },
                 _ => break,
             }

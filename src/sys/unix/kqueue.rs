@@ -94,7 +94,7 @@ impl Selector {
             -1 => Err(io::Error::last_os_error()),
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
-                let kevents = kevents[0..n as usize].iter()
+                let kevents = kevents[..n as usize].iter()
                     .map(|e| kevent_to_event(e));
                 events.extend(kevents);
                 Ok(())
