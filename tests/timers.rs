@@ -68,7 +68,7 @@ fn timers_multiple_deadlines_same_id() {
     let mut events = Vec::new();
 
     let timeout = Duration::from_millis(10);
-    timers.add_timeout(event::Id(0), timeout * 2);
+    timers.add_timeout(event::Id(0), timeout * 10);
     timers.add_timeout(event::Id(0), timeout);
 
     roughly_equal(Source::<Vec<Event>>::next_event_available(&mut timers).unwrap(),
@@ -76,7 +76,7 @@ fn timers_multiple_deadlines_same_id() {
 
     sleep(timeout);
     expect_events(&mut timers, &mut events, vec![Event::new(event::Id(0), Ready::TIMER)]);
-    sleep(timeout);
+    sleep(timeout * 9);
     expect_events(&mut timers, &mut events, vec![Event::new(event::Id(0), Ready::TIMER)]);
 }
 
