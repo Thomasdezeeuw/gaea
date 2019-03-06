@@ -6,7 +6,7 @@ use std::{io, mem, ptr};
 use log::error;
 
 use crate::event::{self, Event, Events, Ready};
-use crate::os::{Interests, PollOption};
+use crate::os::{Interests, RegisterOption};
 use crate::sys::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types
@@ -102,7 +102,7 @@ impl Selector {
         }
     }
 
-    pub fn register(&self, fd: RawFd, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    pub fn register(&self, fd: RawFd, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         let flags = opt_to_flags(opt) | libc::EV_ADD;
         // At most we need two changes, but maybe we only need 1.
         let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
@@ -123,7 +123,7 @@ impl Selector {
         kevent_register(self.kq, &mut changes[0..n_changes], &[])
     }
 
-    pub fn reregister(&self, fd: RawFd, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    pub fn reregister(&self, fd: RawFd, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         let flags = opt_to_flags(opt);
         let write_flags = if interests.is_writable() {
             flags | libc::EV_ADD
@@ -226,7 +226,7 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
 }
 
 /// Convert poll options into `kevent` flags.
-fn opt_to_flags(opt: PollOption) -> kevent_flags_t {
+fn opt_to_flags(opt: RegisterOption) -> kevent_flags_t {
     let mut flags = libc::EV_RECEIPT;
     // NOTE: level is the default.
     if opt.is_edge() {

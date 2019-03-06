@@ -4,7 +4,7 @@ use std::mem;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::event;
-use crate::os::{Evented, Interests, PollOption, OsQueue};
+use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 use crate::sys::unix::EventedFd;
 
 /// Create a new non-blocking unix pipe.
@@ -27,7 +27,7 @@ use crate::sys::unix::EventedFd;
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::io::{Read, Write};
 ///
-/// use mio_st::os::{OsQueue, PollOption};
+/// use mio_st::os::{OsQueue, RegisterOption};
 /// use mio_st::unix::{new_pipe, Sender, Receiver};
 /// use mio_st::{event, poll};
 ///
@@ -43,8 +43,8 @@ use crate::sys::unix::EventedFd;
 /// let (mut sender, mut receiver) = new_pipe()?;
 ///
 /// // Register both ends of the channel.
-/// os_queue.register(&mut receiver, CHANNEL_RECV_ID, Receiver::INTERESTS, PollOption::LEVEL)?;
-/// os_queue.register(&mut sender, CHANNEL_SEND_ID, Sender::INTERESTS, PollOption::LEVEL)?;
+/// os_queue.register(&mut receiver, CHANNEL_RECV_ID, Receiver::INTERESTS, RegisterOption::LEVEL)?;
+/// os_queue.register(&mut sender, CHANNEL_SEND_ID, Sender::INTERESTS, RegisterOption::LEVEL)?;
 ///
 /// const MSG: &[u8; 11] = b"Hello world";
 ///
@@ -100,12 +100,12 @@ impl Receiver {
 }
 
 impl Evented for Receiver {
-    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
         EventedFd(&self.inner.as_raw_fd()).register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "receiving end of a pipe can never be written");
         EventedFd(&self.inner.as_raw_fd()).reregister(os_queue, id, interests, opt)
     }
@@ -147,12 +147,12 @@ impl Sender {
 }
 
 impl Evented for Sender {
-    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
         EventedFd(&self.inner.as_raw_fd()).register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         debug_assert!(!interests.is_readable(), "sending end of a pipe can never be read");
         EventedFd(&self.inner.as_raw_fd()).reregister(os_queue, id, interests, opt)
     }

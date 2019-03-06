@@ -4,15 +4,15 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{self, BlockingSource, Source, Event, Ready};
-use mio_st::os::{Awakener, Evented, Interests, PollOption, OsQueue};
+use mio_st::os::{Awakener, Evented, Interests, RegisterOption, OsQueue};
 
 mod util;
 
 use self::util::{TIMEOUT_MARGIN, assert_error, expect_events, init, init_with_os_queue};
 
 struct TestEvented {
-    registrations: Vec<(event::Id, Interests, PollOption)>,
-    reregistrations: Vec<(event::Id, Interests, PollOption)>,
+    registrations: Vec<(event::Id, Interests, RegisterOption)>,
+    reregistrations: Vec<(event::Id, Interests, RegisterOption)>,
     deregister_count: usize,
 }
 
@@ -27,12 +27,12 @@ impl TestEvented {
 }
 
 impl Evented for TestEvented {
-    fn register(&mut self, _os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, _os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.registrations.push((id, interests, opt));
         Ok(())
     }
 
-    fn reregister(&mut self, _os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, _os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.reregistrations.push((id, interests, opt));
         Ok(())
     }
@@ -51,7 +51,7 @@ fn os_queue_registration() {
     let mut handle = TestEvented::new();
     let id = event::Id(0);
     let interests = Interests::READABLE;
-    let opt = PollOption::EDGE;
+    let opt = RegisterOption::EDGE;
     os_queue.register(&mut handle, id, interests, opt)
         .expect("unable to register evented handle");
     assert_eq!(handle.registrations.len(), 1);
@@ -61,7 +61,7 @@ fn os_queue_registration() {
 
     let re_id = event::Id(0);
     let re_interests = Interests::READABLE;
-    let re_opt = PollOption::EDGE;
+    let re_opt = RegisterOption::EDGE;
     os_queue.reregister(&mut handle, re_id, re_interests, re_opt)
         .expect("unable to reregister evented handle");
     assert_eq!(handle.registrations.len(), 1);
@@ -78,11 +78,11 @@ fn os_queue_registration() {
 struct ErroneousTestEvented;
 
 impl Evented for ErroneousTestEvented {
-    fn register(&mut self, _os_queue: &mut OsQueue, _id: event::Id, _interests: Interests, _opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, _os_queue: &mut OsQueue, _id: event::Id, _interests: Interests, _opt: RegisterOption) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "register"))
     }
 
-    fn reregister(&mut self, _os_queue: &mut OsQueue, _id: event::Id, _interests: Interests, _opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, _os_queue: &mut OsQueue, _id: event::Id, _interests: Interests, _opt: RegisterOption) -> io::Result<()> {
         Err(io::Error::new(io::ErrorKind::Other, "reregister"))
     }
 
@@ -99,7 +99,7 @@ fn os_queue_erroneous_registration() {
     let mut handle = ErroneousTestEvented;
     let id = event::Id(0);
     let interests = Interests::READABLE;
-    let opt = PollOption::EDGE;
+    let opt = RegisterOption::EDGE;
     assert_error(os_queue.register(&mut handle, id, interests, opt), "register");
     assert_error(os_queue.reregister(&mut handle, id, interests, opt), "reregister");
     assert_error(os_queue.deregister(&mut handle), "deregister");

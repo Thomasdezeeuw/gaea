@@ -6,7 +6,7 @@ mod eventfd {
     use std::os::unix::io::FromRawFd;
 
     use crate::event;
-    use crate::os::{Interests, PollOption};
+    use crate::os::{Interests, RegisterOption};
     use crate::sys::Selector;
 
     /// Awakener backed by `eventfd`.
@@ -27,7 +27,7 @@ mod eventfd {
                 return Err(io::Error::last_os_error());
             }
 
-            selector.register(fd, id, Interests::READABLE, PollOption::EDGE)?;
+            selector.register(fd, id, Interests::READABLE, RegisterOption::EDGE)?;
             Ok(Awakener {
                 fd: unsafe { File::from_raw_fd(fd) },
             })

@@ -3,7 +3,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use mio_st::event::{Event, Ready};
-use mio_st::os::{Interests, PollOption, OsQueue};
+use mio_st::os::{Interests, RegisterOption, OsQueue};
 use mio_st::unix::{new_pipe, Sender, Receiver};
 use mio_st::event;
 
@@ -22,9 +22,9 @@ fn unix_pipe() {
 
     let (mut sender, mut receiver) = new_pipe().expect("can't create pipe");
 
-    os_queue.register(&mut sender, SENDER_ID, Sender::INTERESTS, PollOption::LEVEL)
+    os_queue.register(&mut sender, SENDER_ID, Sender::INTERESTS, RegisterOption::LEVEL)
         .expect("can't register sender");
-    os_queue.register(&mut receiver, RECEIVER_ID, Receiver::INTERESTS, PollOption::LEVEL)
+    os_queue.register(&mut receiver, RECEIVER_ID, Receiver::INTERESTS, RegisterOption::LEVEL)
         .expect("can't register receiver");
 
     expect_events(&mut os_queue, &mut events, vec![
@@ -54,7 +54,7 @@ fn receiver_writable_interests() {
     let (_, mut receiver) = new_pipe().expect("can't create pipe");
 
     let mut os_queue = OsQueue::new().unwrap();
-    os_queue.register(&mut receiver, RECEIVER_ID, Interests::WRITABLE, PollOption::LEVEL)
+    os_queue.register(&mut receiver, RECEIVER_ID, Interests::WRITABLE, RegisterOption::LEVEL)
         .unwrap();
 }
 
@@ -66,6 +66,6 @@ fn sender_readable_interests() {
     let (mut sender, _) = new_pipe().expect("can't create pipe");
 
     let mut os_queue = OsQueue::new().unwrap();
-    os_queue.register(&mut sender, SENDER_ID, Interests::READABLE, PollOption::LEVEL)
+    os_queue.register(&mut sender, SENDER_ID, Interests::READABLE, RegisterOption::LEVEL)
         .unwrap();
 }

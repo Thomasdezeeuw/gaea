@@ -16,12 +16,12 @@
 //! corresponding operation must be performed repeatedly until it returns
 //! [`WouldBlock`]. Unless this is done, there is no guarantee that another
 //! readiness event will be delivered, even if further data is received for the
-//! [`Evented`] handle. See [`PollOption`] for more.
+//! [`Evented`] handle. See [`RegisterOption`] for more.
 //!
 //! [`WouldBlock`]: std::io::ErrorKind::WouldBlock
-//! [edge-triggered]: crate::os::PollOption::EDGE
+//! [edge-triggered]: crate::os::RegisterOption::EDGE
 //! [`Evented`]: crate::os::Evented
-//! [`PollOption`]: crate::os::PollOption
+//! [`RegisterOption`]: crate::os::RegisterOption
 //!
 //! ### Spurious events
 //!
@@ -60,7 +60,7 @@
 //!
 //! use mio_st::event;
 //! use mio_st::net::TcpStream;
-//! use mio_st::os::{OsQueue, PollOption};
+//! use mio_st::os::{OsQueue, RegisterOption};
 //!
 //! let address = "216.58.193.100:80".parse()?;
 //! let mut stream = TcpStream::connect(address)?;
@@ -72,7 +72,7 @@
 //!
 //! // The connect is not guaranteed to have started until it is registered at
 //! // this point.
-//! os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
+//! os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, RegisterOption::EDGE)?;
 //! #     Ok(())
 //! # }
 //! ```
@@ -125,7 +125,7 @@ mod option;
 pub use self::awakener::Awakener;
 pub use self::evented::Evented;
 pub use self::interests::Interests;
-pub use self::option::PollOption;
+pub use self::option::RegisterOption;
 
 /// Readiness event queue backed by the OS.
 ///
@@ -140,8 +140,8 @@ pub use self::option::PollOption;
 /// polling option. The [associated id] is used to associate a readiness event
 /// with an `Evented` handle. The readiness [interests] defines which specific
 /// operations on the handle to monitor for readiness. And the final argument,
-/// [`PollOption`], defines how to deliver the readiness events, see
-/// [`PollOption`] for more information.
+/// [`RegisterOption`], defines how to deliver the readiness events, see
+/// [`RegisterOption`] for more information.
 ///
 /// See to [module documentation] for information.
 ///
@@ -241,7 +241,7 @@ impl OsQueue {
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::net::TcpStream;
-    /// use mio_st::os::{OsQueue, PollOption};
+    /// use mio_st::os::{OsQueue, RegisterOption};
     /// use mio_st::{event, poll};
     ///
     /// // Create a new `OsQueue` as well a containers for the events.
@@ -253,7 +253,7 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with queue.
-    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
+    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, RegisterOption::EDGE)?;
     ///
     /// // Run the event loop.
     /// loop {
@@ -268,7 +268,7 @@ impl OsQueue {
     /// }
     /// # }
     /// ```
-    pub fn register<E>(&mut self, handle: &mut E, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()>
+    pub fn register<E>(&mut self, handle: &mut E, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()>
         where E: Evented + ?Sized,
     {
         trace!("registering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
@@ -303,7 +303,7 @@ impl OsQueue {
     /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// use mio_st::{event, poll};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::os::{Interests, PollOption, OsQueue};
+    /// use mio_st::os::{Interests, RegisterOption, OsQueue};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -313,12 +313,12 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `OsQueue`, only with readable interest.
-    /// os_queue.register(&mut stream, event::Id(0), Interests::READABLE, PollOption::EDGE)?;
+    /// os_queue.register(&mut stream, event::Id(0), Interests::READABLE, RegisterOption::EDGE)?;
     ///
     /// // Reregister the connection specifying a different id and write interest
-    /// // instead. `PollOption::EDGE` must be specified even though that value
+    /// // instead. `RegisterOption::EDGE` must be specified even though that value
     /// // is not being changed.
-    /// os_queue.reregister(&mut stream, event::Id(2), Interests::WRITABLE, PollOption::EDGE)?;
+    /// os_queue.reregister(&mut stream, event::Id(2), Interests::WRITABLE, RegisterOption::EDGE)?;
     ///
     /// // Run the event loop.
     /// loop {
@@ -336,7 +336,7 @@ impl OsQueue {
     /// }
     /// # }
     /// ```
-    pub fn reregister<E>(&mut self, handle: &mut E, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()>
+    pub fn reregister<E>(&mut self, handle: &mut E, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()>
         where E: Evented + ?Sized,
     {
         trace!("reregistering handle: id={}, interests={:?}, opt={:?}", id, interests, opt);
@@ -359,7 +359,7 @@ impl OsQueue {
     /// but not all. To properly re-register a handle after deregistering use
     /// `register`, this works on all platforms.
     ///
-    /// [`oneshot`]: PollOption::ONESHOT
+    /// [`oneshot`]: RegisterOption::ONESHOT
     /// [`register`]: OsQueue::register
     /// [`reregister`]: OsQueue::reregister
     ///
@@ -371,7 +371,7 @@ impl OsQueue {
     ///
     /// use mio_st::{event, poll};
     /// use mio_st::net::TcpStream;
-    /// use mio_st::os::{OsQueue, PollOption};
+    /// use mio_st::os::{OsQueue, RegisterOption};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -381,7 +381,7 @@ impl OsQueue {
     /// let mut stream = TcpStream::connect(address)?;
     ///
     /// // Register the connection with `OsQueue`.
-    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
+    /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, RegisterOption::EDGE)?;
     ///
     /// // Do stuff with the connection etc.
     ///
