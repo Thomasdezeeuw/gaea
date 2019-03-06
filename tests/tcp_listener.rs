@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use mio_st::event::{Event, Ready};
 use mio_st::net::TcpListener;
-use mio_st::os::{Interests, PollOption, OsQueue};
+use mio_st::os::{Interests, RegisterOption, OsQueue};
 use mio_st::{event, poll};
 
 mod util;
@@ -23,7 +23,7 @@ fn tcp_listener() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::EDGE)
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::EDGE)
         .expect("unable to register TCP listener");
 
     // Start another thread that connects to our listener.
@@ -58,7 +58,7 @@ fn tcp_listener_ipv6() {
     let mut listener = TcpListener::bind(any_local_ipv6_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::EDGE)
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::EDGE)
         .expect("unable to register TCP listener");
 
     // Start another thread that connects to our listener.
@@ -98,8 +98,8 @@ fn tcp_listener_try_clone_same_os_queue() {
     assert_eq!(address, listener2.local_addr().unwrap());
 
     // Should be able to register both listeners with the same queue.
-    os_queue.register(&mut listener1, ID1, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
-    os_queue.register(&mut listener2, ID2, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
+    os_queue.register(&mut listener1, ID1, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
+    os_queue.register(&mut listener2, ID2, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
 
     // Start another thread that connects to our listener.
     let thread_handle = thread::spawn(move || {
@@ -143,8 +143,8 @@ fn tcp_listener_try_clone_different_os_queue() {
     assert_eq!(address, listener2.local_addr().unwrap());
 
     // Should be able to register both listeners with the same queue.
-    os_queue1.register(&mut listener1, ID1, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
-    os_queue2.register(&mut listener2, ID1, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
+    os_queue1.register(&mut listener1, ID1, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
+    os_queue2.register(&mut listener2, ID1, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
 
     // Start another thread that connects to our listener.
     let thread_handle = thread::spawn(move || {
@@ -211,7 +211,7 @@ fn tcp_listener_deregister() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
     os_queue.deregister(&mut listener).unwrap();
 
     // Start another thread that connects to our listener.
@@ -246,8 +246,8 @@ fn tcp_listener_reregister() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let address = listener.local_addr().unwrap();
 
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
-    os_queue.reregister(&mut listener, ID2, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
+    os_queue.reregister(&mut listener, ID2, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
 
     // Start another thread that connects to our listener.
     let thread_handle = thread::spawn(move || {
@@ -284,7 +284,7 @@ fn tcp_listener_edge_poll_option_drain() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle1 = start_connections(&mut listener, 1, None);
     let thread_handle2 = start_connections(&mut listener, 2, Some(barrier.clone()));
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
@@ -335,7 +335,7 @@ fn tcp_listener_edge_poll_option_no_drain() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle1 = start_connections(&mut listener, 1, None);
     let thread_handle2 = start_connections(&mut listener, 1, None);
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::EDGE).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::EDGE).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
@@ -372,7 +372,7 @@ fn tcp_listener_level_poll_option() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle1 = start_connections(&mut listener, 2, None);
     let thread_handle2 = start_connections(&mut listener, 2, None);
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::LEVEL).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::LEVEL).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(100));
@@ -408,7 +408,7 @@ fn tcp_listener_oneshot_poll_option() {
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle = start_connections(&mut listener, 2, None);
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::ONESHOT).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::ONESHOT).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(20));
@@ -436,7 +436,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
 
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
     let thread_handle = start_connections(&mut listener, 2, None);
-    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, PollOption::ONESHOT).unwrap();
+    os_queue.register(&mut listener, ID1, TcpListener::INTERESTS, RegisterOption::ONESHOT).unwrap();
 
     // Give the connections some time to run.
     sleep(Duration::from_millis(20));
@@ -459,7 +459,7 @@ fn tcp_listener_oneshot_poll_option_reregister() {
     sleep(Duration::from_millis(20));
 
     // Reregister the listener and we expect to see more events.
-    os_queue.reregister(&mut listener, ID2, TcpListener::INTERESTS, PollOption::ONESHOT).unwrap();
+    os_queue.reregister(&mut listener, ID2, TcpListener::INTERESTS, RegisterOption::ONESHOT).unwrap();
 
     seen_event = false;
     for _ in 0..2 {
@@ -486,7 +486,7 @@ fn tcp_listener_writable_interests() {
     let mut listener = TcpListener::bind(any_local_address()).unwrap();
 
     let mut os_queue = OsQueue::new().unwrap();
-    os_queue.register(&mut listener, ID1, Interests::WRITABLE, PollOption::LEVEL)
+    os_queue.register(&mut listener, ID1, Interests::WRITABLE, RegisterOption::LEVEL)
         .unwrap();
 }
 

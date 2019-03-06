@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::{event, sys};
-use crate::os::{Evented, Interests, PollOption, OsQueue};
+use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 
 /// A User Datagram Protocol socket.
 ///
@@ -30,7 +30,7 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use mio_st::{event, poll};
 /// use mio_st::net::UdpSocket;
-/// use mio_st::os::{Interests, PollOption, OsQueue};
+/// use mio_st::os::{Interests, RegisterOption, OsQueue};
 ///
 /// // Unique ids and addresses for both the sender and echoer.
 /// const SENDER_ID: event::Id = event::Id(0);
@@ -53,8 +53,8 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// let mut events = Vec::new();
 ///
 /// // Register our sockets
-/// os_queue.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, PollOption::LEVEL)?;
-/// os_queue.register(&mut echoer_socket, ECHOER_ID, Interests::READABLE, PollOption::LEVEL)?;
+/// os_queue.register(&mut sender_socket, SENDER_ID, Interests::WRITABLE, RegisterOption::LEVEL)?;
+/// os_queue.register(&mut echoer_socket, ECHOER_ID, Interests::READABLE, RegisterOption::LEVEL)?;
 ///
 /// // The message we'll send.
 /// const MSG_TO_SEND: &[u8; 11] = b"Hello world";
@@ -242,11 +242,11 @@ impl UdpSocket {
 }
 
 impl Evented for UdpSocket {
-    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.socket.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.socket.reregister(os_queue, id, interests, opt)
     }
 
@@ -299,7 +299,7 @@ impl FromRawFd for UdpSocket {
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use mio_st::{event, poll};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-/// use mio_st::os::{Interests, PollOption, OsQueue};
+/// use mio_st::os::{Interests, RegisterOption, OsQueue};
 ///
 /// const ECHOER_ID: event::Id = event::Id(0);
 /// const SENDER_ID: event::Id = event::Id(1);
@@ -317,8 +317,8 @@ impl FromRawFd for UdpSocket {
 /// let mut events = Vec::new();
 ///
 /// // Register our echoer and sender.
-/// os_queue.register(&mut echoer, ECHOER_ID, Interests::READABLE, PollOption::LEVEL)?;
-/// os_queue.register(&mut sender, SENDER_ID, Interests::WRITABLE, PollOption::LEVEL)?;
+/// os_queue.register(&mut echoer, ECHOER_ID, Interests::READABLE, RegisterOption::LEVEL)?;
+/// os_queue.register(&mut sender, SENDER_ID, Interests::WRITABLE, RegisterOption::LEVEL)?;
 ///
 /// loop {
 ///     // Poll for events.
@@ -475,11 +475,11 @@ impl ConnectedUdpSocket {
 }
 
 impl Evented for ConnectedUdpSocket {
-    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.socket.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.socket.reregister(os_queue, id, interests, opt)
     }
 

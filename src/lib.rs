@@ -41,7 +41,7 @@
 //! use std::collections::HashMap;
 //!
 //! use mio_st::net::{TcpListener, TcpStream};
-//! use mio_st::os::{OsQueue, PollOption};
+//! use mio_st::os::{OsQueue, RegisterOption};
 //! use mio_st::{event, poll};
 //!
 //! // An unique id to associate an event with a handle, in this case for our
@@ -60,7 +60,7 @@
 //!
 //! // Register our TCP listener with `OsQueue`, this allows us to receive
 //! // readiness events about incoming connections.
-//! os_queue.register(&mut server, SERVER_ID, TcpListener::INTERESTS, PollOption::EDGE)?;
+//! os_queue.register(&mut server, SERVER_ID, TcpListener::INTERESTS, RegisterOption::EDGE)?;
 //!
 //! // A hashmap with `event::Id` -> `TcpStream` connections.
 //! let mut connections = HashMap::new();
@@ -118,7 +118,7 @@
 //!
 //!         // Register the TCP connection so we can handle events for it as
 //!         // well.
-//!         os_queue.register(&mut connection, id, TcpStream::INTERESTS, PollOption::EDGE)?;
+//!         os_queue.register(&mut connection, id, TcpStream::INTERESTS, RegisterOption::EDGE)?;
 //!
 //!         // Store our connection so we can access it later.
 //!         connections.insert(id, connection);

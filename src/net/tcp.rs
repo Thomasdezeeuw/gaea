@@ -4,7 +4,7 @@ use std::net::{Shutdown, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::{event, sys};
-use crate::os::{Evented, Interests, PollOption, OsQueue};
+use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///
@@ -24,7 +24,7 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use mio_st::{event, poll};
 /// use mio_st::net::TcpStream;
-/// use mio_st::os::{OsQueue, PollOption};
+/// use mio_st::os::{OsQueue, RegisterOption};
 ///
 /// let address = "127.0.0.1:8000".parse()?;
 /// let mut stream = TcpStream::connect(address)?;
@@ -33,7 +33,7 @@ use crate::os::{Evented, Interests, PollOption, OsQueue};
 /// let mut events = Vec::new();
 ///
 /// // Register the socket with `OsQueue`.
-/// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, PollOption::EDGE)?;
+/// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, RegisterOption::EDGE)?;
 ///
 /// poll(&mut os_queue, &mut [], &mut events, None)?;
 ///
@@ -134,11 +134,11 @@ impl Write for TcpStream {
 }
 
 impl Evented for TcpStream {
-    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.inner.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         self.inner.reregister(os_queue, id, interests, opt)
     }
 
@@ -196,7 +196,7 @@ impl AsRawFd for TcpStream {
 ///
 /// use mio_st::{event, poll};
 /// use mio_st::net::TcpListener;
-/// use mio_st::os::{OsQueue, PollOption};
+/// use mio_st::os::{OsQueue, RegisterOption};
 ///
 /// let address = "127.0.0.1:8001".parse()?;
 /// let mut listener = TcpListener::bind(address)?;
@@ -207,7 +207,7 @@ impl AsRawFd for TcpStream {
 /// const LISTENER_ID: event::Id = event::Id(0);
 ///
 /// // Register the socket with `OsQueue`.
-/// os_queue.register(&mut listener, LISTENER_ID, TcpListener::INTERESTS, PollOption::EDGE)?;
+/// os_queue.register(&mut listener, LISTENER_ID, TcpListener::INTERESTS, RegisterOption::EDGE)?;
 ///
 /// // Poll for new events.
 /// poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
@@ -291,12 +291,12 @@ impl TcpListener {
 }
 
 impl Evented for TcpListener {
-    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
         self.inner.register(os_queue, id, interests, opt)
     }
 
-    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: PollOption) -> io::Result<()> {
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         debug_assert!(!interests.is_writable(), "TcpListener only needs readable interests");
         self.inner.reregister(os_queue, id, interests, opt)
     }

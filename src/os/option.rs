@@ -74,9 +74,9 @@ use std::ops::BitOr;
 /// would need to be reregistered using [`reregister`].
 ///
 /// [`Evented`]: crate::os::Evented
-/// [edge-triggered]: crate::os::PollOption::EDGE
-/// [level-triggered]: crate::os::PollOption::LEVEL
-/// [oneshot]: crate::os::PollOption::ONESHOT
+/// [edge-triggered]: crate::os::RegisterOption::EDGE
+/// [level-triggered]: crate::os::RegisterOption::LEVEL
+/// [oneshot]: crate::os::RegisterOption::ONESHOT
 /// [reregister]: crate::os::OsQueue::reregister
 /// [`TcpStream`]: crate::net::TcpStream
 /// [`poll`]: crate::poll
@@ -88,21 +88,21 @@ use std::ops::BitOr;
 /// It is not possible to combine edge and level triggers.
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct PollOption(u8);
+pub struct RegisterOption(u8);
 
 // Level trigger is 0.
 const EDGE: u8    = 1 << 0;
 const ONESHOT: u8 = 1 << 1;
 
-impl PollOption {
+impl RegisterOption {
     /// Level-triggered notifications.
-    pub const LEVEL: PollOption = PollOption(0);
+    pub const LEVEL: RegisterOption = RegisterOption(0);
 
     /// Edge-triggered notifications.
-    pub const EDGE: PollOption = PollOption(EDGE);
+    pub const EDGE: RegisterOption = RegisterOption(EDGE);
 
     /// Oneshot notifications.
-    pub const ONESHOT: PollOption = PollOption(ONESHOT);
+    pub const ONESHOT: RegisterOption = RegisterOption(ONESHOT);
 
     /// Returns true if the value includes level trigger.
     #[inline]
@@ -116,22 +116,22 @@ impl PollOption {
         self.0 & EDGE != 0
     }
 
-    /// Returns true if the value includes oneshot trigger.
+    /// Returns true if the value includes oneshot notification.
     #[inline]
     pub fn is_oneshot(self) -> bool {
         self.0 & ONESHOT != 0
     }
 }
 
-impl BitOr for PollOption {
+impl BitOr for RegisterOption {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self {
-        PollOption(self.0 | rhs.0)
+        RegisterOption(self.0 | rhs.0)
     }
 }
 
-impl fmt::Debug for PollOption {
+impl fmt::Debug for RegisterOption {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad(match (self.is_edge(), self.is_oneshot()) {
             (false, false) => "LEVEL",
@@ -144,31 +144,31 @@ impl fmt::Debug for PollOption {
 
 #[cfg(test)]
 mod tests {
-    use crate::os::PollOption;
+    use crate::os::RegisterOption;
 
     #[test]
     fn is_tests() {
-        assert!(PollOption::LEVEL.is_level());
-        assert!(!PollOption::LEVEL.is_edge());
-        assert!(!PollOption::LEVEL.is_oneshot());
+        assert!(RegisterOption::LEVEL.is_level());
+        assert!(!RegisterOption::LEVEL.is_edge());
+        assert!(!RegisterOption::LEVEL.is_oneshot());
 
-        assert!(!PollOption::EDGE.is_level());
-        assert!(PollOption::EDGE.is_edge());
-        assert!(!PollOption::EDGE.is_oneshot());
+        assert!(!RegisterOption::EDGE.is_level());
+        assert!(RegisterOption::EDGE.is_edge());
+        assert!(!RegisterOption::EDGE.is_oneshot());
 
-        assert!(PollOption::ONESHOT.is_level());
-        assert!(!PollOption::ONESHOT.is_edge());
-        assert!(PollOption::ONESHOT.is_oneshot());
+        assert!(RegisterOption::ONESHOT.is_level());
+        assert!(!RegisterOption::ONESHOT.is_edge());
+        assert!(RegisterOption::ONESHOT.is_oneshot());
     }
 
     #[test]
     fn bit_or() {
-        let opt = PollOption::LEVEL | PollOption::ONESHOT;
+        let opt = RegisterOption::LEVEL | RegisterOption::ONESHOT;
         assert!(opt.is_level());
         assert!(!opt.is_edge());
         assert!(opt.is_oneshot());
 
-        let opt = PollOption::EDGE | PollOption::ONESHOT;
+        let opt = RegisterOption::EDGE | RegisterOption::ONESHOT;
         assert!(!opt.is_level());
         assert!(opt.is_edge());
         assert!(opt.is_oneshot());
@@ -176,10 +176,10 @@ mod tests {
 
     #[test]
     fn fmt_debug() {
-        assert_eq!(format!("{:?}", PollOption::LEVEL), "LEVEL");
-        assert_eq!(format!("{:?}", PollOption::EDGE), "EDGE");
-        assert_eq!(format!("{:?}", PollOption::ONESHOT), "LEVEL | ONESHOT");
-        assert_eq!(format!("{:?}", PollOption::LEVEL | PollOption::ONESHOT), "LEVEL | ONESHOT");
-        assert_eq!(format!("{:?}", PollOption::EDGE | PollOption::ONESHOT), "EDGE | ONESHOT");
+        assert_eq!(format!("{:?}", RegisterOption::LEVEL), "LEVEL");
+        assert_eq!(format!("{:?}", RegisterOption::EDGE), "EDGE");
+        assert_eq!(format!("{:?}", RegisterOption::ONESHOT), "LEVEL | ONESHOT");
+        assert_eq!(format!("{:?}", RegisterOption::LEVEL | RegisterOption::ONESHOT), "LEVEL | ONESHOT");
+        assert_eq!(format!("{:?}", RegisterOption::EDGE | RegisterOption::ONESHOT), "EDGE | ONESHOT");
     }
 }
