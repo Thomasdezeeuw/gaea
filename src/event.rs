@@ -259,16 +259,58 @@ impl Events for Vec<Event> {
 pub enum Capacity {
     /// The capacity is limited.
     Limited(usize),
-    /// The event container is growable making the container capacity
+    /// The events container is growable making the container capacity
     /// "infinite". This is for example return in the [`Events`] implements for
     /// vectors.
     Growable,
 }
 
 impl Capacity {
-    /// Get the maximum capacity given the event container capacity and the
-    /// available events.
-    pub(crate) fn min(self, right: usize) -> usize {
+    /// Get the maximum capacity given the events container's capacity and the
+    /// number of available events.
+    ///
+    /// # Examples
+    ///
+    /// For event contains without a capacity limit it will always return
+    /// `right`.
+    ///
+    /// ```
+    /// use mio_st::Events;
+    ///
+    /// let n_events = 5;
+    /// let events = Vec::new();
+    /// assert_eq!(events.capacity_left().min(n_events), 5);
+    /// ```
+    ///
+    /// For limit capacity events containers to will take the `min`imum value.
+    ///
+    /// ```
+    /// use mio_st::{event, Events, Event, Ready};
+    ///
+    /// struct MyEventContainer(Option<Event>);
+    ///
+    /// impl Events for MyEventContainer {
+    ///     fn capacity_left(&self) -> event::Capacity {
+    ///         if self.0.is_some() {
+    ///             event::Capacity::Limited(0)
+    ///         } else {
+    ///             event::Capacity::Limited(1)
+    ///         }
+    ///     }
+    ///
+    ///     fn add(&mut self, event: Event) {
+    ///         self.0 = Some(event);
+    ///     }
+    /// }
+    ///
+    /// let n_events = 5;
+    /// let events = MyEventContainer(None);
+    /// assert_eq!(events.capacity_left().min(n_events), 1);
+    ///
+    /// let events = MyEventContainer(Some(Event::new(event::Id(0), Ready::READABLE)));
+    /// assert_eq!(events.capacity_left().min(n_events), 0);
+    /// ```
+    pub fn min(self, right: usize) -> usize {
         match self {
             Capacity::Limited(left) => left.min(right),
             Capacity::Growable => right,
