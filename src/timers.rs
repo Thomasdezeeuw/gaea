@@ -11,6 +11,8 @@ use crate::event::{self, Event, Events, Ready};
 
 /// Timer readiness queue.
 ///
+/// Polling this event source never returns an error.
+///
 /// # Examples
 ///
 /// ```
