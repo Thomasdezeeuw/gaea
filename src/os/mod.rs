@@ -175,7 +175,7 @@ impl OsQueue {
     /// // Create a new OS backed readiness event queue.
     /// let mut os_queue = OsQueue::new()?;
     ///
-    /// // Create an event container.
+    /// // Create an events container.
     /// let mut events = Vec::new();
     ///
     /// // Poll the queue for new readiness events.
