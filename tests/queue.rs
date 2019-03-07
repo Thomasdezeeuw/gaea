@@ -2,15 +2,15 @@ use std::time::Duration;
 
 use log::error;
 
-use mio_st::event::{self, Source, Ready};
-use mio_st::{Event, Queue};
+use mio_st::event::{self, Capacity, Source, Ready};
+use mio_st::{Events, Event, Queue};
 
 mod util;
 
 use self::util::init;
 
 #[test]
-fn os_queue() {
+fn queue() {
     init();
     let mut queue = Queue::new();
     let mut events = Vec::new();
@@ -35,6 +35,52 @@ fn os_queue() {
         Event::new(event::Id(0), Ready::READABLE | Ready::WRITABLE),
         Event::new(event::Id(1), Ready::READABLE | Ready::WRITABLE | Ready::ERROR),
     ]);
+}
+
+#[test]
+fn queue_events_capacity() {
+    init();
+
+    struct EventsCapacity(Capacity, usize);
+
+    impl Events for EventsCapacity {
+        fn capacity_left(&self) -> Capacity {
+            self.0
+        }
+
+        fn add(&mut self, _event: Event) {
+            self.1 += 1;
+        }
+    }
+
+    let mut queue = Queue::new();
+    let event = Event::new(event::Id(0), Ready::READABLE);
+    queue.add(event);
+    queue.add(event);
+
+    let mut events = EventsCapacity(Capacity::Limited(0), 0);
+    Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+    assert_eq!(events.1, 0); // Shouldn't have grow.
+
+    let mut events = EventsCapacity(Capacity::Limited(1), 0);
+    Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+    assert_eq!(events.1, 1);
+
+    let mut events = EventsCapacity(Capacity::Limited(1), 0);
+    Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+    assert_eq!(events.1, 1);
+
+    let mut events = EventsCapacity(Capacity::Limited(100), 0);
+    queue.add(event);
+    queue.add(event);
+    Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+    assert_eq!(events.1, 2);
+
+    let mut events = EventsCapacity(Capacity::Growable, 0);
+    queue.add(event);
+    queue.add(event);
+    Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+    assert_eq!(events.1, 2);
 }
 
 /// Get the next available event with having to worry about the generic
