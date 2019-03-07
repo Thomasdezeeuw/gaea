@@ -1,8 +1,8 @@
 //! Readiness event types.
 
-use std::ops::{BitOr, BitOrAssign};
-use std::time::Duration;
-use std::{fmt, io};
+use core::fmt;
+use core::ops::{BitOr, BitOrAssign};
+use core::time::Duration;
 
 /// A readiness event source that can be polled for events.
 ///
@@ -172,6 +172,7 @@ impl<'a, Evts> Events for &'a mut Evts
     }
 }
 
+#[cfg(feature = "std")]
 impl Events for Vec<Event> {
     fn capacity_left(&self) -> Capacity {
         Capacity::Growable
