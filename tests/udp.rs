@@ -1,3 +1,4 @@
+use std::io;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 use std::sync::{Arc, Barrier};
@@ -306,7 +307,7 @@ fn udp_socket_deregister() {
 
     // Shouldn't get any events after deregistering.
     events.clear();
-    poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500)))
+    poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500)))
         .expect("unable to poll");
     assert!(events.is_empty());
 
@@ -365,7 +366,7 @@ fn udp_socket_edge_poll_option_drain() {
 
     let mut seen_events = 0;
     for _ in 0..4  {
-        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {
@@ -412,7 +413,7 @@ fn udp_socket_oneshot_poll_option() {
 
     let mut seen_event = false;
     for _ in 0..2 {
-        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {
@@ -450,7 +451,7 @@ fn udp_socket_oneshot_poll_option_reregister() {
 
     let mut seen_event = false;
     for _ in 0..2 {
-        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {
@@ -470,7 +471,7 @@ fn udp_socket_oneshot_poll_option_reregister() {
 
     seen_event = false;
     for _ in 0..2 {
-        poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {

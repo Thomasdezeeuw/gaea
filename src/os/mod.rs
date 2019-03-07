@@ -166,6 +166,7 @@ impl OsQueue {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
     /// use std::time::Duration;
     ///
     /// use mio_st::os::OsQueue;
@@ -180,7 +181,7 @@ impl OsQueue {
     /// // Poll the queue for new readiness events.
     /// // But since no `Evented` handles have been registered we'll receive no
     /// // events.
-    /// poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500)))?;
+    /// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500)))?;
     /// #     Ok(())
     /// # }
     /// ```
@@ -240,6 +241,8 @@ impl OsQueue {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
     /// use mio_st::net::TcpStream;
     /// use mio_st::os::{OsQueue, RegisterOption};
     /// use mio_st::{event, poll};
@@ -257,7 +260,7 @@ impl OsQueue {
     ///
     /// // Run the event loop.
     /// loop {
-    ///     poll(&mut os_queue, &mut [], &mut events, None)?;
+    ///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
     ///
     ///     for event in events.drain(..) {
     ///         if event.id() == event::Id(0) {
@@ -301,6 +304,8 @@ impl OsQueue {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
     /// use mio_st::{event, poll};
     /// use mio_st::net::TcpStream;
     /// use mio_st::os::{Interests, RegisterOption, OsQueue};
@@ -322,7 +327,7 @@ impl OsQueue {
     ///
     /// // Run the event loop.
     /// loop {
-    ///     poll(&mut os_queue, &mut [], &mut events, None)?;
+    ///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
     ///
     ///     for event in events.drain(..) {
     ///         if event.id() == event::Id(2) {
@@ -367,6 +372,7 @@ impl OsQueue {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
     /// use std::time::Duration;
     ///
     /// use mio_st::{event, poll};
@@ -389,7 +395,7 @@ impl OsQueue {
     /// os_queue.deregister(&mut stream)?;
     ///
     /// // Set a timeout because we shouldn't receive any events anymore.
-    /// poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
+    /// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
     /// assert!(events.is_empty());
     /// #     Ok(())
     /// # }
@@ -408,25 +414,28 @@ impl OsQueue {
     }
 }
 
-impl<Evts> event::Source<Evts> for OsQueue
+impl<Evts, E> event::Source<Evts, E> for OsQueue
     where Evts: Events,
+          E: From<io::Error>,
 {
     fn next_event_available(&self) -> Option<Duration> {
         // Can't tell if an event is available.
         None
     }
 
-    fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
+    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
         use crate::event::BlockingSource;
         self.blocking_poll(events, Some(Duration::from_millis(0)))
     }
 }
 
-impl<Evts> event::BlockingSource<Evts> for OsQueue
+impl<Evts, E> event::BlockingSource<Evts, E> for OsQueue
     where Evts: Events,
+          E: From<io::Error>,
 {
-    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()> {
+    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
         trace!("polling OS selector: timeout={:?}", timeout);
         self.selector.select(events, timeout)
+            .map_err(|err| err.into())
     }
 }

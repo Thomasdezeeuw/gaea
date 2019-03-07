@@ -25,7 +25,7 @@ use crate::sys::unix::EventedFd;
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use std::io::{Read, Write};
+/// use std::io::{self, Read, Write};
 ///
 /// use mio_st::os::{OsQueue, RegisterOption};
 /// use mio_st::unix::{new_pipe, Sender, Receiver};
@@ -50,7 +50,7 @@ use crate::sys::unix::EventedFd;
 ///
 /// loop {
 ///     // Poll for events.
-///     poll(&mut os_queue, &mut [], &mut events, None)?;
+///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
 ///
 ///     for event in &mut events {
 ///         match event.id() {

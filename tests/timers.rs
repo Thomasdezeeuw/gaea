@@ -20,21 +20,19 @@ fn timers() {
     let id = event::Id(0);
 
     // No deadlines, no timeout and no events.
-    assert_eq!(Source::<Vec<Event>>::next_event_available(&mut timers), None);
-    timers.poll(&mut events).unwrap();
+    assert_eq!(next_event_available(&mut timers), None);
+    Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
     assert!(events.is_empty());
 
     timers.add_deadline(id, Instant::now());
     // Now we have a deadline which already passed, so no blocking.
-    assert_eq!(Source::<Vec<Event>>::next_event_available(&mut timers),
-        Some(Duration::from_millis(0)));
+    assert_eq!(next_event_available(&mut timers), Some(Duration::from_millis(0)));
     expect_events(&mut timers, &mut events, vec![Event::new(id, Ready::TIMER)]);
 
     let timeout = Duration::from_millis(50);
     timers.add_timeout(id, timeout);
     // Have a deadline, but it hasn't passed yet.
-    roughly_equal(Source::<Vec<Event>>::next_event_available(&mut timers).unwrap(),
-        timeout);
+    roughly_equal(next_event_available(&mut timers).unwrap(), timeout);
     // So no events.
     expect_events(&mut timers, &mut events, vec![]);
 
@@ -71,8 +69,7 @@ fn timers_multiple_deadlines_same_id() {
     timers.add_timeout(event::Id(0), timeout * 10);
     timers.add_timeout(event::Id(0), timeout);
 
-    roughly_equal(Source::<Vec<Event>>::next_event_available(&mut timers).unwrap(),
-        timeout);
+    roughly_equal(next_event_available(&mut timers).unwrap(), timeout);
 
     sleep(timeout);
     expect_events(&mut timers, &mut events, vec![Event::new(event::Id(0), Ready::TIMER)]);
@@ -90,8 +87,7 @@ fn timers_multiple_deadlines_same_time_andid() {
     timers.add_timeout(event::Id(0), timeout);
     timers.add_timeout(event::Id(0), timeout);
 
-    roughly_equal(Source::<Vec<Event>>::next_event_available(&mut timers).unwrap(),
-        timeout);
+    roughly_equal(next_event_available(&mut timers).unwrap(), timeout);
 
     sleep(timeout);
     expect_events(&mut timers, &mut events, vec![
@@ -135,10 +131,16 @@ fn roughly_equal(left: Duration, right: Duration) {
     assert!(diff < (NEXT_EVENT_MARGIN + ADD), "wanted {:?}, but got {:?}", left, right);
 }
 
+/// Get the next available event with having to worry about the generic
+/// parameters.
+fn next_event_available(timers: &mut Timers) -> Option<Duration> {
+    Source::<Vec<Event>, ()>::next_event_available(timers)
+}
+
 /// Poll `Timers` for events.
 fn expect_events(timers: &mut Timers, events: &mut Vec<Event>, mut expected: Vec<Event>) {
     events.clear();
-    timers.poll(events).expect("unable to poll timers");
+    Source::<_, ()>::poll(timers, events).expect("unable to poll timers");
 
     for event in events.drain(..) {
         let index = expected.iter()

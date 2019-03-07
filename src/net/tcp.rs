@@ -22,6 +22,8 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::io;
+///
 /// use mio_st::{event, poll};
 /// use mio_st::net::TcpStream;
 /// use mio_st::os::{OsQueue, RegisterOption};
@@ -35,7 +37,7 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 /// // Register the socket with `OsQueue`.
 /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, RegisterOption::EDGE)?;
 ///
-/// poll(&mut os_queue, &mut [], &mut events, None)?;
+/// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
 ///
 /// // If event ID 0 was returned by `poll` then the stream will be ready to
 /// // read or write.
@@ -192,6 +194,7 @@ impl AsRawFd for TcpStream {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::io;
 /// use std::time::Duration;
 ///
 /// use mio_st::{event, poll};
@@ -210,7 +213,7 @@ impl AsRawFd for TcpStream {
 /// os_queue.register(&mut listener, LISTENER_ID, TcpListener::INTERESTS, RegisterOption::EDGE)?;
 ///
 /// // Poll for new events.
-/// poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
+/// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
 ///
 /// // If `LISTENER_ID` was returned by `poll` then the listener will be ready
 /// // to accept connection.

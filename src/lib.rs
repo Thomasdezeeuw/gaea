@@ -74,7 +74,7 @@
 //! #   if i == 0 { return Ok(()) }
 //!     // Poll for events. As we only have a single event source we provided an
 //!     // empty array as second argument.
-//!     poll(&mut os_queue, &mut [], &mut events, None)?;
+//!     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
 //!
 //!     // Process each event.
 //!     for event in events.drain(..) {
@@ -151,7 +151,6 @@
 #![doc(test(attr(deny(warnings))))]
 
 use std::cmp::min;
-use std::io;
 use std::time::Duration;
 
 use log::trace;
@@ -201,13 +200,13 @@ pub use crate::os::OsQueue;
 /// Providing a `timeout` of `None` means that `poll` will block until the
 /// `blocking_source` is awoken by an external factor, for example a readiness
 /// event.
-pub fn poll<BS, Evts>(
+pub fn poll<BS, Evts, E>(
     blocking_source: &mut BS,
-    sources: &mut [&mut dyn event::Source<Evts>],
+    sources: &mut [&mut dyn event::Source<Evts, E>],
     events: &mut Evts,
     timeout: Option<Duration>,
-) -> io::Result<()>
-    where BS: event::BlockingSource<Evts>,
+) -> Result<(), E>
+    where BS: event::BlockingSource<Evts, E>,
           Evts: Events,
 {
     trace!("polling: timeout={:?}", timeout);
