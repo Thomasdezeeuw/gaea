@@ -150,20 +150,27 @@
 // Disallow warnings in examples, we want to set a good example after all.
 #![doc(test(attr(deny(warnings))))]
 
-use std::cmp::min;
-use std::time::Duration;
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use core::cmp::min;
+use core::time::Duration;
 
 use log::trace;
 
+#[cfg(feature = "std")]
 mod sys;
+#[cfg(feature = "std")]
 mod timers;
+#[cfg(feature = "std")]
 mod user_space;
 
 pub mod event;
+#[cfg(feature = "std")]
 pub mod net;
+#[cfg(feature = "std")]
 pub mod os;
 
-#[cfg(unix)]
+#[cfg(all(feature = "std", unix))]
 pub mod unix {
     //! Unix only extensions.
 
@@ -171,12 +178,15 @@ pub mod unix {
     pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
 }
 
+#[cfg(feature = "std")]
 pub use crate::timers::Timers;
+#[cfg(feature = "std")]
 pub use crate::user_space::Queue;
 
 #[doc(no_inline)]
 pub use crate::event::{Event, Events, Ready};
 #[doc(no_inline)]
+#[cfg(feature = "std")]
 pub use crate::os::OsQueue;
 
 /// Poll event sources for readiness events.

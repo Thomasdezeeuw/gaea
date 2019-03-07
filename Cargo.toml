@@ -24,6 +24,9 @@ log  = "0.4.6"
 env_logger = "0.6.0"
 
 [features]
+default = ["std"]
+# Enable things that require the standard library, such as OsQueue.
+std = []
 # Travis doesn't support IPv6, so we disable the tests for it.
 disable_test_ipv6 = []
 # Travis' macOS machines don't always meet the set deadline, this disables the
