@@ -4,7 +4,7 @@ use std::thread::sleep;
 use log::error;
 
 use mio_st::Timers;
-use mio_st::event::{self, Source, Event, Ready};
+use mio_st::event::{self, Capacity, Events, Event, Source, Ready};
 
 mod util;
 
@@ -120,6 +120,53 @@ fn timers_remove_deadline() {
 
     sleep(timeout);
     expect_events(&mut timers, &mut events, vec![]);
+}
+
+#[test]
+fn timers_events_capacity() {
+    init();
+
+    struct EventsCapacity(Capacity, usize);
+
+    impl Events for EventsCapacity {
+        fn capacity_left(&self) -> Capacity {
+            self.0
+        }
+
+        fn add(&mut self, _event: Event) {
+            self.1 += 1;
+        }
+    }
+
+    let mut timers = Timers::new();
+    let id = event::Id(0);
+    let deadline = Instant::now();
+    timers.add_deadline(id, deadline);
+    timers.add_deadline(id, deadline);
+
+    let mut events = EventsCapacity(Capacity::Limited(0), 0);
+    Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
+    assert_eq!(events.1, 0); // Shouldn't have grow.
+
+    let mut events = EventsCapacity(Capacity::Limited(1), 0);
+    Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
+    assert_eq!(events.1, 1);
+
+    let mut events = EventsCapacity(Capacity::Limited(1), 0);
+    Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
+    assert_eq!(events.1, 1);
+
+    let mut events = EventsCapacity(Capacity::Limited(100), 0);
+    timers.add_deadline(id, deadline);
+    timers.add_deadline(id, deadline);
+    Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
+    assert_eq!(events.1, 2);
+
+    let mut events = EventsCapacity(Capacity::Growable, 0);
+    timers.add_deadline(id, deadline);
+    timers.add_deadline(id, deadline);
+    Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
+    assert_eq!(events.1, 2);
 }
 
 /// Assert that `left` and `right` are roughly equal, with a margin of
