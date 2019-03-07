@@ -192,24 +192,56 @@ pub use crate::os::OsQueue;
 /// Poll event sources for readiness events.
 ///
 /// This first determines the maximum timeout to use based on the provided
-/// `timeout` and the provided `sources`. For example if one of the sources is a
+/// `timeout` and the provided `sources`. For example if one of the sources is
 /// [`Timers`] with a deadline of 1 second and a supplied `timeout` of 10
-/// seconds we don't want to block for the whole 10 seconds and over run the
-/// deadline by 9 seconds. Instead internally we'll use 9 seconds as timeout.
+/// seconds we don't want to block for the whole 10 seconds and overrun the
+/// deadline by 9 seconds. Instead internally we'll use 1 seconds as timeout.
 ///
-/// Next it will use the timeout in a blocking poll call of `blocking_source`
-/// for readiness events. This call will block the current thread until a
-/// readiness event is ready or the timeout has elapsed. After the blocking poll
-/// the other `sources` will be polled for readiness events, without blocking
-/// the thread further.
+/// Next it will use the computed timeout in a blocking poll call of
+/// `blocking_source` for readiness events. This call will block the current
+/// thread until a readiness event is ready or the timeout has elapsed. After
+/// the blocking poll the other `sources` will be polled for readiness events,
+/// without blocking the thread further.
 ///
 /// Readiness events will be added to the supplied `events` container. If not
-/// all events fit into the `events`, they will be returned on the next call to
-/// `poll`.
+/// all events fit into the `events` container, they will be returned on the
+/// next call to `poll`.
 ///
 /// Providing a `timeout` of `None` means that `poll` will block until the
-/// `blocking_source` is awoken by an external factor, for example a readiness
-/// event.
+/// `blocking_source` is awoken by an external factor, what this means is
+/// different for each event source.
+///
+/// # Examples
+///
+/// Polling from an [`OsQueue`], [`Queue`] and [`Timers`].
+///
+/// ```
+/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::io;
+/// use std::time::Instant;
+///
+/// use mio_st::{event, OsQueue, Timers, Queue, Event, Ready, poll};
+///
+/// // Our event sources.
+/// let mut os_queue = OsQueue::new()?;
+/// let mut timers = Timers::new();
+/// let mut queue = Queue::new();
+///
+/// // Our events container.
+/// let mut events = Vec::new();
+///
+/// // Add an event to one of our event sources.
+/// timers.add_deadline(event::Id(0), Instant::now());
+///
+/// // Poll all event sources without a timeout.
+/// poll::<_, _, io::Error>(&mut os_queue, &mut [&mut timers, &mut queue], &mut events, None)?;
+/// // Even though we didn't provide a timeout `poll` will return without
+/// // blocking because an event is ready.
+/// assert_eq!(events[0], Event::new(event::Id(0), Ready::TIMER));
+///
+/// # Ok(())
+/// # }
+/// ```
 pub fn poll<BS, Evts, E>(
     blocking_source: &mut BS,
     sources: &mut [&mut dyn event::Source<Evts, E>],
