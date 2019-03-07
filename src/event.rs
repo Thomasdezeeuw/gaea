@@ -9,10 +9,70 @@ use core::time::Duration;
 /// The trait has a generic parameter `Evts` which must implement [`Events`],
 /// this should always be a generic parameter.
 ///
-/// # Notes
+/// # Implementing event source
 ///
-/// The generic parameter `Evts` should remain generic to support all types
-/// of events containers.
+/// The trait has two generic parameters: `Evts` and `E`. `Evts` should remain
+/// generic to support all types of events containers. `E` should also be
+/// generic but a trait bound `From<MyError>` should be added, this way [`poll`]
+/// can return a single error from multiple event sources. The example below
+/// shows how this works.
+///
+/// [`poll`]: crate::poll
+///
+/// ```
+/// use std::time::Duration;
+///
+/// use mio_st::{event, Events, Event};
+///
+/// /// Our event source that implements `event::Source`.
+/// struct MyEventSource(Vec<Event>);
+///
+/// /// The error returned by our even source implementation.
+/// struct MyError;
+///
+/// impl<Evts, E> event::Source<Evts, E> for MyEventSource
+///     where Evts: Events, // We keep the events container generic to support
+///                         // all kinds of events containers.
+///           E: From<MyError>, // We add this bound to allow use to convert
+///                             // `MyError` into the generic error `E`.
+/// {
+///     fn next_event_available(&self) -> Option<Duration> {
+///         if !self.0.is_empty() {
+///             // If we have an event ready we don't want to block.
+///             Some(Duration::from_millis(0))
+///         } else {
+///             // If we don't have any events we don't have a preference about
+///             // blocking times.
+///             None
+///         }
+///     }
+///
+///     fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
+///         match poll_events(events) {
+///             Ok(()) => Ok(()),
+///             // We need explicitly call `into()` to convert our error into
+///             // the generic error. Note that this isn't required when using
+///             // `?` (the try operator).
+///             Err(err) => Err(err.into()),
+///         }
+///     }
+/// }
+///
+/// // Implementing `From` for `()` allows us to use it as an error in our call
+/// // to poll below..
+/// impl From<MyError> for () {
+///     fn from(_err: MyError) -> () {
+///         ()
+///     }
+/// }
+///
+/// // Now can use our event source with `()` as error type.
+/// let mut my_source = MyEventSource(Vec::new());
+/// let mut events = Vec::new();
+/// event::Source::<_, ()>::poll(&mut my_source, &mut events).unwrap();
+///
+/// # fn poll_events<Evts>(_events: &mut Evts) -> Result<(), MyError> { Ok(()) }
+/// ```
 pub trait Source<Evts, E>
     where Evts: Events,
 {
@@ -57,6 +117,8 @@ impl<S, Evts, E> Source<Evts, E> for &mut S
 }
 
 /// A blocking variant of [`Source`].
+///
+/// For usage and how to implement the trait see [`Source`].
 pub trait BlockingSource<Evts, E>: Source<Evts, E>
     where Evts: Events,
 {
