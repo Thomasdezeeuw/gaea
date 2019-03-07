@@ -11,6 +11,8 @@ use crate::event::{self, Event, Events};
 /// A simple, single threaded user space readiness event queue. This implements
 /// [`event::Source`] which can be used to poll for readiness events.
 ///
+/// Polling this event source never returns an error.
+///
 /// # Examples
 ///
 /// ```
