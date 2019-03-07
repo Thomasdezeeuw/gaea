@@ -94,7 +94,7 @@ pub trait Source<Evts, E>
     /// Any available readiness events must be added to `events`. The pollable
     /// source may not block.
     ///
-    /// Some implementation of `Events` have a limited available capacity.
+    /// Some implementation of [`Events`] have a limited available capacity.
     /// This method may not add more events then [`Events::capacity_left`]
     /// returns, if it returns a capacity limit. Available events that don't fit
     /// in the events container in a single call to poll should remain in the
@@ -165,30 +165,42 @@ impl<S, Evts, E> BlockingSource<Evts, E> for &mut S
 ///
 /// # Examples
 ///
+/// An implementation of `Events` for an array.
+///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use std::io;
-/// use std::time::Duration;
+/// use mio_st::{event, Events, Event, Queue, Ready};
 ///
-/// use mio_st::os::OsQueue;
-/// use mio_st::poll;
+/// const EVENTS_SIZE: usize = 32;
 ///
-/// let mut os_queue = OsQueue::new()?;
-/// // `Events` is implemented for vectors of `Event`s.
-/// let mut events = Vec::new();
+/// /// Our `Events` implementation.
+/// struct MyEvents([Option<Event>; EVENTS_SIZE]);
 ///
-/// // Register `Evented` handles with `OsQueue` here.
-///
-/// // Run the event loop.
-/// loop {
-///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events,
-///         Some(Duration::from_millis(100)))?;
-///
-///     for event in &mut events {
-///         println!("got event: id={:?}, rediness={:?}", event.id(), event.readiness());
+/// impl Events for MyEvents {
+///     fn capacity_left(&self) -> event::Capacity {
+///         let limit = self.0.iter().position(Option::is_some).unwrap_or(EVENTS_SIZE);
+///         event::Capacity::Limited(limit)
 ///     }
-/// #   return Ok(());
+///
+///     fn add(&mut self, event: Event) {
+///         let index = self.0.iter().position(Option::is_none).unwrap();
+///         self.0[index] = Some(event);
+///     }
 /// }
+///
+/// // An event source, with some events.
+/// let mut queue = Queue::new();
+/// let event1 = Event::new(event::Id(0), Ready::READABLE);
+/// queue.add(event1);
+/// let event2 = Event::new(event::Id(1), Ready::WRITABLE);
+/// queue.add(event2);
+///
+/// // Poll the source.
+/// let mut events = MyEvents([None; EVENTS_SIZE]);
+/// event::Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+/// assert_eq!(events.0[0], Some(event1));
+/// assert_eq!(events.0[1], Some(event2));
+/// # Ok(())
 /// # }
 /// ```
 pub trait Events {
