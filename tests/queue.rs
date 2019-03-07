@@ -15,13 +15,12 @@ fn os_queue() {
     let mut queue = Queue::new();
     let mut events = Vec::new();
 
-    assert_eq!(Source::<Vec<Event>>::next_event_available(&mut queue), None);
+    assert_eq!(next_event_available(&mut queue), None);
 
     // Single event.
     let event = Event::new(event::Id(0), Ready::READABLE);
     queue.add(event);
-    assert_eq!(Source::<Vec<Event>>::next_event_available(&mut queue),
-        Some(Duration::from_millis(0)));
+    assert_eq!(next_event_available(&mut queue), Some(Duration::from_millis(0)));
     expect_events(&mut queue, &mut events, vec![event]);
 
     // Multiple events.
@@ -29,8 +28,7 @@ fn os_queue() {
     queue.add(Event::new(event::Id(0), Ready::WRITABLE));
     queue.add(Event::new(event::Id(0), Ready::READABLE | Ready::WRITABLE));
     queue.add(Event::new(event::Id(1), Ready::READABLE | Ready::WRITABLE | Ready::ERROR));
-    assert_eq!(Source::<Vec<Event>>::next_event_available(&mut queue),
-        Some(Duration::from_millis(0)));
+    assert_eq!(next_event_available(&mut queue), Some(Duration::from_millis(0)));
     expect_events(&mut queue, &mut events, vec![
         Event::new(event::Id(0), Ready::READABLE),
         Event::new(event::Id(0), Ready::WRITABLE),
@@ -39,10 +37,17 @@ fn os_queue() {
     ]);
 }
 
+/// Get the next available event with having to worry about the generic
+/// parameters.
+fn next_event_available(queue: &mut Queue) -> Option<Duration> {
+    Source::<Vec<Event>, ()>::next_event_available(queue)
+}
+
 /// Poll `Queue` for events.
 fn expect_events(queue: &mut Queue, events: &mut Vec<Event>, mut expected: Vec<Event>) {
     events.clear();
-    queue.poll(events).expect("unable to poll user space queue");
+    Source::<_, ()>::poll(queue, events)
+        .expect("unable to poll user space queue");
 
     for event in events.drain(..) {
         let index = expected.iter()

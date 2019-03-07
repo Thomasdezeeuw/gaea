@@ -112,14 +112,14 @@ fn os_queue_erroneous_registration() {
 fn os_queue_empty_source() {
     let (mut os_queue, mut events) = init_with_os_queue();
 
-    assert_eq!(Source::<Vec<Event>>::next_event_available(&mut os_queue), None);
+    assert_eq!(Source::<Vec<Event>, io::Error>::next_event_available(&mut os_queue), None);
 
-    os_queue.poll(&mut events).unwrap();
+    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert!(events.is_empty(), "unexpected events");
 
     let timeout = Duration::from_millis(100);
     let start = Instant::now();
-    os_queue.blocking_poll(&mut events, Some(timeout)).unwrap();
+    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(timeout)).unwrap();
     #[cfg(not(feature="disable_test_deadline"))]
     assert!(start.elapsed() <= timeout + TIMEOUT_MARGIN,
         "polling took too long: {:?}, wanted: <= {:?}.", start.elapsed(), timeout + TIMEOUT_MARGIN);
@@ -157,7 +157,7 @@ fn awakener() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    os_queue.blocking_poll(&mut events, Some(Duration::from_millis(100)))
+    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
         .expect("unable to poll");
     assert!(events.is_empty());
 
@@ -197,7 +197,7 @@ fn awakener_try_clone() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    os_queue.blocking_poll(&mut events, Some(Duration::from_millis(100)))
+    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
         .expect("unable to poll");
     assert!(events.is_empty());
 }
@@ -238,7 +238,7 @@ fn awakener_multiple_wakeups() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    os_queue.blocking_poll(&mut events, Some(Duration::from_millis(100)))
+    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
         .expect("unable to poll");
     assert!(events.is_empty());
 

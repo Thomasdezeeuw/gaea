@@ -28,6 +28,8 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::io;
+///
 /// use mio_st::{event, poll};
 /// use mio_st::net::UdpSocket;
 /// use mio_st::os::{Interests, RegisterOption, OsQueue};
@@ -64,7 +66,7 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 /// // Our event loop.
 /// loop {
 ///     // Poll for events.
-///     poll(&mut os_queue, &mut [], &mut events, None)?;
+///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
 ///
 ///     for event in &mut events {
 ///         match event.id() {
@@ -297,6 +299,8 @@ impl FromRawFd for UdpSocket {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::io;
+///
 /// use mio_st::{event, poll};
 /// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
 /// use mio_st::os::{Interests, RegisterOption, OsQueue};
@@ -322,7 +326,7 @@ impl FromRawFd for UdpSocket {
 ///
 /// loop {
 ///     // Poll for events.
-///     poll(&mut os_queue, &mut [], &mut events, None)?;
+///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
 ///
 ///     for event in &mut events {
 ///         match event.id() {

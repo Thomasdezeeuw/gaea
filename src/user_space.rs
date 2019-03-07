@@ -1,6 +1,5 @@
 //! Module with user space readiness event queue.
 
-use std::io;
 use std::time::Duration;
 
 use log::trace;
@@ -27,7 +26,7 @@ use crate::event::{self, Capacity, Event, Events};
 /// queue.add(event);
 ///
 /// // Poll the queue.
-/// queue.poll(&mut events)?;
+/// Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
 /// assert_eq!(events.get(0), Some(&event));
 /// #     Ok(())
 /// # }
@@ -53,7 +52,7 @@ impl Queue {
     }
 }
 
-impl<Evts> event::Source<Evts> for Queue
+impl<Evts, E> event::Source<Evts, E> for Queue
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
@@ -64,7 +63,7 @@ impl<Evts> event::Source<Evts> for Queue
         }
     }
 
-    fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
+    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
         trace!("polling user space events");
         let drain = if let Capacity::Limited(capacity_left) = events.capacity_left() {
             self.events.drain(..capacity_left)

@@ -2,7 +2,6 @@
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
-use std::io;
 use std::mem::replace;
 use std::time::{Duration, Instant};
 
@@ -34,7 +33,7 @@ use crate::event::{self, Event, Events, Ready};
 /// thread::sleep(timeout);
 ///
 /// // Now we poll for events.
-/// timers.poll(&mut events)?;
+/// Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
 ///
 /// assert_eq!(events.get(0), Some(&Event::new(id, Ready::TIMER)));
 /// #     Ok(())
@@ -105,7 +104,7 @@ impl Timers {
     }
 }
 
-impl<Evts> event::Source<Evts> for Timers
+impl<Evts, E> event::Source<Evts, E> for Timers
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
@@ -121,7 +120,7 @@ impl<Evts> event::Source<Evts> for Timers
         })
     }
 
-    fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
+    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
         trace!("polling timers");
         let now = Instant::now();
 

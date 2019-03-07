@@ -13,7 +13,7 @@ use std::{fmt, io};
 ///
 /// The generic parameter `Evts` should remain generic to support all types
 /// of events containers.
-pub trait Source<Evts>
+pub trait Source<Evts, E>
     where Evts: Events,
 {
     /// The duration until the next event will be available.
@@ -40,24 +40,24 @@ pub trait Source<Evts>
     /// in the events container in a single call to poll should remain in the
     /// source and should be added to the events container in future calls to
     /// poll.
-    fn poll(&mut self, events: &mut Evts) -> io::Result<()>;
+    fn poll(&mut self, events: &mut Evts) -> Result<(), E>;
 }
 
-impl<S, Evts> Source<Evts> for &mut S
-    where S: Source<Evts>,
+impl<S, Evts, E> Source<Evts, E> for &mut S
+    where S: Source<Evts, E>,
           Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
         (&**self).next_event_available()
     }
 
-    fn poll(&mut self, events: &mut Evts) -> io::Result<()> {
+    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
         (&mut **self).poll(events)
     }
 }
 
 /// A blocking variant of [`Source`].
-pub trait BlockingSource<Evts>: Source<Evts>
+pub trait BlockingSource<Evts, E>: Source<Evts, E>
     where Evts: Events,
 {
     /// A blocking poll for readiness events.
@@ -67,14 +67,14 @@ pub trait BlockingSource<Evts>: Source<Evts>
     /// may block up to `timeout` duration, if one is provided, or block forever
     /// if no timeout is provided (assuming *something* wakes up the poll
     /// source).
-    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>;
+    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E>;
 }
 
-impl<S, Evts> BlockingSource<Evts> for &mut S
-    where S: BlockingSource<Evts>,
+impl<S, Evts, E> BlockingSource<Evts, E> for &mut S
+    where S: BlockingSource<Evts, E>,
           Evts: Events,
 {
-    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()> {
+    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
         (&mut **self).blocking_poll(events, timeout)
     }
 }
@@ -105,6 +105,7 @@ impl<S, Evts> BlockingSource<Evts> for &mut S
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
+/// use std::io;
 /// use std::time::Duration;
 ///
 /// use mio_st::os::OsQueue;
@@ -118,7 +119,8 @@ impl<S, Evts> BlockingSource<Evts> for &mut S
 ///
 /// // Run the event loop.
 /// loop {
-///     poll(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
+///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events,
+///         Some(Duration::from_millis(100)))?;
 ///
 ///     for event in &mut events {
 ///         println!("got event: id={:?}, rediness={:?}", event.id(), event.readiness());
