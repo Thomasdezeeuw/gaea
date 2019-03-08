@@ -11,7 +11,7 @@ use std::time::Duration;
 use log::error;
 
 use mio_st::poll;
-use mio_st::event::Event;
+use mio_st::event::{Capacity, Events, Event};
 use mio_st::os::OsQueue;
 
 /// Allowed margin for deadlines to be overrun.
@@ -57,6 +57,20 @@ pub fn expect_events(os_queue: &mut OsQueue, events: &mut Vec<Event>, mut expect
     }
 
     assert!(expected.is_empty(), "the following expected events were not found: {:?}", expected);
+}
+
+/// An `Events` implementation to test `event::Source` using different
+/// `Capacity`s.
+pub struct EventsCapacity(pub Capacity, pub usize);
+
+impl Events for EventsCapacity {
+    fn capacity_left(&self) -> Capacity {
+        self.0
+    }
+
+    fn add(&mut self, _event: Event) {
+        self.1 += 1;
+    }
 }
 
 /// Assert that `result` is an error and the formatted error (via

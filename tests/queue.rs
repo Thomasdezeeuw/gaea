@@ -3,11 +3,11 @@ use std::time::Duration;
 use log::error;
 
 use mio_st::event::{self, Capacity, Source, Ready};
-use mio_st::{Events, Event, Queue};
+use mio_st::{Event, Queue};
 
 mod util;
 
-use self::util::init;
+use self::util::{init, EventsCapacity};
 
 #[test]
 fn queue() {
@@ -40,20 +40,8 @@ fn queue() {
 #[test]
 fn queue_events_capacity() {
     init();
-
-    struct EventsCapacity(Capacity, usize);
-
-    impl Events for EventsCapacity {
-        fn capacity_left(&self) -> Capacity {
-            self.0
-        }
-
-        fn add(&mut self, _event: Event) {
-            self.1 += 1;
-        }
-    }
-
     let mut queue = Queue::new();
+
     let event = Event::new(event::Id(0), Ready::READABLE);
     queue.add(event);
     queue.add(event);
