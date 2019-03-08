@@ -17,25 +17,20 @@ use crate::event::{self, Event, Events, Ready};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use std::thread;
-/// use std::time::Duration;
+/// use std::time::Instant;
 ///
-/// use mio_st::event::Source;
-/// use mio_st::{Event, Timers, Ready, event};
+/// use mio_st::{Event, Timers, Ready, event, poll};
 ///
 /// let mut timers = Timers::new();
 /// let mut events = Vec::new();
 ///
-/// // Add a timeout, to trigger an event 10 milliseconds from now.
+/// // Add a deadline, to trigger an event immediately.
 /// let id = event::Id(0);
-/// let timeout = Duration::from_millis(10);
-/// timers.add_timeout(id, timeout);
+/// timers.add_deadline(id, Instant::now());
 ///
-/// // Wait until the deadline expires.
-/// thread::sleep(timeout);
-///
-/// // Now we poll for events.
-/// Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
+/// // Now we poll for events. Note that this is safe to unwrap as polling
+/// // `Timers` never returns an error.
+/// poll::<_, ()>(&mut [&mut timers], &mut events, None).unwrap();
 ///
 /// assert_eq!(events.get(0), Some(&Event::new(id, Ready::TIMER)));
 /// #     Ok(())
