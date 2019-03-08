@@ -79,11 +79,9 @@
 //!
 //! ### Timeout granularity
 //!
-//! The timeout provided to [`BlockingSource::blocking_poll`] will be rounded
+//! The timeout provided to [`event::Source::blocking_poll`] will be rounded
 //! up to the system clock granularity (usually 1ms), and kernel scheduling
 //! delays mean that the blocking interval may be overrun by a small amount.
-//!
-//! [`BlockingSource::blocking_poll`]: crate::event::BlockingSource::blocking_poll
 //!
 //! # Implementation notes
 //!
@@ -181,7 +179,7 @@ impl OsQueue {
     /// // Poll the queue for new readiness events.
     /// // But since no `Evented` handles have been registered we'll receive no
     /// // events.
-    /// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500)))?;
+    /// poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(500)))?;
     /// #     Ok(())
     /// # }
     /// ```
@@ -260,7 +258,7 @@ impl OsQueue {
     ///
     /// // Run the event loop.
     /// loop {
-    ///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
     ///
     ///     for event in events.drain(..) {
     ///         if event.id() == event::Id(0) {
@@ -327,7 +325,7 @@ impl OsQueue {
     ///
     /// // Run the event loop.
     /// loop {
-    ///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
     ///
     ///     for event in events.drain(..) {
     ///         if event.id() == event::Id(2) {
@@ -395,7 +393,7 @@ impl OsQueue {
     /// os_queue.deregister(&mut stream)?;
     ///
     /// // Set a timeout because we shouldn't receive any events anymore.
-    /// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
+    /// poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100)))?;
     /// assert!(events.is_empty());
     /// #     Ok(())
     /// # }
@@ -424,15 +422,9 @@ impl<Evts, E> event::Source<Evts, E> for OsQueue
     }
 
     fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
-        use crate::event::BlockingSource;
         self.blocking_poll(events, Some(Duration::from_millis(0)))
     }
-}
 
-impl<Evts, E> event::BlockingSource<Evts, E> for OsQueue
-    where Evts: Events,
-          E: From<io::Error>,
-{
     fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
         trace!("polling OS selector: timeout={:?}", timeout);
         self.selector.select(events, timeout)

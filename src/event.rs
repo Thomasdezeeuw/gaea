@@ -86,7 +86,7 @@ pub trait Source<Evts, E>
     /// If the duration until the next available event is unknown `None` should
     /// be returned.
     ///
-    /// [blocking call]: BlockingSource::blocking_poll
+    /// [blocking call]: Source::blocking_poll
     fn next_event_available(&self) -> Option<Duration>;
 
     /// Poll for events.
@@ -101,6 +101,20 @@ pub trait Source<Evts, E>
     /// source and should be added to the events container in future calls to
     /// poll.
     fn poll(&mut self, events: &mut Evts) -> Result<(), E>;
+
+    /// A blocking poll for readiness events.
+    ///
+    /// This is the same as [`Source::poll`] and all requirements of that method
+    /// apply to this method as well. Different to `poll` is that this method
+    /// may block up to `timeout` duration, if one is provided, or block forever
+    /// if no timeout is provided (assuming *something* wakes up the poll
+    /// source).
+    ///
+    /// The default implementation simply calls `poll`, thus it doesn't actually
+    /// block.
+    fn blocking_poll(&mut self, events: &mut Evts, _timeout: Option<Duration>) -> Result<(), E> {
+        self.poll(events)
+    }
 }
 
 impl<S, Evts, E> Source<Evts, E> for &mut S
@@ -114,28 +128,7 @@ impl<S, Evts, E> Source<Evts, E> for &mut S
     fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
         (&mut **self).poll(events)
     }
-}
 
-/// A blocking variant of [`Source`].
-///
-/// For usage and how to implement the trait see [`Source`].
-pub trait BlockingSource<Evts, E>: Source<Evts, E>
-    where Evts: Events,
-{
-    /// A blocking poll for readiness events.
-    ///
-    /// This is the same as [`Source::poll`] and all requirements of that method
-    /// apply to this method as well. Different to `poll` is that this method
-    /// may block up to `timeout` duration, if one is provided, or block forever
-    /// if no timeout is provided (assuming *something* wakes up the poll
-    /// source).
-    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E>;
-}
-
-impl<S, Evts, E> BlockingSource<Evts, E> for &mut S
-    where S: BlockingSource<Evts, E>,
-          Evts: Events,
-{
     fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
         (&mut **self).blocking_poll(events, timeout)
     }

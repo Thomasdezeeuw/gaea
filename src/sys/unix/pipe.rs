@@ -50,7 +50,7 @@ use crate::sys::unix::EventedFd;
 ///
 /// loop {
 ///     // Poll for events.
-///     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
+///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
 ///
 ///     for event in &mut events {
 ///         match event.id() {

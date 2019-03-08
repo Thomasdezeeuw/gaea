@@ -3,7 +3,7 @@ use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use mio_st::event::{self, BlockingSource, Source, Capacity, Event, Ready};
+use mio_st::event::{self, Capacity, Event, Ready};
 use mio_st::os::{Awakener, Evented, Interests, RegisterOption, OsQueue};
 use mio_st::unix::new_pipe;
 
@@ -106,21 +106,21 @@ fn os_queue_erroneous_registration() {
     assert_error(os_queue.deregister(&mut handle), "deregister");
 }
 
-// NOTE: the `BlockingSource` and `Source` implementations are tested more
-// thoroughly in the TCP and UDP tests.
+// NOTE: the `event::Source` implementation is tested more thoroughly in the TCP
+// and UDP tests.
 
 #[test]
 fn os_queue_empty_source() {
     let (mut os_queue, mut events) = init_with_os_queue();
 
-    assert_eq!(Source::<Vec<Event>, io::Error>::next_event_available(&mut os_queue), None);
+    assert_eq!(event::Source::<Vec<Event>, io::Error>::next_event_available(&mut os_queue), None);
 
-    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert!(events.is_empty(), "unexpected events");
 
     let timeout = Duration::from_millis(100);
     let start = Instant::now();
-    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(timeout)).unwrap();
+    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(timeout)).unwrap();
     #[cfg(not(feature="disable_test_deadline"))]
     assert!(start.elapsed() <= timeout + TIMEOUT_MARGIN,
         "polling took too long: {:?}, wanted: <= {:?}.", start.elapsed(), timeout + TIMEOUT_MARGIN);
@@ -140,17 +140,17 @@ fn queue_events_capacity() {
     os_queue.register(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
 
     let mut events = EventsCapacity(Capacity::Limited(0), 0);
-    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert_eq!(events.1, 0); // Shouldn't have grow.
 
     // The events should remain in the OS queue and be return in the following
     // two poll calls.
     let mut events = EventsCapacity(Capacity::Limited(1), 0);
-    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert_eq!(events.1, 1);
 
     let mut events = EventsCapacity(Capacity::Limited(1), 0);
-    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert_eq!(events.1, 1);
 
     // Add two more events.
@@ -158,7 +158,7 @@ fn queue_events_capacity() {
     awakener.wake().unwrap();
 
     let mut events = EventsCapacity(Capacity::Limited(100), 0);
-    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert_eq!(events.1, 2);
 
     // Add three more events.
@@ -168,7 +168,7 @@ fn queue_events_capacity() {
     awakener.wake().unwrap();
 
     let mut events = EventsCapacity(Capacity::Growable, 0);
-    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert_eq!(events.1, 3);
 }
 
@@ -203,7 +203,7 @@ fn awakener() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
+    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
         .expect("unable to poll");
     assert!(events.is_empty());
 
@@ -243,7 +243,7 @@ fn awakener_try_clone() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
+    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
         .expect("unable to poll");
     assert!(events.is_empty());
 }
@@ -284,7 +284,7 @@ fn awakener_multiple_wakeups() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    BlockingSource::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
+    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
         .expect("unable to poll");
     assert!(events.is_empty());
 

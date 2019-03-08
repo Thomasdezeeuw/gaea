@@ -14,11 +14,11 @@
 //!
 //! # Usage
 //!
-//! Using the library starts by creating a [blocking event source] and zero or
-//! more (nonblocking) [event sources]. Next an [events container] is required,
-//! this used to store the events from the event source, but as it's a trait
-//! this can also be scheduler of some kind to directly schedule processes for
-//! which a readiness event is generated.
+//! Using the library starts by creating one or more (nonblocking) [event
+//! sources]. Next an [events container] is required, this used to store the
+//! events from the event sources, but as it's a trait this can also be
+//! scheduler of some kind to directly schedule processes for which a readiness
+//! event is generated.
 //!
 //! Next the event source can be [polled], using the events container and a
 //! timeout. This will poll all sources and block until a readiness event is
@@ -26,7 +26,6 @@
 //! applications turn to process each event. Do this in a loop and you've got
 //! yourself an event loop.
 //!
-//! [blocking event source]: event::BlockingSource
 //! [event source]: event::Source
 //! [events container]: Events
 //! [polled]: poll
@@ -74,7 +73,7 @@
 //! #   if i == 0 { return Ok(()) }
 //!     // Poll for events. As we only have a single event source we provided an
 //!     // empty array as second argument.
-//!     poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
+//!     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
 //!
 //!     // Process each event.
 //!     for event in events.drain(..) {
@@ -194,24 +193,27 @@ pub use crate::os::OsQueue;
 /// Poll event sources for readiness events.
 ///
 /// This first determines the maximum timeout to use based on the provided
-/// `timeout` and the provided `sources`. For example if one of the sources is
-/// [`Timers`] with a deadline of 1 second and a supplied `timeout` of 10
-/// seconds we don't want to block for the whole 10 seconds and overrun the
-/// deadline by 9 seconds. Instead internally we'll use 1 seconds as timeout.
+/// `timeout` and the provided `event_sources`. For example if one of the
+/// sources is [`Timers`] with a deadline of 1 second and a supplied `timeout`
+/// of 10 seconds we don't want to block for the whole 10 seconds and overrun
+/// the deadline by 9 seconds. Instead we'll use 1 seconds as timeout.
 ///
-/// Next it will use the computed timeout in a blocking poll call of
-/// `blocking_source` for readiness events. This call will block the current
-/// thread until a readiness event is ready or the timeout has elapsed. After
-/// the blocking poll the other `sources` will be polled for readiness events,
-/// without blocking the thread further.
+/// Next it will use the computed timeout in a [blocking poll] call of the first
+/// of the provided `event_sources` for readiness events. This call will block
+/// the current thread until a readiness event is ready or the timeout has
+/// elapsed. After the blocking poll the other event sources will be [polled]
+/// for readiness events, without blocking the thread further.
 ///
 /// Readiness events will be added to the supplied `events` container. If not
-/// all events fit into the `events` container, they will be returned on the
+/// all events fit into the `events` container, they will be returned in the
 /// next call to `poll`.
 ///
 /// Providing a `timeout` of `None` means that `poll` will block until the
 /// `blocking_source` is awoken by an external factor, what this means is
 /// different for each event source.
+///
+/// [blocking poll]: event::Source::blocking_poll
+/// [polled]: event::Source::poll
 ///
 /// # Examples
 ///
@@ -236,7 +238,7 @@ pub use crate::os::OsQueue;
 /// timers.add_deadline(event::Id(0), Instant::now());
 ///
 /// // Poll all event sources without a timeout.
-/// poll::<_, _, io::Error>(&mut os_queue, &mut [&mut timers, &mut queue], &mut events, None)?;
+/// poll::<_, io::Error>(&mut [&mut os_queue, &mut timers, &mut queue], &mut events, None)?;
 /// // Even though we didn't provide a timeout `poll` will return without
 /// // blocking because an event is ready.
 /// assert_eq!(events[0], Event::new(event::Id(0), Ready::TIMER));
@@ -244,28 +246,29 @@ pub use crate::os::OsQueue;
 /// # Ok(())
 /// # }
 /// ```
-pub fn poll<BS, Evts, E>(
-    blocking_source: &mut BS,
-    sources: &mut [&mut dyn event::Source<Evts, E>],
+pub fn poll<Evts, E>(
+    event_sources: &mut [&mut dyn event::Source<Evts, E>],
     events: &mut Evts,
     timeout: Option<Duration>,
 ) -> Result<(), E>
-    where BS: event::BlockingSource<Evts, E>,
-          Evts: Events,
+    where Evts: Events,
 {
     trace!("polling: timeout={:?}", timeout);
 
     // Compute the maximum timeout we can use.
-    let timeout = sources.iter().fold(timeout, |timeout, source| {
-        min_timeout(timeout, source.next_event_available())
+    let timeout = event_sources.iter().fold(timeout, |timeout, event_source| {
+        min_timeout(timeout, event_source.next_event_available())
     });
 
-    // Start with polling the blocking source.
-    blocking_source.blocking_poll(events, timeout)?;
+    let mut iter = event_sources.iter_mut();
+    if let Some(event_source) = iter.next() {
+        // Start with polling the blocking source.
+        event_source.blocking_poll(events, timeout)?;
 
-    // Next poll all non-blocking sources.
-    for source in sources.iter_mut() {
-        source.poll(events)?;
+        // Next poll all non-blocking sources.
+        for event_source in iter {
+            event_source.poll(events)?;
+        }
     }
 
     Ok(())

@@ -58,7 +58,7 @@ use crate::os::OsQueue;
 /// });
 ///
 /// // On our current thread we'll poll for events, without a timeout.
-/// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
+/// poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
 ///
 /// // After about 500 milliseconds we should we awoken by the other thread we
 /// // started, getting a single event.
