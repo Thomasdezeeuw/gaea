@@ -17,8 +17,7 @@ use crate::event::{self, Event, Events};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::event::Source;
-/// use mio_st::{Event, Queue, Ready, event};
+/// use mio_st::{Event, Queue, Ready, event, poll};
 ///
 /// let mut queue = Queue::new();
 /// let mut events = Vec::new();
@@ -27,8 +26,10 @@ use crate::event::{self, Event, Events};
 /// let event = Event::new(event::Id(0), Ready::READABLE);
 /// queue.add(event);
 ///
-/// // Poll the queue.
-/// Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+/// // Now we poll for events. Note that this is safe to unwrap as polling
+/// // `Queue` never returns an error.
+/// poll::<_, ()>(&mut [&mut queue], &mut events, None).unwrap();
+///
 /// assert_eq!(events.get(0), Some(&event));
 /// #     Ok(())
 /// # }

@@ -220,12 +220,12 @@ pub use crate::os::OsQueue;
 /// Polling from an [`OsQueue`], [`Queue`] and [`Timers`].
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
 /// use std::io;
 /// use std::time::Instant;
 ///
 /// use mio_st::{event, OsQueue, Timers, Queue, Event, Ready, poll};
 ///
+/// # fn main() -> io::Result<()> {
 /// // Our event sources.
 /// let mut os_queue = OsQueue::new()?;
 /// let mut timers = Timers::new();

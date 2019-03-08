@@ -22,7 +22,7 @@ use core::time::Duration;
 /// ```
 /// use std::time::Duration;
 ///
-/// use mio_st::{event, Events, Event};
+/// use mio_st::{event, Events, Event, poll};
 ///
 /// /// Our event source that implements `event::Source`.
 /// struct MyEventSource(Vec<Event>);
@@ -57,6 +57,7 @@ use core::time::Duration;
 ///         }
 ///     }
 /// }
+/// # fn poll_events<Evts>(_events: &mut Evts) -> Result<(), MyError> { Ok(()) }
 ///
 /// // Implementing `From` for `()` allows us to use it as an error in our call
 /// // to poll below..
@@ -66,12 +67,13 @@ use core::time::Duration;
 ///     }
 /// }
 ///
+/// # fn main() -> Result<(), ()> {
 /// // Now can use our event source with `()` as error type.
 /// let mut my_source = MyEventSource(Vec::new());
 /// let mut events = Vec::new();
-/// event::Source::<_, ()>::poll(&mut my_source, &mut events).unwrap();
-///
-/// # fn poll_events<Evts>(_events: &mut Evts) -> Result<(), MyError> { Ok(()) }
+/// poll::<_, ()>(&mut [&mut my_source], &mut events, None)?;
+/// # Ok(())
+/// # }
 /// ```
 pub trait Source<Evts, E>
     where Evts: Events,
@@ -161,8 +163,8 @@ impl<S, Evts, E> Source<Evts, E> for &mut S
 /// An implementation of `Events` for an array.
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use mio_st::{event, Events, Event, Queue, Ready};
+/// # fn main() -> Result<(), ()> {
+/// use mio_st::{event, Events, Event, Queue, Ready, poll};
 ///
 /// const EVENTS_SIZE: usize = 32;
 ///
@@ -190,7 +192,7 @@ impl<S, Evts, E> Source<Evts, E> for &mut S
 ///
 /// // Poll the source.
 /// let mut events = MyEvents([None; EVENTS_SIZE]);
-/// event::Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
+/// poll(&mut [&mut queue], &mut events, None)?;
 /// assert_eq!(events.0[0], Some(event1));
 /// assert_eq!(events.0[1], Some(event2));
 /// # Ok(())
