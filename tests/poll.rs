@@ -1,8 +1,7 @@
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use mio_st::{Events, poll};
-use mio_st::event::{BlockingSource, Source};
+use mio_st::{event, Events, poll};
 
 mod util;
 
@@ -10,7 +9,7 @@ use self::util::{TIMEOUT_MARGIN, init};
 
 struct SleepySource;
 
-impl<Evts, E> Source<Evts, E> for SleepySource
+impl<Evts, E> event::Source<Evts, E> for SleepySource
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
@@ -20,11 +19,7 @@ impl<Evts, E> Source<Evts, E> for SleepySource
     fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
         self.blocking_poll(events, Some(Duration::from_millis(0)))
     }
-}
 
-impl<Evts, E> BlockingSource<Evts, E> for SleepySource
-    where Evts: Events,
-{
     fn blocking_poll(&mut self, _events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
         let timeout = timeout.expect("SleepySource needs a timeout");
         sleep(timeout);
@@ -34,7 +29,7 @@ impl<Evts, E> BlockingSource<Evts, E> for SleepySource
 
 struct AvailableSource(Duration);
 
-impl<Evts, E> Source<Evts, E> for AvailableSource
+impl<Evts, E> event::Source<Evts, E> for AvailableSource
     where Evts: Events,
 {
     fn next_event_available(&self) -> Option<Duration> {
@@ -54,7 +49,7 @@ fn poll_determine_timeout() {
     let timeout = Duration::from_millis(10);
 
     let start = Instant::now();
-    poll::<_, _, ()>(&mut SleepySource, &mut [&mut AvailableSource(timeout)], &mut events, None).unwrap();
+    poll::<_, ()>(&mut [&mut SleepySource, &mut AvailableSource(timeout)], &mut events, None).unwrap();
     assert!(events.is_empty());
     let duration = start.elapsed();
     #[cfg(not(feature="disable_test_deadline"))]
@@ -62,7 +57,7 @@ fn poll_determine_timeout() {
         "blocking time incorrect: {:?}, wanted: >= {:?} and >= {:?}.", duration, timeout, timeout + TIMEOUT_MARGIN);
 
     let start = Instant::now();
-    poll::<_, _, ()>(&mut SleepySource, &mut [&mut AvailableSource(Duration::from_secs(1))], &mut events, Some(timeout)).unwrap();
+    poll::<_, ()>(&mut [&mut SleepySource, &mut AvailableSource(Duration::from_secs(1))], &mut events, Some(timeout)).unwrap();
     assert!(events.is_empty());
     let duration = start.elapsed();
     #[cfg(not(feature="disable_test_deadline"))]
@@ -72,7 +67,7 @@ fn poll_determine_timeout() {
 
 struct ResultSource<E>(Result<(), E>);
 
-impl<E2, Evts, E> Source<Evts, E> for ResultSource<E2>
+impl<E2, Evts, E> event::Source<Evts, E> for ResultSource<E2>
     where Evts: Events,
           E: From<E2>,
           E2: Clone,
@@ -83,16 +78,6 @@ impl<E2, Evts, E> Source<Evts, E> for ResultSource<E2>
 
     fn poll(&mut self, _events: &mut Evts) -> Result<(), E> {
         self.0.clone().map_err(|err| err.into())
-    }
-}
-
-impl<E2, E, Evts> BlockingSource<Evts, E> for ResultSource<E2>
-    where Evts: Events,
-          E: From<E2>,
-          E2: Clone,
-{
-    fn blocking_poll(&mut self, events: &mut Evts, _timeout: Option<Duration>) -> Result<(), E> {
-        self.poll(events)
     }
 }
 
@@ -132,6 +117,6 @@ fn poll_different_source_error_types() {
     let mut s3 = ResultSource(Err(2u16));
     let mut s4 = ResultSource(Err(3u32));
 
-    let res = poll(&mut s1, &mut [&mut s2, &mut s3, &mut s4], &mut events, None);
+    let res = poll(&mut [&mut s1, &mut s2, &mut s3, &mut s4], &mut events, None);
     assert_eq!(res, Err(Error::U8(1)));
 }

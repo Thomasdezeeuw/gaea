@@ -356,7 +356,7 @@ fn tcp_stream_deregister() {
     os_queue.deregister(&mut stream).unwrap();
 
     // Shouldn't get any events after deregistering.
-    poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(500))).unwrap();
+    poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(500))).unwrap();
     assert!(events.is_empty());
 
     // But we do expect to be connected.
@@ -415,7 +415,7 @@ fn tcp_stream_edge_poll_option_drain() {
 
     let mut seen_events = 0;
     for _ in 0..4  {
-        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {
@@ -470,7 +470,7 @@ fn tcp_stream_edge_poll_option_no_drain() {
 
     let mut seen_event = false;
     for _ in 0..3  {
-        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {
@@ -517,7 +517,7 @@ fn tcp_stream_level_poll_option() {
 
     let mut seen_events = 0;
     for _ in 0..3  {
-        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {
@@ -571,7 +571,7 @@ fn tcp_stream_oneshot_poll_option() {
 
     let mut seen_event = false;
     for _ in 0..2 {
-        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {
@@ -614,7 +614,7 @@ fn tcp_stream_oneshot_poll_option_reregister() {
 
     let mut seen_event = false;
     for _ in 0..2 {
-        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in &mut events.drain(..) {
             match event.id() {
@@ -634,7 +634,7 @@ fn tcp_stream_oneshot_poll_option_reregister() {
 
     seen_event = false;
     for _ in 0..2 {
-        poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100))).unwrap();
+        poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100))).unwrap();
 
         for event in events.drain(..) {
             match event.id() {

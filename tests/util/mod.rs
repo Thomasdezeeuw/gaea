@@ -38,7 +38,7 @@ pub fn init_with_os_queue() -> (OsQueue, Vec<Event>) {
 /// contains the expected readiness and the ids match.
 pub fn expect_events(os_queue: &mut OsQueue, events: &mut Vec<Event>, mut expected: Vec<Event>) {
     events.clear();
-    poll::<_, _, io::Error>(os_queue, &mut [], events, Some(Duration::from_millis(500)))
+    poll::<_, io::Error>(&mut [os_queue], events, Some(Duration::from_millis(500)))
         .expect("unable to poll");
 
     for event in events.drain(..) {

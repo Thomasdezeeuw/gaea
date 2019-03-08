@@ -37,7 +37,7 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 /// // Register the socket with `OsQueue`.
 /// os_queue.register(&mut stream, event::Id(0), TcpStream::INTERESTS, RegisterOption::EDGE)?;
 ///
-/// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, None)?;
+/// poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
 ///
 /// // If event ID 0 was returned by `poll` then the stream will be ready to
 /// // read or write.
@@ -213,7 +213,7 @@ impl AsRawFd for TcpStream {
 /// os_queue.register(&mut listener, LISTENER_ID, TcpListener::INTERESTS, RegisterOption::EDGE)?;
 ///
 /// // Poll for new events.
-/// poll::<_, _, io::Error>(&mut os_queue, &mut [], &mut events, Some(Duration::from_millis(100)))?;
+/// poll::<_, io::Error>(&mut [&mut os_queue], &mut events, Some(Duration::from_millis(100)))?;
 ///
 /// // If `LISTENER_ID` was returned by `poll` then the listener will be ready
 /// // to accept connection.
