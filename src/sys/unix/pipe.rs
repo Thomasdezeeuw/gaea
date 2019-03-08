@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::{self, Read, Write};
-use std::mem;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::event;
@@ -70,7 +69,7 @@ use crate::sys::unix::EventedFd;
 /// # }
 /// ```
 pub fn new_pipe() -> io::Result<(Sender, Receiver)> {
-    let mut fds: [RawFd; 2] = unsafe { mem::uninitialized() };
+    let mut fds: [RawFd; 2] = [-1; 2];
 
     if unsafe { libc::pipe(fds.as_mut_ptr()) } == -1 {
         Err(io::Error::last_os_error())
