@@ -6,6 +6,16 @@ env:
   - RUST_BACKTRACE=full
 matrix:
   fast_finish: false
+  include:
+  - rust: stable
+    name: "Build check FreeBSD"
+    script: .ci/build_check.sh "x86_64-unknown-freebsd"
+  - rust: stable
+    name: "Build check Linux musl"
+    script: .ci/build_check.sh "x86_64-unknown-linux-musl"
+  - rust: stable
+    name: "Build check no features"
+    script: cargo build --no-default-features
 language: rust
 rust:
   - 1.31.1
