@@ -130,6 +130,8 @@
 //! # }
 //! ```
 
+#![feature(maybe_uninit, maybe_uninit_slice, maybe_uninit_ref)]
+
 #![warn(anonymous_parameters,
         bare_trait_objects,
         missing_debug_implementations,

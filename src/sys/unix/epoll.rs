@@ -1,7 +1,8 @@
 use std::cmp::min;
+use std::mem::MaybeUninit;
 use std::os::unix::io::RawFd;
 use std::time::Duration;
-use std::{io, mem, ptr};
+use std::{io, ptr};
 
 use log::error;
 
@@ -27,7 +28,7 @@ impl Selector {
     pub fn select<Evts>(&self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
         where Evts: Events,
     {
-        let mut ep_events: [libc::epoll_event; EVENTS_CAP] = unsafe { mem::uninitialized() };
+        let mut ep_events = uninitialized_array![libc::epoll_event; EVENTS_CAP];
         let events_cap = events.capacity_left().min(EVENTS_CAP) as libc::c_int;
         if events_cap == 0 {
             // epoll can't deal with 0 capacity event arrays.
@@ -37,14 +38,16 @@ impl Selector {
         let timeout_ms = timeout.map(duration_to_millis).unwrap_or(-1);
 
         let n_events = unsafe {
-            libc::epoll_wait(self.epfd, ep_events.as_mut_ptr(), events_cap, timeout_ms)
+            libc::epoll_wait(self.epfd, MaybeUninit::first_ptr_mut(&mut ep_events), events_cap, timeout_ms)
         };
         match n_events {
             -1 => Err(io::Error::last_os_error()),
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
                 let ep_events = ep_events[..n as usize].iter()
-                    .map(|e| ep_event_to_event(e));
+                    // This is safe because the `epoll_wait` call ensures that
+                    // up to `n` events are initialised.
+                    .map(|e| ep_event_to_event(unsafe { e.get_ref() }));
                 events.extend(ep_events);
                 Ok(())
             },

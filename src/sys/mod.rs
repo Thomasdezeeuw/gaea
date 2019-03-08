@@ -8,6 +8,17 @@
 //! - `UdpSocket`: UDP socket, used in the net module.
 //! - `Awakener`: cross-thread awakener, used by `Awakener`.
 
+/// A macro to create an array of [`MaybeUninit`]
+///
+/// This macro constructs and uninitialized array of the type `[MaybeUninit<T>; N]`.
+///
+/// Taken from Rust std lib (rust/src/libcore/macros.rs).
+macro_rules! uninitialized_array {
+    ($t:ty; $size:expr) => (unsafe {
+        MaybeUninit::<[MaybeUninit<$t>; $size]>::uninitialized().into_initialized()
+    });
+}
+
 #[cfg(unix)]
 mod unix;
 

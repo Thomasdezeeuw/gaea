@@ -1,7 +1,8 @@
 use std::cmp::min;
+use std::mem::MaybeUninit;
 use std::os::unix::io::RawFd;
 use std::time::Duration;
-use std::{io, mem, ptr};
+use std::{io, ptr, slice};
 
 use log::error;
 
@@ -76,7 +77,7 @@ impl Selector {
     pub fn select<Evts>(&self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
         where Evts: Events,
     {
-        let mut kevents: [libc::kevent; EVENTS_CAP] = unsafe { mem::uninitialized() };
+        let mut kevents = uninitialized_array![libc::kevent; EVENTS_CAP];
         let events_cap = events.capacity_left().min(EVENTS_CAP) as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
@@ -88,14 +89,16 @@ impl Selector {
 
         let n_events = unsafe {
             libc::kevent(self.kq, ptr::null(), 0,
-                kevents.as_mut_ptr(), events_cap, timespec_ptr)
+                MaybeUninit::first_ptr_mut(&mut kevents), events_cap, timespec_ptr)
         };
         match n_events {
             -1 => Err(io::Error::last_os_error()),
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
                 let kevents = kevents[..n as usize].iter()
-                    .map(|e| kevent_to_event(e));
+                    // This is safe because the `kevent` call ensures that
+                    // up to `n` events are initialised.
+                    .map(|e| kevent_to_event(unsafe { e.get_ref() }));
                 events.extend(kevents);
                 Ok(())
             },
@@ -105,22 +108,26 @@ impl Selector {
     pub fn register(&self, fd: RawFd, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
         let flags = opt_to_flags(opt) | libc::EV_ADD;
         // At most we need two changes, but maybe we only need 1.
-        let mut changes: [libc::kevent; 2] = unsafe { mem::uninitialized() };
+        let mut changes = uninitialized_array![libc::kevent; EVENTS_CAP];
         let mut n_changes = 0;
 
         if interests.is_writable() {
             let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, id);
-            unsafe { ptr::write(&mut changes[n_changes], kevent) };
+            let _ = changes[n_changes].set(kevent);
             n_changes += 1;
         }
 
         if interests.is_readable() {
             let kevent = new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, id);
-            unsafe { ptr::write(&mut changes[n_changes], kevent) };
+            let _ = changes[n_changes].set(kevent);
             n_changes += 1;
         }
 
-        kevent_register(self.kq, &mut changes[0..n_changes], &[])
+        // This is safe because we initialised the `n_changes` above.
+        let mut changes = unsafe {
+            slice::from_raw_parts_mut(MaybeUninit::first_ptr_mut(&mut changes), n_changes)
+        };
+        kevent_register(self.kq, &mut changes, &[])
     }
 
     pub fn reregister(&self, fd: RawFd, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
