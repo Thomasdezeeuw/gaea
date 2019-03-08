@@ -4,11 +4,11 @@ use std::thread::sleep;
 use log::error;
 
 use mio_st::Timers;
-use mio_st::event::{self, Capacity, Events, Event, Source, Ready};
+use mio_st::event::{self, Capacity, Event, Source, Ready};
 
 mod util;
 
-use self::util::init;
+use self::util::{init, EventsCapacity};
 
 const NEXT_EVENT_MARGIN: Duration = Duration::from_millis(1);
 
@@ -125,20 +125,8 @@ fn timers_remove_deadline() {
 #[test]
 fn timers_events_capacity() {
     init();
-
-    struct EventsCapacity(Capacity, usize);
-
-    impl Events for EventsCapacity {
-        fn capacity_left(&self) -> Capacity {
-            self.0
-        }
-
-        fn add(&mut self, _event: Event) {
-            self.1 += 1;
-        }
-    }
-
     let mut timers = Timers::new();
+
     let id = event::Id(0);
     let deadline = Instant::now();
     timers.add_deadline(id, deadline);

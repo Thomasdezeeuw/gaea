@@ -1,14 +1,15 @@
-use std::io;
+use std::io::{self, Write};
 use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use mio_st::event::{self, BlockingSource, Source, Event, Ready};
+use mio_st::event::{self, BlockingSource, Source, Capacity, Event, Ready};
 use mio_st::os::{Awakener, Evented, Interests, RegisterOption, OsQueue};
+use mio_st::unix::new_pipe;
 
 mod util;
 
-use self::util::{TIMEOUT_MARGIN, assert_error, expect_events, init, init_with_os_queue};
+use self::util::{TIMEOUT_MARGIN, EventsCapacity, assert_error, expect_events, init, init_with_os_queue};
 
 struct TestEvented {
     registrations: Vec<(event::Id, Interests, RegisterOption)>,
@@ -124,6 +125,51 @@ fn os_queue_empty_source() {
     assert!(start.elapsed() <= timeout + TIMEOUT_MARGIN,
         "polling took too long: {:?}, wanted: <= {:?}.", start.elapsed(), timeout + TIMEOUT_MARGIN);
     assert!(events.is_empty(), "unexpected events");
+}
+
+#[test]
+fn queue_events_capacity() {
+    init();
+    let mut os_queue = OsQueue::new().unwrap();
+
+    // Add two events to the OS queue.
+    let awakener = Awakener::new(&mut os_queue, event::Id(0)).unwrap();
+    awakener.wake().unwrap();
+    let (mut sender, mut receiver) = new_pipe().unwrap();
+    let opt = RegisterOption::ONESHOT | RegisterOption::LEVEL;
+    os_queue.register(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
+
+    let mut events = EventsCapacity(Capacity::Limited(0), 0);
+    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    assert_eq!(events.1, 0); // Shouldn't have grow.
+
+    // The events should remain in the OS queue and be return in the following
+    // two poll calls.
+    let mut events = EventsCapacity(Capacity::Limited(1), 0);
+    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    assert_eq!(events.1, 1);
+
+    let mut events = EventsCapacity(Capacity::Limited(1), 0);
+    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    assert_eq!(events.1, 1);
+
+    // Add two more events.
+    os_queue.register(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
+    awakener.wake().unwrap();
+
+    let mut events = EventsCapacity(Capacity::Limited(100), 0);
+    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    assert_eq!(events.1, 2);
+
+    // Add three more events.
+    os_queue.register(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
+    os_queue.register(&mut receiver, event::Id(1), Interests::READABLE, opt).unwrap();
+    sender.write(b"Hello").unwrap();
+    awakener.wake().unwrap();
+
+    let mut events = EventsCapacity(Capacity::Growable, 0);
+    Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
+    assert_eq!(events.1, 3);
 }
 
 #[test]
