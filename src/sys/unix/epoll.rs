@@ -29,6 +29,10 @@ impl Selector {
     {
         let mut ep_events: [libc::epoll_event; EVENTS_CAP] = unsafe { mem::uninitialized() };
         let events_cap = events.capacity_left().min(EVENTS_CAP) as libc::c_int;
+        if events_cap == 0 {
+            // epoll can't deal with 0 capacity event arrays.
+            return Ok(())
+        }
 
         let timeout_ms = timeout.map(duration_to_millis).unwrap_or(-1);
 
