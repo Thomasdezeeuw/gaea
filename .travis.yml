@@ -12,12 +12,4 @@ rust:
   - stable
   - beta
   - nightly
-script:
-  - cargo --version
-  - rustc --version
-  - |
-      if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-        cargo test --verbose --features disable_test_deadline
-      else # Linux.
-        cargo test --verbose --features disable_test_ipv6
-      fi
+script: .ci/test.sh
