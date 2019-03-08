@@ -154,7 +154,7 @@ fn queue_events_capacity() {
     assert_eq!(events.1, 1);
 
     // Add two more events.
-    os_queue.register(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
+    os_queue.reregister(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
     awakener.wake().unwrap();
 
     let mut events = EventsCapacity(Capacity::Limited(100), 0);
@@ -162,7 +162,7 @@ fn queue_events_capacity() {
     assert_eq!(events.1, 2);
 
     // Add three more events.
-    os_queue.register(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
+    os_queue.reregister(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
     os_queue.register(&mut receiver, event::Id(1), Interests::READABLE, opt).unwrap();
     sender.write(b"Hello").unwrap();
     awakener.wake().unwrap();
