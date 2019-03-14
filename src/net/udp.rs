@@ -374,14 +374,15 @@ impl ConnectedUdpSocket {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::net::UdpSocket;
+    /// use mio_st::net::ConnectedUdpSocket;
     ///
-    /// let address = "127.0.0.1:7010".parse()?;
-    /// let mut socket = UdpSocket::bind(address)?;
+    /// let local_addr = "127.0.0.1:7017".parse()?;
+    /// let remote_addr = "127.0.0.1:7018".parse()?;
+    /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
     ///
-    /// assert_eq!(socket.local_addr()?, address);
+    /// assert_eq!(socket.local_addr()?, local_addr);
     /// #    Ok(())
     /// # }
     pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
