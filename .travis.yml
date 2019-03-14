@@ -8,9 +8,6 @@ matrix:
   fast_finish: false
   include:
   - rust: stable
-    name: "Build check FreeBSD"
-    script: .ci/build_check.sh "x86_64-unknown-freebsd"
-  - rust: stable
     name: "Build check Linux musl"
     script: .ci/build_check.sh "x86_64-unknown-linux-musl"
   - rust: stable
