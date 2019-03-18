@@ -8,13 +8,12 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 
 /// A User Datagram Protocol socket.
 ///
-/// This works much like the `UdpSocket` in the standard library, but the
-/// [`send_to`], [`recv_from`] and [`peek_from`] methods don't block and instead
-/// return a [`WouldBlock`] error.
+/// This works much like the `UdpSocket` in the standard library, but the I/O
+/// methods such as [`send_to`], [`send`] etc. don't block and instead return a
+/// [`WouldBlock`] error.
 ///
 /// [`send_to`]: UdpSocket::send_to
-/// [`recv_from`]: UdpSocket::recv_from
-/// [`peek_from`]: UdpSocket::peek_from
+/// [`send`]: UdpSocket::send
 /// [`WouldBlock`]: std::io::ErrorKind::WouldBlock
 ///
 /// # Deregistering
@@ -42,13 +41,11 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 /// let echoer_address = "127.0.0.1:7001".parse()?;
 ///
 /// // Create our sockets.
-/// let sender_socket = UdpSocket::bind(sender_address)?;
-/// let echoer_socket = UdpSocket::bind(echoer_address)?;
+/// let mut sender_socket = UdpSocket::bind(sender_address)?;
+/// let mut echoer_socket = UdpSocket::bind(echoer_address)?;
 ///
-/// // Connect the sockets so we can use `send` and `recv`, rather then
-/// // `send_to` and `recv_from`.
-/// let mut sender_socket = sender_socket.connect(echoer_address)?;
-/// let mut echoer_socket = echoer_socket.connect(sender_address)?;
+/// // Connect the sending socket so we can use `send` method.
+/// sender_socket.connect(echoer_address)?;
 ///
 /// // As always create our poll and events.
 /// let mut os_queue = OsQueue::new()?;
@@ -61,7 +58,7 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 /// // The message we'll send.
 /// const MSG_TO_SEND: &[u8; 11] = b"Hello world";
 /// // A buffer for our echoer to receive the message in.
-/// let mut buf = [0; 11];
+/// let mut buf = [0; 20];
 ///
 /// // Our event loop.
 /// loop {
@@ -78,8 +75,8 @@ use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 ///             },
 ///             ECHOER_ID => {
 ///                 // Our echoer is ready to read.
-///                 let bytes_recv = echoer_socket.recv(&mut buf)?;
-///                 println!("received {:?} ({} bytes)", &buf[0..bytes_recv], bytes_recv);
+///                 let (bytes_recv, address) = echoer_socket.recv_from(&mut buf)?;
+///                 println!("received {:?} ({} bytes) from {}", &buf[0..bytes_recv], bytes_recv, address);
 ///                 # return Ok(());
 ///             }
 ///             // We shouldn't receive any event with another id then the two
@@ -126,10 +123,13 @@ impl UdpSocket {
     /// packets that are read, written and peeked to the address specified in
     /// `address`.
     ///
-    /// See [`ConnectedUdpSocket`] for more information.
-    pub fn connect(self, address: SocketAddr) -> io::Result<ConnectedUdpSocket> {
+    /// This allows the [`send`], [`recv`] and [`peek`] methods to be used.
+    ///
+    /// [`send`]: UdpSocket::send
+    /// [`recv`]: UdpSocket::recv
+    /// [`peek`]: UdpSocket::peek
+    pub fn connect(&mut self, address: SocketAddr) -> io::Result<()> {
         self.socket.connect(address)
-            .map(|_| ConnectedUdpSocket { socket: self.socket })
     }
 
     /// Returns the socket address that this socket was created from.
@@ -157,17 +157,29 @@ impl UdpSocket {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
     /// use mio_st::net::UdpSocket;
+    /// use mio_st::os::{RegisterOption, Interests};
+    /// use mio_st::{event, OsQueue, poll};
+    ///
+    /// let mut os_queue = OsQueue::new()?;
+    /// let mut events = Vec::new();
     ///
     /// let address = "127.0.0.1:7004".parse()?;
     /// let mut socket = UdpSocket::bind(address)?;
     ///
-    /// // We must check if the socket is writable before calling send_to,
-    /// // or we could run into a WouldBlock error.
+    /// // Register our socket.
+    /// os_queue.register(&mut socket, event::Id(0), Interests::WRITABLE, RegisterOption::EDGE)?;
+    ///
+    /// // Poll until our socket is ready.
+    /// while events.is_empty() {
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
+    /// }
     ///
     /// let other_address = "127.0.0.1:7005".parse()?;
-    /// let bytes_sent = socket.send_to(&[9; 9], other_address)?;
-    /// assert_eq!(bytes_sent, 9);
+    /// let bytes_sent = socket.send_to(b"Hello world", other_address)?;
+    /// assert_eq!(bytes_sent, 11);
     /// #
     /// #    Ok(())
     /// # }
@@ -176,24 +188,90 @@ impl UdpSocket {
         self.socket.send_to(buf, &target)
     }
 
+    /// Sends data on the socket to the connected socket. On success, returns
+    /// the number of bytes written.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
+    /// use mio_st::net::UdpSocket;
+    /// use mio_st::os::{RegisterOption, Interests};
+    /// use mio_st::{event, OsQueue, poll};
+    ///
+    /// let mut os_queue = OsQueue::new()?;
+    /// let mut events = Vec::new();
+    ///
+    /// let local_address = "127.0.0.1:7006".parse()?;
+    /// let remote_address = "127.0.0.1:7007".parse()?;
+    /// let mut socket = UdpSocket::bind(local_address)?;
+    /// socket.connect(remote_address)?;
+    ///
+    /// // Register our socket.
+    /// os_queue.register(&mut socket, event::Id(0), Interests::WRITABLE, RegisterOption::EDGE)?;
+    ///
+    /// // Poll until our socket is ready.
+    /// while events.is_empty() {
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
+    /// }
+    ///
+    /// let bytes_sent = socket.send(b"Hello world")?;
+    /// assert_eq!(bytes_sent, 11);
+    /// #
+    /// #    Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// This requires the socket to be [connected].
+    ///
+    /// [connected]: UdpSocket::connect
+    pub fn send(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.socket.send(buf)
+    }
+
     /// Receives data from the socket. On success, returns the number of bytes
     /// read and the address from whence the data came.
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
     /// use mio_st::net::UdpSocket;
+    /// use mio_st::os::{RegisterOption, Interests};
+    /// use mio_st::{event, OsQueue, poll};
     ///
-    /// let address = "127.0.0.1:7006".parse()?;
+    /// let mut os_queue = OsQueue::new()?;
+    /// let mut events = Vec::new();
+    ///
+    /// let address = "127.0.0.1:7008".parse()?;
     /// let mut socket = UdpSocket::bind(address)?;
+    /// #
+    /// # // Send some data that we can receive.
+    /// # let mut socket2 = UdpSocket::bind("127.0.0.1:7108".parse()?)?;
+    /// # os_queue.register(&mut socket2, event::Id(1), Interests::WRITABLE, RegisterOption::EDGE)?;
+    /// # while events.is_empty() { poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?; }
+    /// # let bytes_sent = socket2.send_to(b"Hello world", address)?;
+    /// # assert_eq!(bytes_sent, 11);
+    /// # events.clear();
     ///
-    /// // We must check if the socket is readable before calling recv_from,
-    /// // or we could run into a WouldBlock error.
+    /// // Register our socket.
+    /// os_queue.register(&mut socket, event::Id(0), Interests::READABLE, RegisterOption::EDGE)?;
     ///
-    /// let mut buf = [0; 9];
-    /// let (num_recv, from_addr) = socket.recv_from(&mut buf)?;
-    /// println!("Received {:?} -> {:?} bytes from {:?}", buf, num_recv, from_addr);
+    /// // Poll until our socket is ready.
+    /// while events.is_empty() {
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
+    /// }
+    ///
+    /// let mut buf = [0; 20];
+    /// let (bytes_received, from_address) = socket.recv_from(&mut buf)?;
+    /// println!("Received {:?} ({} bytes) from {}", &buf[..bytes_received], bytes_received, from_address);
+    /// # assert_eq!(&buf[..bytes_received], b"Hello world");
     /// #
     /// #    Ok(())
     /// # }
@@ -202,35 +280,175 @@ impl UdpSocket {
         self.socket.recv_from(buf)
     }
 
+    /// Receives data from the socket. On success, returns the number of bytes
+    /// read.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
+    /// use mio_st::net::UdpSocket;
+    /// use mio_st::os::{RegisterOption, Interests};
+    /// use mio_st::{event, OsQueue, poll};
+    ///
+    /// let mut os_queue = OsQueue::new()?;
+    /// let mut events = Vec::new();
+    ///
+    /// let local_address = "127.0.0.1:7009".parse()?;
+    /// let remote_address = "127.0.0.1:7010".parse()?;
+    /// let mut socket = UdpSocket::bind(local_address)?;
+    /// #
+    /// # // Send some data that we can receive.
+    /// # let mut socket2 = UdpSocket::bind(remote_address)?;
+    /// # os_queue.register(&mut socket2, event::Id(1), Interests::WRITABLE, RegisterOption::EDGE)?;
+    /// # while events.is_empty() { poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?; }
+    /// # let bytes_sent = socket2.send_to(b"Hello world", local_address)?;
+    /// # assert_eq!(bytes_sent, 11);
+    /// # events.clear();
+    ///
+    /// // Register our socket.
+    /// os_queue.register(&mut socket, event::Id(0), Interests::READABLE, RegisterOption::EDGE)?;
+    ///
+    /// // Poll until our socket is ready.
+    /// while events.is_empty() {
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
+    /// }
+    ///
+    /// let mut buf = [0; 20];
+    /// let bytes_received = socket.recv(&mut buf)?;
+    /// println!("Received {:?} ({} bytes)", &buf[..bytes_received], bytes_received);
+    /// # assert_eq!(&buf[..bytes_received], b"Hello world");
+    /// #
+    /// #    Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// This requires the socket to be [connected].
+    ///
+    /// [connected]: UdpSocket::connect
+    pub fn recv(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.socket.recv(buf)
+    }
+
     /// Receives data from the socket, without removing it from the input queue.
     /// On success, returns the number of bytes read and the address from whence
     /// the data came.
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```
     /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
     /// use mio_st::net::UdpSocket;
+    /// use mio_st::os::{RegisterOption, Interests};
+    /// use mio_st::{event, OsQueue, poll};
     ///
-    /// let address = "127.0.0.1:7007".parse()?;
+    /// let mut os_queue = OsQueue::new()?;
+    /// let mut events = Vec::new();
+    ///
+    /// let address = "127.0.0.1:7011".parse()?;
     /// let mut socket = UdpSocket::bind(address)?;
+    /// #
+    /// # // Send some data that we can receive.
+    /// # let mut socket2 = UdpSocket::bind("127.0.0.1:7111".parse()?)?;
+    /// # os_queue.register(&mut socket2, event::Id(1), Interests::WRITABLE, RegisterOption::EDGE)?;
+    /// # while events.is_empty() { poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?; }
+    /// # let bytes_sent = socket2.send_to(b"Hello world", address)?;
+    /// # assert_eq!(bytes_sent, 11);
+    /// # events.clear();
     ///
-    /// // We must check if the socket is readable before calling recv_from,
-    /// // or we could run into a WouldBlock error.
+    /// // Register our socket.
+    /// os_queue.register(&mut socket, event::Id(0), Interests::READABLE, RegisterOption::EDGE)?;
     ///
-    /// let mut buf1 = [0; 9];
-    /// let mut buf2 = [0; 9];
-    /// let (num_recv1, from_addr1) = socket.peek_from(&mut buf1)?;
-    /// let (num_recv2, from_addr2) = socket.recv_from(&mut buf2)?;
-    /// assert_eq!(num_recv1, num_recv2);
-    /// assert_eq!(from_addr1, from_addr2);
-    /// assert_eq!(buf1, buf2);
+    /// // Poll until our socket is ready.
+    /// while events.is_empty() {
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
+    /// }
+    ///
+    /// let mut buf1 = [0; 20];
+    /// let (bytes_received1, from_address1) = socket.peek_from(&mut buf1)?;
+    /// println!("Peeked {:?} ({} bytes) from {}", &buf1[..bytes_received1], bytes_received1, from_address1);
+    /// # assert_eq!(&buf1[..bytes_received1], b"Hello world");
+    /// # assert_eq!(from_address1, "127.0.0.1:7111".parse()?);
+    ///
+    /// let mut buf2 = [0; 20];
+    /// let (bytes_received2, from_address2) = socket.recv_from(&mut buf2)?;
+    /// println!("Received {:?} ({} bytes) from {}", &buf2[..bytes_received2], bytes_received2, from_address2);
+    /// assert_eq!(bytes_received1, bytes_received2);
+    /// assert_eq!(&buf1[..bytes_received1], &buf2[..bytes_received2]);
+    /// assert_eq!(from_address1, from_address2);
     /// #
     /// #    Ok(())
     /// # }
     /// ```
     pub fn peek_from(&mut self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.socket.peek_from(buf)
+    }
+
+    /// Receives data from the socket, without removing it from the input queue.
+    /// On success, returns the number of bytes read.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// use std::io;
+    ///
+    /// use mio_st::net::UdpSocket;
+    /// use mio_st::os::{RegisterOption, Interests};
+    /// use mio_st::{event, OsQueue, poll};
+    ///
+    /// let mut os_queue = OsQueue::new()?;
+    /// let mut events = Vec::new();
+    ///
+    /// let local_address = "127.0.0.1:7012".parse()?;
+    /// let remote_address = "127.0.0.1:7013".parse()?;
+    /// let mut socket = UdpSocket::bind(local_address)?;
+    /// socket.connect(remote_address)?;
+    /// #
+    /// # // Send some data that we can receive.
+    /// # let mut socket2 = UdpSocket::bind(remote_address)?;
+    /// # os_queue.register(&mut socket2, event::Id(1), Interests::WRITABLE, RegisterOption::EDGE)?;
+    /// # while events.is_empty() { poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?; }
+    /// # let bytes_sent = socket2.send_to(b"Hello world", local_address)?;
+    /// # assert_eq!(bytes_sent, 11);
+    /// # events.clear();
+    ///
+    /// // Register our socket.
+    /// os_queue.register(&mut socket, event::Id(0), Interests::READABLE, RegisterOption::EDGE)?;
+    ///
+    /// // Poll until our socket is ready.
+    /// while events.is_empty() {
+    ///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
+    /// }
+    ///
+    /// let mut buf1 = [0; 20];
+    /// let bytes_received1 = socket.peek(&mut buf1)?;
+    /// println!("Peeked {:?} ({} bytes)", &buf1[..bytes_received1], bytes_received1);
+    /// # assert_eq!(&buf1[..bytes_received1], b"Hello world");
+    ///
+    /// let mut buf2 = [0; 20];
+    /// let bytes_received2 = socket.recv(&mut buf2)?;
+    /// println!("Received {:?} ({} bytes)", &buf2[..bytes_received2], bytes_received2);
+    /// assert_eq!(bytes_received1, bytes_received2);
+    /// assert_eq!(&buf1[..bytes_received1], &buf2[..bytes_received2]);
+    /// #
+    /// #    Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// This requires the socket to be [connected].
+    ///
+    /// [connected]: UdpSocket::connect
+    pub fn peek(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.socket.peek(buf)
     }
 
     /// Get the value of the `SO_ERROR` option on this socket.
@@ -275,242 +493,6 @@ impl AsRawFd for UdpSocket {
 impl FromRawFd for UdpSocket {
     unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
         UdpSocket {
-            socket: FromRawFd::from_raw_fd(fd),
-        }
-    }
-}
-
-/// A connected User Datagram Protocol socket.
-///
-/// This connected variant of a `UdpSocket` and can be created by calling
-/// [`connect`] on a [`UdpSocket`].
-///
-/// Also see [`UdpSocket`] for more creating a socket, including setting various
-/// options.
-///
-/// [`connect`]: UdpSocket::connect
-/// [`UdpSocket`]: UdpSocket
-///
-/// # Deregistering
-///
-/// `ConnectedUdpSocket` will deregister itself when dropped.
-///
-/// # Examples
-///
-/// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
-/// use std::io;
-///
-/// use mio_st::{event, poll};
-/// use mio_st::net::{ConnectedUdpSocket, UdpSocket};
-/// use mio_st::os::{Interests, RegisterOption, OsQueue};
-///
-/// const ECHOER_ID: event::Id = event::Id(0);
-/// const SENDER_ID: event::Id = event::Id(1);
-///
-/// // Create our echoer, which will act as server.
-/// let echoer_addr = "127.0.0.1:7008".parse()?;
-/// let mut echoer = UdpSocket::bind(echoer_addr)?;
-///
-/// // Then we connect to the echo server we create above.
-/// let sender_addr = "127.0.0.1:7009".parse()?;
-/// let mut sender = ConnectedUdpSocket::connect(sender_addr, echoer_addr)?;
-///
-/// // Create our OS queue and events container.
-/// let mut os_queue = OsQueue::new()?;
-/// let mut events = Vec::new();
-///
-/// // Register our echoer and sender.
-/// os_queue.register(&mut echoer, ECHOER_ID, Interests::READABLE, RegisterOption::LEVEL)?;
-/// os_queue.register(&mut sender, SENDER_ID, Interests::WRITABLE, RegisterOption::LEVEL)?;
-///
-/// loop {
-///     // Poll for events.
-///     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
-///
-///     for event in &mut events {
-///         match event.id() {
-///             SENDER_ID => {
-///                 // In all likelihood still will be called after the first
-///                 // call to poll.
-///                 let msg = b"hello world";
-///                 sender.send(msg)?;
-///             },
-///             ECHOER_ID => {
-///                 // After the sender send a message this will likely be
-///                 // called after another call to poll.
-///                 let mut buf = [0; 20];
-///                 let (recv_n, address) = echoer.recv_from(&mut buf)?;
-///                 println!("Received: {:?} from {}", &buf[0..recv_n], address);
-/// #               return Ok(());
-///             },
-///             _ => unreachable!(),
-///         }
-///     }
-/// }
-/// # }
-/// ```
-#[derive(Debug)]
-pub struct ConnectedUdpSocket {
-    socket: sys::UdpSocket,
-}
-
-impl ConnectedUdpSocket {
-    /// The interests to use when registering to receive both readable and
-    /// writable events.
-    pub const INTERESTS: Interests = Interests::BOTH;
-
-    /// Creates a connected UDP socket.
-    ///
-    /// This method first binds a UDP socket to the `bind_address`, then connects
-    /// that socket to `connect_address`. The is convenience method for a call
-    /// to `UdpSocket::bind` followed by a call to `connect`.
-    pub fn connect(bind_address: SocketAddr, connect_address: SocketAddr) -> io::Result<ConnectedUdpSocket> {
-        UdpSocket::bind(bind_address)
-            .and_then(|socket| socket.connect(connect_address))
-    }
-
-    /// Returns the socket address that this socket was created from.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::net::ConnectedUdpSocket;
-    ///
-    /// let local_addr = "127.0.0.1:7017".parse()?;
-    /// let remote_addr = "127.0.0.1:7018".parse()?;
-    /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
-    ///
-    /// assert_eq!(socket.local_addr()?, local_addr);
-    /// #    Ok(())
-    /// # }
-    pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
-        self.socket.local_addr()
-    }
-
-    /// Sends data on the socket to the connected socket. On success, returns
-    /// the number of bytes written.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::net::ConnectedUdpSocket;
-    ///
-    /// let local_addr = "127.0.0.1:7011".parse()?;
-    /// let remote_addr = "127.0.0.1:7012".parse()?;
-    /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
-    ///
-    /// // We must check if the socket is writable before calling send, or we
-    /// // could run into a WouldBlock error.
-    ///
-    /// let bytes_sent = socket.send(&[9; 9])?;
-    /// assert_eq!(bytes_sent, 9);
-    /// #    Ok(())
-    /// # }
-    /// ```
-    pub fn send(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.socket.send(buf)
-    }
-
-    /// Receives data from the socket. On success, returns the number of bytes
-    /// read.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::net::ConnectedUdpSocket;
-    ///
-    /// let local_addr = "127.0.0.1:7013".parse()?;
-    /// let remote_addr = "127.0.0.1:7014".parse()?;
-    /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
-    ///
-    /// // We must check if the socket is readable before calling recv, or we
-    /// // could run into a WouldBlock error.
-    ///
-    /// let mut buf = [0; 9];
-    /// let num_recv = socket.recv(&mut buf)?;
-    /// println!("Received {:?} -> {:?} bytes", buf, num_recv);
-    /// #    Ok(())
-    /// # }
-    /// ```
-    pub fn recv(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.socket.recv(buf)
-    }
-
-    /// Receives data from the socket, without removing it from the input queue.
-    /// On success, returns the number of bytes read.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
-    /// use mio_st::net::ConnectedUdpSocket;
-    ///
-    /// let local_addr = "127.0.0.1:7015".parse()?;
-    /// let remote_addr = "127.0.0.1:7016".parse()?;
-    /// let mut socket = ConnectedUdpSocket::connect(local_addr, remote_addr)?;
-    ///
-    /// // We must check if the socket is readable before calling peek, or we
-    /// // could run into a WouldBlock error.
-    ///
-    /// let mut buf1 = [0; 9];
-    /// let mut buf2 = [0; 9];
-    /// let num_recv1 = socket.peek(&mut buf1)?;
-    /// let num_recv2 = socket.recv(&mut buf2)?;
-    /// assert_eq!(buf1, buf2);
-    /// assert_eq!(num_recv1, num_recv2);
-    /// #    Ok(())
-    /// # }
-    /// ```
-    pub fn peek(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.socket.peek(buf)
-    }
-
-    /// Get the value of the `SO_ERROR` option on this socket.
-    ///
-    /// This will retrieve the stored error in the underlying socket, clearing
-    /// the field in the process. This can be useful for checking errors between
-    /// calls.
-    pub fn take_error(&mut self) -> io::Result<Option<io::Error>> {
-        self.socket.take_error()
-    }
-}
-
-impl Evented for ConnectedUdpSocket {
-    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
-        self.socket.register(os_queue, id, interests, opt)
-    }
-
-    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()> {
-        self.socket.reregister(os_queue, id, interests, opt)
-    }
-
-    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()> {
-        self.socket.deregister(os_queue)
-    }
-}
-
-#[cfg(unix)]
-impl IntoRawFd for ConnectedUdpSocket {
-    fn into_raw_fd(self) -> RawFd {
-        self.socket.into_raw_fd()
-    }
-}
-
-#[cfg(unix)]
-impl AsRawFd for ConnectedUdpSocket {
-    fn as_raw_fd(&self) -> RawFd {
-        self.socket.as_raw_fd()
-    }
-}
-
-#[cfg(unix)]
-impl FromRawFd for ConnectedUdpSocket {
-    unsafe fn from_raw_fd(fd: RawFd) -> ConnectedUdpSocket {
-        ConnectedUdpSocket {
             socket: FromRawFd::from_raw_fd(fd),
         }
     }
