@@ -6,7 +6,7 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 
 use mio_st::event::{Event, Ready};
-use mio_st::net::{ConnectedUdpSocket, UdpSocket};
+use mio_st::net::UdpSocket;
 use mio_st::os::{RegisterOption, Interests};
 use mio_st::{event, poll};
 
@@ -146,10 +146,11 @@ fn connected_udp_socket() {
     let mut socket1 = UdpSocket::bind(any_local_address()).unwrap();
     let address1 = socket1.local_addr().unwrap();
 
-    let mut socket2 = ConnectedUdpSocket::connect(any_local_address(), address1).unwrap();
+    let mut socket2 = UdpSocket::bind(any_local_address()).unwrap();
+    socket2.connect(address1).unwrap();
     let address2 = socket2.local_addr().unwrap();
 
-    let mut socket1 = socket1.connect(address2).unwrap();
+    socket1.connect(address2).unwrap();
 
     os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, RegisterOption::EDGE)
         .expect("unable to register UDP socket");
@@ -204,10 +205,11 @@ fn connected_udp_socket_ipv6() {
     let mut socket1 = UdpSocket::bind(any_local_ipv6_address()).unwrap();
     let address1 = socket1.local_addr().unwrap();
 
-    let mut socket2 = ConnectedUdpSocket::connect(any_local_ipv6_address(), address1).unwrap();
+    let mut socket2 = UdpSocket::bind(any_local_ipv6_address()).unwrap();
+    socket2.connect(address1).unwrap();
     let address2 = socket2.local_addr().unwrap();
 
-    let mut socket1 = socket1.connect(address2).unwrap();
+    socket1.connect(address2).unwrap();
 
     os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, RegisterOption::EDGE)
         .expect("unable to register UDP socket");
@@ -266,25 +268,6 @@ fn udp_socket_raw_fd() {
     assert_eq!(raw_fd1, raw_fd2);
 
     let mut socket = unsafe { UdpSocket::from_raw_fd(raw_fd2) };
-    assert_eq!(socket.as_raw_fd(), raw_fd1);
-    assert_eq!(socket.local_addr().unwrap(), address);
-}
-
-#[test]
-fn connected_udp_socket_raw_fd() {
-    init();
-
-    let listen_socket = net::UdpSocket::bind(any_local_address()).unwrap();
-    let connect_address = listen_socket.local_addr().unwrap();
-
-    let mut socket = ConnectedUdpSocket::connect(any_local_address(), connect_address).unwrap();
-    let address = socket.local_addr().unwrap();
-
-    let raw_fd1 = socket.as_raw_fd();
-    let raw_fd2 = socket.into_raw_fd();
-    assert_eq!(raw_fd1, raw_fd2);
-
-    let mut socket = unsafe { ConnectedUdpSocket::from_raw_fd(raw_fd2) };
     assert_eq!(socket.as_raw_fd(), raw_fd1);
     assert_eq!(socket.local_addr().unwrap(), address);
 }
