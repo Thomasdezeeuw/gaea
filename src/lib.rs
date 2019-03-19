@@ -48,12 +48,11 @@
 //! const SERVER_ID: event::Id = event::Id(0);
 //!
 //! // Create a Operating System backed (epoll or kqueue) queue.
-//! // This is a blocking event source as it implements `BlockingSource`.
 //! let mut os_queue = OsQueue::new()?;
-//! // Crate our events container.
+//! // Create our events container.
 //! let mut events = Vec::new();
 //!
-//! // Setup a TCP listener, which will act as our server.
+//! // Setup a TCP listener, which will be our server.
 //! let address = "127.0.0.1:12345".parse()?;
 //! let mut server = TcpListener::bind(address)?;
 //!
@@ -64,15 +63,14 @@
 //! // A hashmap with `event::Id` -> `TcpStream` connections.
 //! let mut connections = HashMap::new();
 //!
-//! // A simple "counter" to create new unique ids for each incoming connection.
+//! // A simple counter to create new unique ids for each incoming connection.
 //! let mut current_id = event::Id(10);
 //!
 //! // Start our event loop.
 //! # let i = 0; // Don't run the event loop.
 //! loop {
 //! #   if i == 0 { return Ok(()) }
-//!     // Poll for events. As we only have a single event source we provided an
-//!     // empty array as second argument.
+//!     // Poll for events.
 //!     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
 //!
 //!     // Process each event.
