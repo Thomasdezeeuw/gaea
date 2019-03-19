@@ -4,9 +4,9 @@
 // while other tests are actually using them.
 #![allow(dead_code)]
 
-use std::io;
 use std::net::SocketAddr;
 use std::time::Duration;
+use std::{fmt, io};
 
 use log::error;
 
@@ -75,10 +75,11 @@ impl Events for EventsCapacity {
 
 /// Assert that `result` is an error and the formatted error (via
 /// `fmt::Display`) equals `expected_msg`.
-pub fn assert_error<T, E: ToString>(result: Result<T, E>, expected_msg: &str) {
+pub fn assert_error<T, E: fmt::Display>(result: Result<T, E>, expected_msg: &str) {
     match result {
         Ok(_) => panic!("unexpected OK result"),
-        Err(err) => assert_eq!(err.to_string(), expected_msg),
+        Err(err) => assert!(err.to_string().contains(expected_msg),
+            "wanted: {}, got: {}", err, expected_msg),
     }
 }
 
