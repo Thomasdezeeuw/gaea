@@ -19,6 +19,7 @@ const DATA2: &'static [u8; 11] = b"Hello mars!";
 
 const ID1: event::Id = event::Id(0);
 const ID2: event::Id = event::Id(1);
+const ID3: event::Id = event::Id(2);
 
 #[test]
 fn udp_socket() {
@@ -254,6 +255,67 @@ fn connected_udp_socket_ipv6() {
 
     assert!(socket1.take_error().unwrap().is_none());
     assert!(socket2.take_error().unwrap().is_none());
+}
+
+#[test]
+fn reconnect_udp_socket() {
+    let (mut os_queue, mut events) = init_with_os_queue();
+
+    let mut socket1 = UdpSocket::bind(any_local_address()).unwrap();
+    let mut socket2 = UdpSocket::bind(any_local_address()).unwrap();
+    let mut socket3 = UdpSocket::bind(any_local_address()).unwrap();
+
+    let address1 = socket1.local_addr().unwrap();
+    let address2 = socket2.local_addr().unwrap();
+    let address3 = socket3.local_addr().unwrap();
+
+    socket1.connect(address2).unwrap();
+    socket2.connect(address1).unwrap();
+    socket3.connect(address1).unwrap();
+
+    os_queue.register(&mut socket1, ID1, Interests::READABLE, RegisterOption::EDGE).unwrap();
+    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, RegisterOption::EDGE).unwrap();
+    os_queue.register(&mut socket3, ID3, UdpSocket::INTERESTS, RegisterOption::EDGE).unwrap();
+
+    // Ensure the events show up.
+    sleep(Duration::from_millis(10));
+
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID2, Ready::WRITABLE),
+        Event::new(ID3, Ready::WRITABLE),
+    ]);
+
+    socket2.send(DATA1).unwrap();
+
+    // Ensure the events show up.
+    sleep(Duration::from_millis(10));
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
+    ]);
+
+    let mut buf = [0; 20];
+    let n = socket1.recv(&mut buf).unwrap();
+    assert_eq!(n, DATA1.len());
+    assert_eq!(buf[..n], DATA1[..]);
+
+    // Now change the address the socket is connected to and send some data from
+    // that address.
+    socket1.connect(address3).unwrap();
+    socket3.send(DATA2).unwrap();
+
+    // Ensure the events show up.
+    sleep(Duration::from_millis(10));
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::READABLE),
+    ]);
+
+    let n = socket1.recv(&mut buf).unwrap();
+    assert_eq!(n, DATA2.len());
+    assert_eq!(buf[..n], DATA2[..]);
+
+    assert!(socket1.take_error().unwrap().is_none());
+    assert!(socket2.take_error().unwrap().is_none());
+    assert!(socket3.take_error().unwrap().is_none());
 }
 
 #[test]
