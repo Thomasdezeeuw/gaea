@@ -8,7 +8,7 @@ use std::net::SocketAddr;
 use std::time::Duration;
 use std::{fmt, io};
 
-use log::error;
+use log::warn;
 
 use mio_st::poll;
 use mio_st::event::{Capacity, Events, Event};
@@ -52,7 +52,7 @@ pub fn expect_events(os_queue: &mut OsQueue, events: &mut Vec<Event>, mut expect
             expected.swap_remove(index);
         } else {
             // Must accept sporadic events.
-            error!("got unexpected event: {:?}", event);
+            warn!("got unexpected event: {:?}", event);
         }
     }
 
