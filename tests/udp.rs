@@ -12,7 +12,7 @@ use mio_st::{event, poll};
 
 mod util;
 
-use self::util::{assert_would_block, any_local_address, any_local_ipv6_address, expect_events, init, init_with_os_queue};
+use self::util::{assert_error, assert_would_block, any_local_address, any_local_ipv6_address, expect_events, init, init_with_os_queue};
 
 const DATA1: &'static [u8; 12] = b"Hello world!";
 const DATA2: &'static [u8; 11] = b"Hello mars!";
@@ -316,6 +316,106 @@ fn reconnect_udp_socket() {
     assert!(socket1.take_error().unwrap().is_none());
     assert!(socket2.take_error().unwrap().is_none());
     assert!(socket3.take_error().unwrap().is_none());
+}
+
+#[test]
+fn unconnected_udp_socket_connected_methods() {
+    let (mut os_queue, mut events) = init_with_os_queue();
+
+    let mut socket1 = UdpSocket::bind(any_local_address()).unwrap();
+    let mut socket2 = UdpSocket::bind(any_local_address()).unwrap();
+    let address2 = socket2.local_addr().unwrap();
+
+    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, RegisterOption::EDGE).unwrap();
+    os_queue.register(&mut socket2, ID2, Interests::READABLE, RegisterOption::EDGE).unwrap();
+
+    // Ensure the events show up.
+    sleep(Duration::from_millis(10));
+
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::WRITABLE),
+    ]);
+
+    // Socket is unconnected, but we're using an connected method.
+    assert_error(socket1.send(DATA1), "address required");
+
+    // Now send some actual data.
+    socket1.send_to(DATA1, address2).unwrap();
+
+    // Ensure the events show up.
+    sleep(Duration::from_millis(10));
+
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID2, Ready::READABLE),
+    ]);
+
+    let mut buf = [0; 20];
+    let n = socket2.peek(&mut buf).unwrap();
+    assert_eq!(n, DATA1.len());
+    assert_eq!(buf[..n], DATA1[..]);
+
+    let n = socket2.recv(&mut buf).unwrap();
+    assert_eq!(n, DATA1.len());
+    assert_eq!(buf[..n], DATA1[..]);
+
+    assert!(socket1.take_error().unwrap().is_none());
+    assert!(socket2.take_error().unwrap().is_none());
+}
+
+#[test]
+fn connected_udp_socket_unconnected_methods() {
+    let (mut os_queue, mut events) = init_with_os_queue();
+
+    let mut socket1 = UdpSocket::bind(any_local_address()).unwrap();
+    let mut socket2 = UdpSocket::bind(any_local_address()).unwrap();
+    let mut socket3 = UdpSocket::bind(any_local_address()).unwrap();
+
+    let address2 = socket2.local_addr().unwrap();
+    let address3 = socket3.local_addr().unwrap();
+
+    socket1.connect(address3).unwrap();
+    socket3.connect(address2).unwrap();
+
+    os_queue.register(&mut socket1, ID1, UdpSocket::INTERESTS, RegisterOption::EDGE).unwrap();
+    os_queue.register(&mut socket2, ID2, UdpSocket::INTERESTS, RegisterOption::EDGE).unwrap();
+    os_queue.register(&mut socket3, ID3, Interests::READABLE, RegisterOption::EDGE).unwrap();
+
+    // Ensure the events show up.
+    sleep(Duration::from_millis(10));
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID1, Ready::WRITABLE),
+        Event::new(ID2, Ready::WRITABLE),
+    ]);
+
+    // Can't use `send_to`.
+    // Linux actually allows `send_to` even if the socket is connected.
+    #[cfg(not(target_os = "linux"))]
+    assert_error(socket1.send_to(DATA1, address2), "already connected");
+    // Even if the address is the same.
+    #[cfg(not(target_os = "linux"))]
+    assert_error(socket1.send_to(DATA1, address3), "already connected");
+
+    socket2.send_to(DATA2, address3).unwrap();
+
+    // Ensure the events show up.
+    sleep(Duration::from_millis(10));
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(ID3, Ready::READABLE),
+    ]);
+
+    let mut buf = [0; 20];
+    let (n, got_address1) = socket3.peek_from(&mut buf).unwrap();
+    assert_eq!(n, DATA2.len());
+    assert_eq!(buf[..n], DATA2[..]);
+    assert_eq!(got_address1, address2);
+
+    let (n, got_address2) = socket3.recv_from(&mut buf).unwrap();
+    assert_eq!(n, DATA2.len());
+    assert_eq!(buf[..n], DATA2[..]);
+    assert_eq!(got_address2, address2);
+
+    assert!(socket1.take_error().unwrap().is_none());
+    assert!(socket2.take_error().unwrap().is_none());
 }
 
 #[test]
