@@ -8,12 +8,12 @@ use core::time::Duration;
 ///
 /// # Implementing event source
 ///
-/// The trait has two generic parameters: `ES` and `E`. `ES` which must
-/// implement [`event::Sink`], this should always be a generic parameter to
-/// ensure that any event sink can be used with the event source. `E` should
-/// also remain generic but a trait bound `From<MyError>` should be added, this
-/// way [`poll`] can return a single error from multiple event sources. The
-/// example below shows how this works.
+/// The trait has two generic parameters: `ES` and `E`. `ES` must implement
+/// [`event::Sink`], this should always be a generic parameter to ensure that
+/// any event sink can be used with the event source. `E` should also remain
+/// generic but a trait bound `From<MyError>` should be added, this way [`poll`]
+/// can return a single error from multiple event sources. The example below
+/// shows how this works.
 ///
 /// [`event::Sink`]: Sink
 /// [`poll`]: crate::poll
