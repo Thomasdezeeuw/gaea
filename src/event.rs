@@ -434,7 +434,7 @@ impl fmt::Display for Id {
 #[repr(transparent)]
 pub struct Ready(u8);
 
-const READABLE: u8 = 1 << 0;
+const READABLE: u8 = 1;
 const WRITABLE: u8 = 1 << 1;
 const ERROR: u8 = 1 << 2;
 const TIMER: u8 = 1 << 3;
