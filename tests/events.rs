@@ -1,4 +1,4 @@
-use mio_st::event::{self, Capacity, Event, Events, Ready};
+use mio_st::event::{self, Capacity, Event, Ready, Sink};
 
 #[test]
 fn events_vec() {

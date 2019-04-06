@@ -10,9 +10,9 @@ use std::{fmt, io};
 
 use log::warn;
 
-use mio_st::poll;
-use mio_st::event::{Capacity, Events, Event};
+use mio_st::event::Capacity;
 use mio_st::os::OsQueue;
+use mio_st::{Event, poll, event};
 
 /// Allowed margin for deadlines to be overrun.
 pub const TIMEOUT_MARGIN: Duration = Duration::from_millis(10);
@@ -25,7 +25,7 @@ pub fn init() {
 }
 
 /// Initialise the test setup (same as `init`) and create a `OsQueue` and an
-/// events container at the same time.
+/// event sink at the same time.
 pub fn init_with_os_queue() -> (OsQueue, Vec<Event>) {
     init();
 
@@ -59,11 +59,11 @@ pub fn expect_events(os_queue: &mut OsQueue, events: &mut Vec<Event>, mut expect
     assert!(expected.is_empty(), "the following expected events were not found: {:?}", expected);
 }
 
-/// An `Events` implementation to test `event::Source` using different
+/// An `event::Sink` implementation to test `event::Source` using different
 /// `Capacity`s.
 pub struct EventsCapacity(pub Capacity, pub usize);
 
-impl Events for EventsCapacity {
+impl event::Sink for EventsCapacity {
     fn capacity_left(&self) -> Capacity {
         self.0
     }

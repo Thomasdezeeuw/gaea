@@ -112,8 +112,7 @@ use std::time::Duration;
 
 use log::trace;
 
-use crate::event::{self, Events};
-use crate::sys;
+use crate::{event, sys};
 
 mod awakener;
 mod evented;
@@ -173,7 +172,7 @@ impl OsQueue {
     /// // Create a new OS backed readiness event queue.
     /// let mut os_queue = OsQueue::new()?;
     ///
-    /// // Create an events container.
+    /// // Create an event sink.
     /// let mut events = Vec::new();
     ///
     /// // Poll the queue for new readiness events.
@@ -412,8 +411,8 @@ impl OsQueue {
     }
 }
 
-impl<Evts, E> event::Source<Evts, E> for OsQueue
-    where Evts: Events,
+impl<ES, E> event::Source<ES, E> for OsQueue
+    where ES: event::Sink,
           E: From<io::Error>,
 {
     fn next_event_available(&self) -> Option<Duration> {
@@ -421,13 +420,13 @@ impl<Evts, E> event::Source<Evts, E> for OsQueue
         None
     }
 
-    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
-        self.blocking_poll(events, Some(Duration::from_millis(0)))
+    fn poll(&mut self, event_sink: &mut ES) -> Result<(), E> {
+        self.blocking_poll(event_sink, Some(Duration::from_millis(0)))
     }
 
-    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
+    fn blocking_poll(&mut self, event_sink: &mut ES, timeout: Option<Duration>) -> Result<(), E> {
         trace!("polling OS selector: timeout={:?}", timeout);
-        self.selector.select(events, timeout)
+        self.selector.select(event_sink, timeout)
             .map_err(Into::into)
     }
 }

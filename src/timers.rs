@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 
 use log::trace;
 
-use crate::event::{self, Event, Events, Ready};
+use crate::event::{self, Event, Ready};
 
 /// Timer readiness queue.
 ///
@@ -101,8 +101,8 @@ impl Timers {
     }
 }
 
-impl<Evts, E> event::Source<Evts, E> for Timers
-    where Evts: Events,
+impl<ES, E> event::Source<ES, E> for Timers
+    where ES: event::Sink,
 {
     fn next_event_available(&self) -> Option<Duration> {
         self.deadlines.peek().map(|deadline| {
@@ -117,15 +117,15 @@ impl<Evts, E> event::Source<Evts, E> for Timers
         })
     }
 
-    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
+    fn poll(&mut self, event_sink: &mut ES) -> Result<(), E> {
         trace!("polling timers");
         let now = Instant::now();
 
-        for _ in 0..events.capacity_left().min(self.deadlines.len()) {
+        for _ in 0..event_sink.capacity_left().min(self.deadlines.len()) {
             match self.deadlines.peek() {
                 Some(deadline) if deadline.0.deadline <= now => {
                     let deadline = self.deadlines.pop().unwrap().0;
-                    events.add(Event::new(deadline.id, Ready::TIMER));
+                    event_sink.add(Event::new(deadline.id, Ready::TIMER));
                 },
                 _ => break,
             }

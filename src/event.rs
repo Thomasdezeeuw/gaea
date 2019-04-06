@@ -6,23 +6,22 @@ use core::time::Duration;
 
 /// A readiness event source that can be polled for events.
 ///
-/// The trait has a generic parameter `Evts` which must implement [`Events`],
-/// this should always be a generic parameter.
-///
 /// # Implementing event source
 ///
-/// The trait has two generic parameters: `Evts` and `E`. `Evts` should remain
-/// generic to support all types of events containers. `E` should also be
-/// generic but a trait bound `From<MyError>` should be added, this way [`poll`]
-/// can return a single error from multiple event sources. The example below
-/// shows how this works.
+/// The trait has two generic parameters: `ES` and `E`. `ES` which must
+/// implement [`event::Sink`], this should always be a generic parameter to
+/// ensure that any event sink can be used with the event source. `E` should
+/// also remain generic but a trait bound `From<MyError>` should be added, this
+/// way [`poll`] can return a single error from multiple event sources. The
+/// example below shows how this works.
 ///
+/// [`event::Sink`]: Sink
 /// [`poll`]: crate::poll
 ///
 /// ```
 /// use std::time::Duration;
 ///
-/// use mio_st::{event, Events, Event, poll};
+/// use mio_st::{event, Event, poll};
 ///
 /// /// Our event source that implements `event::Source`.
 /// struct MyEventSource(Vec<Event>);
@@ -30,9 +29,9 @@ use core::time::Duration;
 /// /// The error returned by our even source implementation.
 /// struct MyError;
 ///
-/// impl<Evts, E> event::Source<Evts, E> for MyEventSource
-///     where Evts: Events, // We keep the events container generic to support
-///                         // all kinds of events containers.
+/// impl<ES, E> event::Source<ES, E> for MyEventSource
+///     where ES: event::Sink, // We keep the event sink generic to support all
+///                            // kinds of event sinks.
 ///           E: From<MyError>, // We add this bound to allow use to convert
 ///                             // `MyError` into the generic error `E`.
 /// {
@@ -47,8 +46,8 @@ use core::time::Duration;
 ///         }
 ///     }
 ///
-///     fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
-///         match poll_events(events) {
+///     fn poll(&mut self, event_sink: &mut ES) -> Result<(), E> {
+///         match poll_events(event_sink) {
 ///             Ok(()) => Ok(()),
 ///             // We need explicitly call `into()` to convert our error into
 ///             // the generic error. Note that this isn't required when using
@@ -57,7 +56,7 @@ use core::time::Duration;
 ///         }
 ///     }
 /// }
-/// # fn poll_events<Evts>(_events: &mut Evts) -> Result<(), MyError> { Ok(()) }
+/// # fn poll_events<ES>(_event_sink: &mut ES) -> Result<(), MyError> { Ok(()) }
 ///
 /// // Implementing `From` for `()` allows us to use it as an error in our call
 /// // to poll below..
@@ -75,8 +74,8 @@ use core::time::Duration;
 /// # Ok(())
 /// # }
 /// ```
-pub trait Source<Evts, E>
-    where Evts: Events,
+pub trait Source<ES, E>
+    where ES: Sink,
 {
     /// The duration until the next event will be available.
     ///
@@ -93,16 +92,19 @@ pub trait Source<Evts, E>
 
     /// Poll for events.
     ///
-    /// Any available readiness events must be added to `events`. The pollable
-    /// source may not block.
+    /// Any available readiness events must be added to `event_sink`. This
+    /// method may **not** block.
     ///
-    /// Some implementation of [`Events`] have a limited available capacity.
-    /// This method may not add more events then [`Events::capacity_left`]
-    /// returns, if it returns a capacity limit. Available events that don't fit
-    /// in the events container in a single call to poll should remain in the
-    /// source and should be added to the events container in future calls to
-    /// poll.
-    fn poll(&mut self, events: &mut Evts) -> Result<(), E>;
+    /// Some implementation of [`event::Sink`]s have a limited available
+    /// capacity. This method may not add more events then
+    /// [`event::Sink::capacity_left`] returns, if it returns a capacity limit.
+    /// Available events that don't fit in the event sink in a single call to
+    /// poll should remain in the source and should be added to the event sink
+    /// in future calls to poll.
+    ///
+    /// [`event::Sink`]: Sink
+    /// [`event::Sink::capacity_left`]: Sink::capacity_left
+    fn poll(&mut self, event_sink: &mut ES) -> Result<(), E>;
 
     /// A blocking poll for readiness events.
     ///
@@ -114,33 +116,33 @@ pub trait Source<Evts, E>
     ///
     /// The default implementation simply calls `poll`, thus it doesn't actually
     /// block.
-    fn blocking_poll(&mut self, events: &mut Evts, _timeout: Option<Duration>) -> Result<(), E> {
-        self.poll(events)
+    fn blocking_poll(&mut self, event_sink: &mut ES, _timeout: Option<Duration>) -> Result<(), E> {
+        self.poll(event_sink)
     }
 }
 
-impl<S, Evts, E> Source<Evts, E> for &mut S
-    where S: Source<Evts, E>,
-          Evts: Events,
+impl<S, ES, E> Source<ES, E> for &mut S
+    where S: Source<ES, E>,
+          ES: Sink,
 {
     fn next_event_available(&self) -> Option<Duration> {
         (&**self).next_event_available()
     }
 
-    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
-        (&mut **self).poll(events)
+    fn poll(&mut self, event_sink: &mut ES) -> Result<(), E> {
+        (&mut **self).poll(event_sink)
     }
 
-    fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
-        (&mut **self).blocking_poll(events, timeout)
+    fn blocking_poll(&mut self, event_sink: &mut ES, timeout: Option<Duration>) -> Result<(), E> {
+        (&mut **self).blocking_poll(event_sink, timeout)
     }
 }
 
-/// `Events` represents an events container to which events can be added.
+/// An event sink to which events can be added.
 ///
-/// `Events` is passed as an argument to [`poll`] and will be used to
+/// `event::Sink` is passed as an argument to [`poll`] and will be used to
 /// receive any new readiness events received since the last poll. Usually, a
-/// single `Events` instance is created and reused on each call to [`poll`].
+/// single `event::Sink` is created and reused on each call to [`poll`].
 ///
 /// See [`poll`] for more documentation on polling.
 ///
@@ -148,11 +150,11 @@ impl<S, Evts, E> Source<Evts, E> for &mut S
 ///
 /// # Why a trait?
 ///
-/// A possible question that might arise is: "why is `Events` a trait and not a
-/// concrete type?" The answer is flexibility. Previously `Events` was a vector,
-/// but most users actually have there own data structure with runnable
-/// processes, green threads, `Future`s, etc. This meant that `Events` was often
-/// an intermediate storage used to receive events only to mark processes as
+/// A possible question that might arise is: "why is this a trait and not a
+/// concrete type?" The answer is flexibility. Previously it was a vector, but
+/// most users actually have there own data structure with runnable processes,
+/// green threads, `Future`s, etc. This meant that `event::Sink` was often an
+/// intermediate storage used to receive events only to mark processes as
 /// runnable and run them later.
 ///
 /// Using a trait removes the need for this intermediate storage and allows
@@ -160,18 +162,18 @@ impl<S, Evts, E> Source<Evts, E> for &mut S
 ///
 /// # Examples
 ///
-/// An implementation of `Events` for an array.
+/// An implementation of `event::Sink` for an array.
 ///
 /// ```
 /// # fn main() -> Result<(), ()> {
-/// use mio_st::{event, Events, Event, Queue, Ready, poll};
+/// use mio_st::{event, Event, Queue, Ready, poll};
 ///
 /// const EVENTS_SIZE: usize = 32;
 ///
-/// /// Our `Events` implementation.
+/// /// Our `event::Sink` implementation.
 /// struct MyEvents([Option<Event>; EVENTS_SIZE]);
 ///
-/// impl Events for MyEvents {
+/// impl event::Sink for MyEvents {
 ///     fn capacity_left(&self) -> event::Capacity {
 ///         let limit = self.0.iter().position(Option::is_some).unwrap_or(EVENTS_SIZE);
 ///         event::Capacity::Limited(limit)
@@ -198,21 +200,21 @@ impl<S, Evts, E> Source<Evts, E> for &mut S
 /// # Ok(())
 /// # }
 /// ```
-pub trait Events {
-    /// Capacity left in the events container.
+pub trait Sink {
+    /// Capacity left in the event sink.
     ///
     /// This must return the available capacity left, **not total capacity**.
     ///
     /// # Notes
     ///
-    /// If this returns [`Capacity::Growable`] and the capacity left is
-    /// incorrect it may cause missing events.
+    /// If this returns [`Capacity::Limited`] and the capacity left is incorrect
+    /// it may cause missing events.
     fn capacity_left(&self) -> Capacity;
 
-    /// Add a single event to the events container.
+    /// Add a single event.
     fn add(&mut self, event: Event);
 
-    /// Extend the events containers with multiple events.
+    /// Extend with multiple events.
     fn extend<I>(&mut self, events: I)
         where I: Iterator<Item = Event>,
     {
@@ -222,9 +224,8 @@ pub trait Events {
     }
 }
 
-impl<'a, Evts> Events for &'a mut Evts
-    where Evts: Events,
-          &'a mut Evts: Extend<Event>,
+impl<'a, ES> Sink for &'a mut ES
+    where ES: Sink,
 {
     fn capacity_left(&self) -> Capacity {
         (&**self).capacity_left()
@@ -242,7 +243,7 @@ impl<'a, Evts> Events for &'a mut Evts
 }
 
 #[cfg(feature = "std")]
-impl Events for Vec<Event> {
+impl Sink for Vec<Event> {
     fn capacity_left(&self) -> Capacity {
         Capacity::Growable
     }
@@ -258,45 +259,48 @@ impl Events for Vec<Event> {
     }
 }
 
-/// The capacity left in the events container.
+/// The capacity left in the [event sink].
 ///
-/// If the container is "infinite", i.e. it can grow, it should use `Growable`.
-/// If there is some kind of capacity limit `Limited` should be used.
+/// If the event source can grow it should use `Growable`. If there is some kind
+/// of capacity limit `Limited` should be used.
+///
+/// [event sink]: Sink
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Capacity {
     /// The capacity is limited.
     Limited(usize),
-    /// The events container is growable making the container capacity
-    /// "infinite". This is for example return in the [`Events`] implements for
+    /// The events sink capacity is growable.
+    ///
+    /// This is for example returned in the event sink implementation for
     /// vectors.
     Growable,
 }
 
 impl Capacity {
-    /// Get the maximum capacity given the events container's capacity and the
+    /// Get the maximum capacity given the event sink's capacity and the
     /// number of available events.
     ///
     /// # Examples
     ///
-    /// For event contains without a capacity limit it will always return
-    /// `right`.
+    /// For event sinks without a capacity limit it will always return `right`.
     ///
     /// ```
-    /// use mio_st::Events;
+    /// use mio_st::event::Sink;
     ///
     /// let n_events = 5;
     /// let events = Vec::new();
     /// assert_eq!(events.capacity_left().min(n_events), 5);
     /// ```
     ///
-    /// For limit capacity events containers to will take the `min`imum value.
+    /// For limited capacity event sinks it will take the minimum value.
     ///
     /// ```
-    /// use mio_st::{event, Events, Event, Ready};
+    /// use mio_st::{event, Event, Ready};
+    /// use mio_st::event::Sink;
     ///
     /// struct MyEventContainer(Option<Event>);
     ///
-    /// impl Events for MyEventContainer {
+    /// impl event::Sink for MyEventContainer {
     ///     fn capacity_left(&self) -> event::Capacity {
     ///         if self.0.is_some() {
     ///             event::Capacity::Limited(0)
@@ -371,7 +375,7 @@ impl Event {
 
 /// Identifier of an event.
 ///
-/// This is used to associate a readiness notifications with event handle.
+/// This is used to associate a readiness notification with an event handle.
 ///
 /// See [`poll`] for more documentation on polling.
 ///
