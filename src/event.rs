@@ -517,23 +517,28 @@ impl BitOrAssign for Ready {
 
 macro_rules! fmt_debug {
     ($self:expr, $f:expr, $($flag:expr),+) => {{
-        let mut first = true;
-        $(
-        if $self.0 & $flag != 0 {
-            if !first {
-                $f.write_str(" | ")?;
-            } else {
-                first = false;
+        if $self.0 == 0 {
+            $f.write_str("(empty)")
+        } else {
+            let mut first = true;
+            $(
+            if $self.0 & $flag != 0 {
+                if !first {
+                    $f.write_str(" | ")?;
+                } else {
+                    first = false;
+                }
+                $f.write_str(stringify!($flag))?;
             }
-            $f.write_str(stringify!($flag))?;
-        }
-        )+
+            )+
 
-        if first {
-            $f.write_str("(empty)")?;
-        }
+            // This is silly but it is to circumvent a `unused_assignments`
+            // warning for the last write to `first`.
+            #[allow(clippy::drop_copy)]
+            drop(first);
 
-        Ok(())
+            Ok(())
+        }
     }}
 }
 
