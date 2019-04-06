@@ -213,13 +213,10 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
     match kevent.filter {
         libc::EVFILT_READ => readiness |= Ready::READABLE,
         libc::EVFILT_WRITE => readiness |= Ready::WRITABLE,
+        // Used by the `Awakener`. On platforms that use `eventfd` it will emit
+        // a readable event so we'll fake that here as well.
+        libc::EVFILT_USER => readiness |= Ready::READABLE,
         _ => {},
-    }
-
-    // Used by the `Awakener`. On platforms that use `eventfd` it will emit a
-    // readable event so we'll fake that here as well.
-    if kevent.filter == libc::EVFILT_USER {
-        readiness |= Ready::READABLE;
     }
 
     Event::new(id, readiness)
