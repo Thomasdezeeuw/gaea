@@ -1,7 +1,7 @@
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use mio_st::{event, Events, poll};
+use mio_st::{event, poll};
 
 mod util;
 
@@ -9,18 +9,18 @@ use self::util::{TIMEOUT_MARGIN, init};
 
 struct SleepySource;
 
-impl<Evts, E> event::Source<Evts, E> for SleepySource
-    where Evts: Events,
+impl<ES, E> event::Source<ES, E> for SleepySource
+    where ES: event::Sink,
 {
     fn next_event_available(&self) -> Option<Duration> {
         None
     }
 
-    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
-        self.blocking_poll(events, Some(Duration::from_millis(0)))
+    fn poll(&mut self, event_sink: &mut ES) -> Result<(), E> {
+        self.blocking_poll(event_sink, Some(Duration::from_millis(0)))
     }
 
-    fn blocking_poll(&mut self, _events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
+    fn blocking_poll(&mut self, _event_sink: &mut ES, timeout: Option<Duration>) -> Result<(), E> {
         let timeout = timeout.expect("SleepySource needs a timeout");
         sleep(timeout);
         Ok(())
@@ -29,14 +29,14 @@ impl<Evts, E> event::Source<Evts, E> for SleepySource
 
 struct AvailableSource(Duration);
 
-impl<Evts, E> event::Source<Evts, E> for AvailableSource
-    where Evts: Events,
+impl<ES, E> event::Source<ES, E> for AvailableSource
+    where ES: event::Sink,
 {
     fn next_event_available(&self) -> Option<Duration> {
         Some(self.0)
     }
 
-    fn poll(&mut self, _events: &mut Evts) -> Result<(), E> {
+    fn poll(&mut self, _event_sink: &mut ES) -> Result<(), E> {
         Ok(())
     }
 }
@@ -67,8 +67,8 @@ fn poll_determine_timeout() {
 
 struct ResultSource<E>(Result<(), E>);
 
-impl<E2, Evts, E> event::Source<Evts, E> for ResultSource<E2>
-    where Evts: Events,
+impl<E2, ES, E> event::Source<ES, E> for ResultSource<E2>
+    where ES: event::Sink,
           E: From<E2>,
           E2: Clone,
 {
@@ -76,8 +76,8 @@ impl<E2, Evts, E> event::Source<Evts, E> for ResultSource<E2>
         None
     }
 
-    fn poll(&mut self, _events: &mut Evts) -> Result<(), E> {
-        self.0.clone().map_err(|err| err.into())
+    fn poll(&mut self, _event_sink: &mut ES) -> Result<(), E> {
+        self.0.clone().map_err(Into::into)
     }
 }
 

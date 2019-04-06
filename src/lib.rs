@@ -1,6 +1,6 @@
 //! A low-level library to build event driven applications. The core of the
 //! library is [`poll`], which polls multiple [event sources] for readiness
-//! events. Based on these readiness event the application will continue, e.g.
+//! events. Based on these readiness events the application will continue, e.g.
 //! by polling a [`Future`].
 //!
 //! A number of readiness event sources are provided:
@@ -14,20 +14,19 @@
 //!
 //! # Usage
 //!
-//! Using the library starts by creating one or more (nonblocking) [event
-//! sources]. Next an [events container] is required, this used to store the
-//! events from the event sources, but as it's a trait this can also be
-//! scheduler of some kind to directly schedule processes for which a readiness
-//! event is generated.
+//! Using the library starts by creating one or more [event sources]. Next an
+//! [event sink] is required, this used to store the events from the event
+//! sources. But as it's a trait this can also be scheduler of some kind to
+//! directly schedule processes for which a readiness event is added.
 //!
-//! Next the event source can be [polled], using the events container and a
-//! timeout. This will poll all sources and block until a readiness event is
-//! available in any of the sources or until the timeout expires. Next it's the
-//! applications turn to process each event. Do this in a loop and you've got
-//! yourself an event loop.
+//! Next the event source can be [polled], using the events sink and a timeout.
+//! This will poll all sources and block until a readiness event is available in
+//! any of the sources or until the timeout expires. Next it's the applications
+//! turn to process each event. Do this in a loop and you've got yourself an
+//! event loop.
 //!
 //! [event source]: event::Source
-//! [events container]: Events
+//! [event sink]: event::Sink
 //! [polled]: poll
 //!
 //! # Examples
@@ -49,7 +48,7 @@
 //!
 //! // Create a Operating System backed (epoll or kqueue) queue.
 //! let mut os_queue = OsQueue::new()?;
-//! // Create our events container.
+//! // Create our event sink.
 //! let mut events = Vec::new();
 //!
 //! // Setup a TCP listener, which will be our server.
@@ -186,7 +185,7 @@ pub use crate::timers::Timers;
 pub use crate::user_space::Queue;
 
 #[doc(no_inline)]
-pub use crate::event::{Event, Events, Ready};
+pub use crate::event::{Event, Ready};
 #[doc(no_inline)]
 #[cfg(feature = "std")]
 pub use crate::os::OsQueue;
@@ -205,9 +204,9 @@ pub use crate::os::OsQueue;
 /// elapsed. After the blocking poll the other event sources will be [polled]
 /// for readiness events, without blocking the thread further.
 ///
-/// Readiness events will be added to the supplied `events` container. If not
-/// all events fit into the `events` container, they will be returned in the
-/// next call to `poll`.
+/// Readiness events will be added to the supplied `event_sink`. If not all
+/// events fit into the event sink, they will be returned in the next call to
+/// `poll`.
 ///
 /// Providing a `timeout` of `None` means that `poll` will block until the
 /// `blocking_source` is awoken by an external factor, what this means is
@@ -232,27 +231,27 @@ pub use crate::os::OsQueue;
 /// let mut timers = Timers::new();
 /// let mut queue = Queue::new();
 ///
-/// // Our events container.
-/// let mut events = Vec::new();
+/// // Our event sink.
+/// let mut event_sink = Vec::new();
 ///
 /// // Add an event to one of our event sources.
 /// timers.add_deadline(event::Id(0), Instant::now());
 ///
 /// // Poll all event sources without a timeout.
-/// poll::<_, io::Error>(&mut [&mut os_queue, &mut timers, &mut queue], &mut events, None)?;
+/// poll::<_, io::Error>(&mut [&mut os_queue, &mut timers, &mut queue], &mut event_sink, None)?;
 /// // Even though we didn't provide a timeout `poll` will return without
 /// // blocking because an event is ready.
-/// assert_eq!(events[0], Event::new(event::Id(0), Ready::TIMER));
+/// assert_eq!(event_sink[0], Event::new(event::Id(0), Ready::TIMER));
 ///
 /// # Ok(())
 /// # }
 /// ```
-pub fn poll<Evts, E>(
-    event_sources: &mut [&mut dyn event::Source<Evts, E>],
-    events: &mut Evts,
+pub fn poll<ES, E>(
+    event_sources: &mut [&mut dyn event::Source<ES, E>],
+    event_sink: &mut ES,
     timeout: Option<Duration>,
 ) -> Result<(), E>
-    where Evts: Events,
+    where ES: event::Sink,
 {
     trace!("polling: timeout={:?}", timeout);
 
@@ -264,11 +263,11 @@ pub fn poll<Evts, E>(
     let mut iter = event_sources.iter_mut();
     if let Some(event_source) = iter.next() {
         // Start with polling the blocking source.
-        event_source.blocking_poll(events, timeout)?;
+        event_source.blocking_poll(event_sink, timeout)?;
 
         // Next poll all non-blocking sources.
         for event_source in iter {
-            event_source.poll(events)?;
+            event_source.poll(event_sink)?;
         }
     }
 

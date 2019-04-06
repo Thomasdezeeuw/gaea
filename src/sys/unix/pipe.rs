@@ -35,7 +35,7 @@ use crate::sys::unix::EventedFd;
 /// const CHANNEL_RECV_ID: event::Id = event::Id(0);
 /// const CHANNEL_SEND_ID: event::Id = event::Id(1);
 ///
-/// // Create a `OsQueue` and the events container.
+/// // Create a `OsQueue` and the event sink.
 /// let mut os_queue = OsQueue::new()?;
 /// let mut events = Vec::new();
 ///

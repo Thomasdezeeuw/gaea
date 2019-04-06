@@ -5,7 +5,7 @@ use std::{io, mem, ptr};
 
 use log::error;
 
-use crate::event::{self, Event, Events, Ready};
+use crate::event::{self, Event, Ready};
 use crate::os::{Interests, RegisterOption};
 use crate::sys::EVENTS_CAP;
 
@@ -73,11 +73,11 @@ impl Selector {
         }
     }
 
-    pub fn select<Evts>(&self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
-        where Evts: Events,
+    pub fn select<ES>(&self, event_sink: &mut ES, timeout: Option<Duration>) -> io::Result<()>
+        where ES: event::Sink,
     {
         let mut kevents: [libc::kevent; EVENTS_CAP] = unsafe { mem::uninitialized() };
-        let events_cap = events.capacity_left().min(EVENTS_CAP) as nchanges_t;
+        let events_cap = event_sink.capacity_left().min(EVENTS_CAP) as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
         #[allow(trivial_casts)]
@@ -96,7 +96,7 @@ impl Selector {
             n => {
                 let kevents = kevents[..n as usize].iter()
                     .map(|e| kevent_to_event(e));
-                events.extend(kevents);
+                event_sink.extend(kevents);
                 Ok(())
             },
         }

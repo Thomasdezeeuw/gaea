@@ -5,7 +5,7 @@ use std::{io, mem, ptr};
 
 use log::error;
 
-use crate::event::{self, Event, Events, Ready};
+use crate::event::{self, Event, Ready};
 use crate::os::{Interests, RegisterOption};
 use crate::sys::EVENTS_CAP;
 
@@ -24,11 +24,11 @@ impl Selector {
         }
     }
 
-    pub fn select<Evts>(&self, events: &mut Evts, timeout: Option<Duration>) -> io::Result<()>
-        where Evts: Events,
+    pub fn select<ES>(&self, event_sink: &mut ES, timeout: Option<Duration>) -> io::Result<()>
+        where ES: event::Sink,
     {
         let mut ep_events: [libc::epoll_event; EVENTS_CAP] = unsafe { mem::uninitialized() };
-        let events_cap = events.capacity_left().min(EVENTS_CAP) as libc::c_int;
+        let events_cap = event_sink.capacity_left().min(EVENTS_CAP) as libc::c_int;
         if events_cap == 0 {
             // epoll can't deal with 0 capacity event arrays.
             return Ok(())
@@ -45,7 +45,7 @@ impl Selector {
             n => {
                 let ep_events = ep_events[..n as usize].iter()
                     .map(|e| ep_event_to_event(e));
-                events.extend(ep_events);
+                event_sink.extend(ep_events);
                 Ok(())
             },
         }

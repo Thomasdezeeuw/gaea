@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use log::trace;
 
-use crate::event::{self, Event, Events};
+use crate::event::{self, Event};
 
 /// User space readiness queue.
 ///
@@ -55,8 +55,8 @@ impl Queue {
     }
 }
 
-impl<Evts, E> event::Source<Evts, E> for Queue
-    where Evts: Events,
+impl<ES, E> event::Source<ES, E> for Queue
+    where ES: event::Sink,
 {
     fn next_event_available(&self) -> Option<Duration> {
         if !self.events.is_empty() {
@@ -66,10 +66,10 @@ impl<Evts, E> event::Source<Evts, E> for Queue
         }
     }
 
-    fn poll(&mut self, events: &mut Evts) -> Result<(), E> {
+    fn poll(&mut self, event_sink: &mut ES) -> Result<(), E> {
         trace!("polling user space events");
-        let drain = self.events.drain(..events.capacity_left().min(self.events.len()));
-        events.extend(drain);
+        let drain = self.events.drain(..event_sink.capacity_left().min(self.events.len()));
+        event_sink.extend(drain);
         Ok(())
     }
 }
