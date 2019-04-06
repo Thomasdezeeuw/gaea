@@ -133,3 +133,9 @@ impl<Evts, E> event::Source<Evts, E> for Timers
         Ok(())
     }
 }
+
+impl Default for Timers {
+    fn default() -> Timers {
+        Timers::new()
+    }
+}
