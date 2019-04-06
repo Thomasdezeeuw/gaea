@@ -73,3 +73,9 @@ impl<Evts, E> event::Source<Evts, E> for Queue
         Ok(())
     }
 }
+
+impl Default for Queue {
+    fn default() -> Queue {
+        Queue::new()
+    }
+}
