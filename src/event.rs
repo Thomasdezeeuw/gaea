@@ -543,6 +543,7 @@ macro_rules! fmt_debug {
 }
 
 impl fmt::Debug for Ready {
+    #[allow(clippy::cognitive_complexity)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt_debug!(self, f, READABLE, WRITABLE, ERROR, TIMER, HUP)
     }
