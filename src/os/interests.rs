@@ -18,7 +18,7 @@ use std::ops::BitOr;
 #[repr(transparent)]
 pub struct Interests(NonZeroU8);
 
-const READABLE: u8 = 1 << 0;
+const READABLE: u8 = 1;
 const WRITABLE: u8 = 1 << 1;
 
 impl Interests {

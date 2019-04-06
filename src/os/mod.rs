@@ -428,6 +428,6 @@ impl<Evts, E> event::Source<Evts, E> for OsQueue
     fn blocking_poll(&mut self, events: &mut Evts, timeout: Option<Duration>) -> Result<(), E> {
         trace!("polling OS selector: timeout={:?}", timeout);
         self.selector.select(events, timeout)
-            .map_err(|err| err.into())
+            .map_err(Into::into)
     }
 }

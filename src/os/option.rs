@@ -91,7 +91,7 @@ use std::ops::BitOr;
 pub struct RegisterOption(u8);
 
 // Level trigger is 0.
-const EDGE: u8    = 1 << 0;
+const EDGE: u8    = 1;
 const ONESHOT: u8 = 1 << 1;
 
 impl RegisterOption {
