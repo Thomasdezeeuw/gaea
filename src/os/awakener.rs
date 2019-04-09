@@ -1,7 +1,7 @@
 use std::io;
 
-use crate::{event, sys};
 use crate::os::OsQueue;
+use crate::{event, sys};
 
 /// Awakener allows cross-thread waking of [`OsQueue`].
 ///

@@ -2,7 +2,7 @@ use std::io;
 use std::os::unix::io::RawFd;
 
 use crate::event;
-use crate::os::{Evented, Interests, RegisterOption, OsQueue};
+use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 
 /// Adapter for a `RawFd` providing an [`Evented`] implementation.
 ///

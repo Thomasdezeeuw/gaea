@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use log::error;
 
-use mio_st::event::{self, Capacity, Source, Ready};
+use mio_st::event::{self, Capacity, Ready, Source};
 use mio_st::{Event, Queue};
 
 mod util;

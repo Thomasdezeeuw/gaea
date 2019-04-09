@@ -193,7 +193,7 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
     let id = event::Id(kevent.udata as usize);
     let mut readiness = Ready::EMPTY;
 
-    if contains_flag(kevent.flags, libc::EV_ERROR)  {
+    if contains_flag(kevent.flags, libc::EV_ERROR) {
         // The actual error is stored in `kevent.data`, but we can't pass it
         // to the user from here. So the user needs to try and retrieve the
         // error themselves.

@@ -7,12 +7,12 @@ use std::time::Duration;
 
 use mio_st::event::{Event, Ready};
 use mio_st::net::UdpSocket;
-use mio_st::os::{RegisterOption, Interests};
+use mio_st::os::{Interests, RegisterOption};
 use mio_st::{event, poll};
 
 mod util;
 
-use self::util::{assert_error, assert_would_block, any_local_address, any_local_ipv6_address, expect_events, init, init_with_os_queue};
+use self::util::{any_local_address, any_local_ipv6_address, assert_error, assert_would_block, expect_events, init, init_with_os_queue};
 
 const DATA1: &'static [u8; 12] = b"Hello world!";
 const DATA2: &'static [u8; 11] = b"Hello mars!";

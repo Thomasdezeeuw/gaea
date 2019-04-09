@@ -1,5 +1,5 @@
 use std::io::{self, Read, Write};
-use std::net::{self, SocketAddr,Shutdown};
+use std::net::{self, Shutdown, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Barrier};

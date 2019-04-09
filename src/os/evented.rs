@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::event;
-use crate::os::{Interests, RegisterOption, OsQueue};
+use crate::os::{Interests, OsQueue, RegisterOption};
 
 /// A handle that may be registered with [`OsQueue`].
 ///

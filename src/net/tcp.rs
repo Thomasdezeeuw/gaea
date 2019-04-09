@@ -3,8 +3,8 @@ use std::net::{Shutdown, SocketAddr};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
+use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 use crate::{event, sys};
-use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 
 /// A non-blocking TCP stream between a local socket and a remote socket.
 ///

@@ -2,11 +2,11 @@ use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 use std::sync::{Arc, Barrier};
 use std::thread::{self, sleep};
 use std::time::Duration;
-use std::{net, io};
+use std::{io, net};
 
 use mio_st::event::{Event, Ready};
 use mio_st::net::TcpListener;
-use mio_st::os::{Interests, RegisterOption, OsQueue};
+use mio_st::os::{Interests, OsQueue, RegisterOption};
 use mio_st::{event, poll};
 
 mod util;

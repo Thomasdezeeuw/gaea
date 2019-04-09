@@ -4,12 +4,12 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use mio_st::event::{self, Capacity, Event, Ready};
-use mio_st::os::{Awakener, Evented, Interests, RegisterOption, OsQueue};
+use mio_st::os::{Awakener, Evented, Interests, OsQueue, RegisterOption};
 use mio_st::unix::new_pipe;
 
 mod util;
 
-use self::util::{TIMEOUT_MARGIN, EventsCapacity, assert_error, expect_events, init, init_with_os_queue};
+use self::util::{assert_error, expect_events, init, init_with_os_queue, EventsCapacity, TIMEOUT_MARGIN};
 
 struct TestEvented {
     registrations: Vec<(event::Id, Interests, RegisterOption)>,
