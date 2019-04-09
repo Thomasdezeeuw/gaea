@@ -7,6 +7,7 @@
 //! - `TcpListener`: TCP listener, used in the net module.
 //! - `UdpSocket`: UDP socket, used in the net module.
 //! - `Awakener`: cross-thread awakener, used by `Awakener`.
+//! - `Signals`: process signal handler, used in `Signals`.
 
 #[cfg(unix)]
 mod unix;

@@ -99,10 +99,7 @@
 //!
 //! On all supported platforms socket operations are handled by using the system
 //! queue. Platform specific extensions (e.g. [`EventedFd`]) allow accessing
-//! other features provided by individual system selectors. For example Linux's
-//! [`signalfd`] feature can be used by registering the file descriptor with
-//! `OsQueue` via [`EventedFd`].
-//!
+//! other features provided by individual system selectors.
 //!
 //! [`Eventedfd`]: crate::sys::unix::EventedFd
 //! [`signalfd`]: http://man7.org/linux/man-pages/man2/signalfd.2.html
@@ -119,10 +116,13 @@ mod evented;
 mod interests;
 mod option;
 
+pub mod signals;
+
 pub use self::awakener::Awakener;
 pub use self::evented::Evented;
 pub use self::interests::Interests;
 pub use self::option::RegisterOption;
+pub use self::signals::{Signal, SignalSet, Signals};
 
 /// Readiness event queue backed by the OS.
 ///
