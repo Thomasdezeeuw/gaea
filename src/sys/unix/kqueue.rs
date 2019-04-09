@@ -1,12 +1,12 @@
 use std::cmp::min;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, RawFd};
 use std::time::Duration;
 use std::{io, mem, ptr};
 
 use log::error;
 
 use crate::event::{self, Event, Ready};
-use crate::os::{Interests, RegisterOption};
+use crate::os::{Interests, RegisterOption, SignalSet};
 use crate::sys::EVENTS_CAP;
 
 // Of course each OS that implements kqueue has chosen to go for different types
@@ -158,7 +158,8 @@ impl Selector {
     // Used by `Awakener`.
     pub fn setup_awakener(&self, id: event::Id) -> io::Result<()> {
         // First attempt to accept user space notifications.
-        let kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
+        let kevent = new_kevent(0, libc::EVFILT_USER,
+            libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
         kevent_register(self.kq, &mut [kevent], &[])
     }
 
@@ -177,6 +178,23 @@ impl Selector {
         let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
         kevent.fflags = libc::NOTE_TRIGGER;
         kevent_register(self.kq, &mut [kevent], &[])
+    }
+
+    // Used by `Signaler`.
+    pub fn register_signals(&self, id: event::Id, signals: SignalSet) -> io::Result<()> {
+        // An event for each signal, keep in sync with the number of signals in
+        // `os::SignalSet`.
+        let mut changes: [libc::kevent; 4] = unsafe { mem::uninitialized() };
+        let mut n_changes = 0;
+
+        for signal in signals {
+            let kevent = new_kevent(signal.into_raw() as libc::uintptr_t,
+                libc::EVFILT_SIGNAL, libc::EV_RECEIPT | libc::EV_ADD, id);
+            unsafe { ptr::write(&mut changes[n_changes], kevent) };
+            n_changes += 1;
+        }
+
+        kevent_register(self.kq, &mut changes[0..n_changes], &[])
     }
 }
 
@@ -296,6 +314,12 @@ fn check_errors(events: &[libc::kevent], ignored_errors: &[kevent_data_t]) -> io
 /// Whether or not the provided `flags` contains the provided `flag`.
 fn contains_flag(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
     (flags & flag) != 0
+}
+
+impl AsRawFd for Selector {
+    fn as_raw_fd(&self) -> RawFd {
+        self.kq
+    }
 }
 
 impl Drop for Selector {
