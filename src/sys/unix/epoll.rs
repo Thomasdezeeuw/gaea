@@ -40,7 +40,10 @@ impl Selector {
             libc::epoll_wait(self.epfd, ep_events.as_mut_ptr(), events_cap, timeout_ms)
         };
         match n_events {
-            -1 => Err(io::Error::last_os_error()),
+            -1 => match io::Error::last_os_error() {
+                ref err if err.kind() == io::ErrorKind::Interrupted => Ok(()),
+                err => Err(err)
+            },
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
                 let ep_events = ep_events[..n as usize].iter()
