@@ -1,10 +1,10 @@
-use std::time::{Duration, Instant};
 use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 use log::error;
 
+use mio_st::event::{self, Capacity, Event, Ready, Source};
 use mio_st::Timers;
-use mio_st::event::{self, Capacity, Event, Source, Ready};
 
 mod util;
 

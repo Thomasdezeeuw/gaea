@@ -5,7 +5,7 @@ use mio_st::{event, poll};
 
 mod util;
 
-use self::util::{TIMEOUT_MARGIN, init};
+use self::util::{init, TIMEOUT_MARGIN};
 
 struct SleepySource;
 

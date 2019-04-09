@@ -3,8 +3,8 @@ use std::net::SocketAddr;
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
+use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 use crate::{event, sys};
-use crate::os::{Evented, Interests, RegisterOption, OsQueue};
 
 /// A User Datagram Protocol socket.
 ///

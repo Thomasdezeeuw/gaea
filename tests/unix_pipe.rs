@@ -2,10 +2,10 @@ use std::io::{Read, Write};
 use std::thread::sleep;
 use std::time::Duration;
 
-use mio_st::event::{Event, Ready};
-use mio_st::os::{Interests, RegisterOption, OsQueue};
-use mio_st::unix::{new_pipe, Sender, Receiver};
 use mio_st::event;
+use mio_st::event::{Event, Ready};
+use mio_st::os::{Interests, OsQueue, RegisterOption};
+use mio_st::unix::{new_pipe, Receiver, Sender};
 
 mod util;
 

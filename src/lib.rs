@@ -174,9 +174,9 @@ pub mod unix {
     //! Unix only extensions.
 
     #[doc(inline)]
-    pub use crate::sys::EventedFd;
-    #[doc(inline)]
     pub use crate::sys::pipe::{new_pipe, Receiver, Sender};
+    #[doc(inline)]
+    pub use crate::sys::EventedFd;
 }
 
 #[cfg(feature = "std")]

@@ -3,7 +3,7 @@ use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::event;
-use crate::os::{Evented, Interests, RegisterOption, OsQueue};
+use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 use crate::sys::unix::EventedFd;
 
 #[derive(Debug)]

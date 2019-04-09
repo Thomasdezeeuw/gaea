@@ -4,7 +4,7 @@ use std::mem;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
 use crate::event;
-use crate::os::{Evented, Interests, RegisterOption, OsQueue};
+use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 use crate::sys::unix::EventedFd;
 
 /// Create a new non-blocking unix pipe.
