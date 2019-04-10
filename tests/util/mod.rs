@@ -12,7 +12,7 @@ use log::warn;
 
 use mio_st::event::Capacity;
 use mio_st::os::OsQueue;
-use mio_st::{Event, poll, event};
+use mio_st::{event, poll, Event};
 
 /// Allowed margin for deadlines to be overrun.
 pub const TIMEOUT_MARGIN: Duration = Duration::from_millis(10);

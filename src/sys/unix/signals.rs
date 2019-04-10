@@ -1,4 +1,4 @@
-use std::{mem, io, ptr};
+use std::{io, mem, ptr};
 
 use crate::os::signals::SignalSet;
 
@@ -9,11 +9,11 @@ mod signalfd {
     use std::os::unix::io::FromRawFd;
     use std::{mem, slice};
 
+    use super::{block_signals, create_sigset};
     use crate::event;
     use crate::os::signals::{Signal, SignalSet};
     use crate::os::{Interests, RegisterOption};
     use crate::sys::Selector;
-    use super::{block_signals, create_sigset};
 
     /// Signaler backed by `signalfd`.
     #[derive(Debug)]
@@ -66,11 +66,11 @@ mod kqueue {
     use std::os::unix::io::AsRawFd;
     use std::{io, mem, ptr};
 
+    use super::{block_signals, create_sigset};
     use crate::event;
     use crate::os::signals::{Signal, SignalSet};
     use crate::os::{Interests, RegisterOption};
     use crate::sys::Selector;
-    use super::{block_signals, create_sigset};
 
     /// Signaler backed by kqueue (`EVFILT_SIGNAL`).
     #[derive(Debug)]
