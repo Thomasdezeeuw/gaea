@@ -1,14 +1,19 @@
+use std::{mem, io, ptr};
+
+use crate::os::signals::SignalSet;
+
 #[cfg(target_os = "linux")]
 mod signalfd {
     use std::fs::File;
     use std::io::{self, Read};
     use std::os::unix::io::FromRawFd;
-    use std::{mem, ptr, slice};
+    use std::{mem, slice};
 
     use crate::event;
     use crate::os::signals::{Signal, SignalSet};
     use crate::os::{Interests, RegisterOption};
     use crate::sys::Selector;
+    use super::{block_signals, create_sigset};
 
     /// Signaler backed by `signalfd`.
     #[derive(Debug)]
@@ -19,32 +24,19 @@ mod signalfd {
     impl Signals {
         pub fn new(selector: &Selector, signals: SignalSet, id: event::Id) -> io::Result<Signals> {
             // Create a mask for all signal we want to handle.
-            let mut mask: libc::sigset_t = unsafe { mem::uninitialized() };
-            if unsafe { libc::sigemptyset(&mut mask) } == -1 {
-                return Err(io::Error::last_os_error());
-            }
-            for signal in signals {
-                if unsafe { libc::sigaddset(&mut mask, signal.into_raw()) } == -1 {
-                    return Err(io::Error::last_os_error());
-                }
-            }
+            let set = create_sigset(signals)?;
 
             // Create a new signal file descriptor.
-            let fd = unsafe { libc::signalfd(-1, &mask, libc::SFD_CLOEXEC | libc::SFD_NONBLOCK) };
+            let fd = unsafe { libc::signalfd(-1, &set, libc::SFD_CLOEXEC | libc::SFD_NONBLOCK) };
             if fd == -1 {
                 return Err(io::Error::last_os_error());
             }
 
-            selector.register(fd, id, Interests::READABLE, RegisterOption::LEVEL)?;
-
-            // Block any signal and let them be handled by our signalfd.
-            if unsafe { libc::sigprocmask(libc::SIG_BLOCK, &mask, ptr::null_mut()) } == -1 {
-                return Err(io::Error::last_os_error());
-            } else {
-                Ok(Signals {
-                    fd: unsafe { File::from_raw_fd(fd) },
-                })
-            }
+            // Register the signalfd, only then block the signals and return our
+            // struct.
+            selector.register(fd, id, Interests::READABLE, RegisterOption::LEVEL)
+                .and_then(|()| block_signals(&set))
+                .map(|()| Signals { fd: unsafe { File::from_raw_fd(fd) } })
         }
 
         pub fn receive(&mut self) -> io::Result<Option<Signal>> {
@@ -78,6 +70,7 @@ mod kqueue {
     use crate::os::signals::{Signal, SignalSet};
     use crate::os::{Interests, RegisterOption};
     use crate::sys::Selector;
+    use super::{block_signals, create_sigset};
 
     /// Signaler backed by kqueue (`EVFILT_SIGNAL`).
     #[derive(Debug)]
@@ -87,11 +80,12 @@ mod kqueue {
 
     impl Signals {
         pub fn new(selector: &Selector, signals: SignalSet, id: event::Id) -> io::Result<Signals> {
+            let set = create_sigset(signals)?;
             let kq = Selector::new()?;
             kq.register_signals(id, signals)
                 .and_then(|()| selector.register(kq.as_raw_fd(), id,
                     Interests::READABLE, RegisterOption::LEVEL))
-                .and_then(|()| ignore_signals(signals))
+                .and_then(|()| block_signals(&set))
                 .map(|()| Signals { kq })
         }
 
@@ -115,29 +109,31 @@ mod kqueue {
             }
         }
     }
-
-    /// Overwrite the signal handler to ignore `signal`.
-    fn ignore_signals(signals: SignalSet) -> io::Result<()> {
-        let mut mask: libc::sigset_t = unsafe { mem::uninitialized() };
-        if unsafe { libc::sigemptyset(&mut mask) } == -1 {
-            return Err(io::Error::last_os_error());
-        }
-        let action = libc::sigaction {
-            sa_sigaction: libc::SIG_IGN,
-            sa_mask: mask,
-            sa_flags: libc::SA_SIGINFO, // Use `sa_sigaction` field.
-            #[cfg(target_os = "linux")]
-            sa_restorer: None,
-        };
-        for signal in signals {
-            if unsafe { libc::sigaction(signal.into_raw(), &action, ptr::null_mut()) } == -1 {
-                return Err(io::Error::last_os_error());
-            }
-        }
-        Ok(())
-    }
 }
 
 #[cfg(any(target_os = "freebsd", target_os = "macos",
           target_os = "netbsd", target_os = "openbsd"))]
 pub use self::kqueue::Signals;
+
+/// Create a `libc::sigset_t` from `SignalSet`.
+fn create_sigset(signals: SignalSet) -> io::Result<libc::sigset_t> {
+    let mut set: libc::sigset_t = unsafe { mem::uninitialized() };
+    if unsafe { libc::sigemptyset(&mut set) } == -1 {
+        return Err(io::Error::last_os_error());
+    }
+    for signal in signals {
+        if unsafe { libc::sigaddset(&mut set, signal.into_raw()) } == -1 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(set)
+}
+
+/// Block all signals in `set`.
+fn block_signals(set: &libc::sigset_t) -> io::Result<()> {
+    if unsafe { libc::sigprocmask(libc::SIG_BLOCK, set, ptr::null_mut()) } == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
