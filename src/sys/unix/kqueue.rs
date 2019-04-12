@@ -184,7 +184,7 @@ impl Selector {
     pub fn register_signals(&self, id: event::Id, signals: SignalSet) -> io::Result<()> {
         // An event for each signal, keep in sync with the number of signals in
         // `os::SignalSet`.
-        let mut changes: [libc::kevent; 4] = unsafe { mem::uninitialized() };
+        let mut changes: [libc::kevent; 3] = unsafe { mem::uninitialized() };
         let mut n_changes = 0;
 
         for signal in signals {

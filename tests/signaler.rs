@@ -15,13 +15,11 @@ fn signals_examples() {
     let pid = child.id() as libc::pid_t;
 
     send_signal(pid, libc::SIGINT);
-    send_signal(pid, libc::SIGSTOP);
-    send_signal(pid, libc::SIGCONT);
     send_signal(pid, libc::SIGQUIT);
     send_signal(pid, libc::SIGTERM);
 
     let output = read_output(child);
-    assert_eq!(output, "Got interrupt signal\nGot continue signal\nGot quit signal\nGot terminate signal\n");
+    assert_eq!(output, "Got interrupt signal\nGot quit signal\nGot terminate signal\n");
 }
 
 /// Wrapper around a `command::Child` that kills the process when dropped, even
