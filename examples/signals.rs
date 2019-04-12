@@ -32,7 +32,6 @@ fn main() -> io::Result<()> {
                             return Ok(());
                         },
                         Some(Signal::Quit) => println!("Got quit signal"),
-                        Some(Signal::Continue) => println!("Got continue signal"),
                         _ => println!("Got unknown signal event: {:?}", event),
                     }
                 },

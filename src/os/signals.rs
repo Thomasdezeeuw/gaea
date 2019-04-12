@@ -55,7 +55,6 @@ use crate::sys;
 ///                         return Ok(());
 ///                     },
 ///                     Some(Signal::Quit) => println!("Got quit signal"),
-///                     Some(Signal::Continue) => println!("Got continue signal"),
 ///                     _ => println!("Got unknown signal event: {:?}", event),
 ///                 },
 /// #               event::Id(20) => return Ok(()),
@@ -96,7 +95,6 @@ pub struct SignalSet(u8);
 const INTERRUPT: u8 = 1;
 const QUIT: u8 = 1 << 1;
 const TERMINATE: u8 = 1 << 2;
-const CONTINUE: u8 = 1 << 3;
 
 impl SignalSet {
     /// Create an empty signal set.
@@ -106,7 +104,7 @@ impl SignalSet {
 
     /// Create a new set with all signals.
     pub const fn all() -> SignalSet {
-        SignalSet(INTERRUPT | QUIT | TERMINATE | CONTINUE)
+        SignalSet(INTERRUPT | QUIT | TERMINATE)
     }
 
     /// Number of signals in the set.
@@ -133,7 +131,6 @@ impl From<Signal> for SignalSet {
             Signal::Interrupt => INTERRUPT,
             Signal::Quit => QUIT,
             Signal::Terminate => TERMINATE,
-            Signal::Continue => CONTINUE,
         })
     }
 }
@@ -175,14 +172,13 @@ impl Iterator for SignalSetIter {
     type Item = Signal;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.1 >= 4 {
+        if self.1 >= 3 {
             None
         } else {
             let signal = match self.1 {
                 0 => Signal::Interrupt,
                 1 => Signal::Quit,
                 2 => Signal::Terminate,
-                3 => Signal::Continue,
                 _ => unreachable!(),
             };
             self.1 += 1;
@@ -239,14 +235,6 @@ pub enum Signal {
     ///
     /// Corresponds to POSIX signal `SIGQUIT`.
     Quit,
-    /// Continue executing, if previously stopped.
-    ///
-    /// This signal is received when the process was previously stopped (e.g.
-    /// via the `SIGSTOP` signal, send by terminals when Ctrl+Z is pressed) and
-    /// now is restarted (continued).
-    ///
-    /// Corresponds to POSIX signal `SIGCONT`.
-    Continue,
 }
 
 impl Signal {
@@ -256,7 +244,6 @@ impl Signal {
             Signal::Interrupt => libc::SIGINT,
             Signal::Quit => libc::SIGQUIT,
             Signal::Terminate => libc::SIGTERM,
-            Signal::Continue => libc::SIGCONT,
         }
     }
 
@@ -266,7 +253,6 @@ impl Signal {
             libc::SIGINT => Some(Signal::Interrupt),
             libc::SIGQUIT => Some(Signal::Quit),
             libc::SIGTERM => Some(Signal::Terminate),
-            libc::SIGCONT => Some(Signal::Continue),
             _ => None,
         }
     }
