@@ -109,7 +109,7 @@ impl SignalSet {
 
     /// Number of signals in the set.
     pub fn size(self) -> usize {
-        self.0.count_zeros() as usize
+        self.0.count_ones() as usize
     }
 
     /// Whether or not all signals in `other` are contained within `self`.
