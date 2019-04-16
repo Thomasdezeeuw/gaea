@@ -25,6 +25,15 @@ use crate::{event, sys};
 /// [`wake`]: Awakener::wake
 /// [`try_clone`]: Awakener::try_clone
 ///
+/// # Implementation notes
+///
+/// On platforms that support kqueue this will use the `EVFILT_USER` event
+/// filter, see [implementation notes of the `os` module] to see what platform
+/// supports kqueue. On Linux it uses [eventfd].
+///
+/// [implementation notes of the `os` module]: ../index.html#implementation-notes
+/// [eventfd]: http://man7.org/linux/man-pages/man2/eventfd.2.html
+///
 /// # Examples
 ///
 /// Wake an [`OsQueue`] from another thread.
