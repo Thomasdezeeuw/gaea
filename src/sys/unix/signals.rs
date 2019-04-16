@@ -35,7 +35,7 @@ mod signalfd {
             // Register the signalfd, only then block the signals and return our
             // struct.
             selector.register(fd, id, Interests::READABLE, RegisterOption::LEVEL)
-                .and_then(|()| block_signals(&set))
+                .and_then(|()| block_signals(set))
                 .map(|()| Signals { fd: unsafe { File::from_raw_fd(fd) } })
         }
 
@@ -92,7 +92,7 @@ mod kqueue {
                 .and_then(|()| selector.register(kq.as_raw_fd(), id,
                     Interests::READABLE, RegisterOption::LEVEL))
                 // Once all setup is done block the signals.
-                .and_then(|()| block_signals(&set))
+                .and_then(|()| block_signals(set))
                 .map(|()| Signals { kq })
         }
 
@@ -137,8 +137,8 @@ fn create_sigset(signals: SignalSet) -> io::Result<libc::sigset_t> {
 }
 
 /// Block all signals in `set`.
-fn block_signals(set: &libc::sigset_t) -> io::Result<()> {
-    if unsafe { libc::sigprocmask(libc::SIG_BLOCK, set, ptr::null_mut()) } == -1 {
+fn block_signals(set: libc::sigset_t) -> io::Result<()> {
+    if unsafe { libc::sigprocmask(libc::SIG_BLOCK, &set, ptr::null_mut()) } == -1 {
         Err(io::Error::last_os_error())
     } else {
         Ok(())
