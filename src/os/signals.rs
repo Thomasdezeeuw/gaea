@@ -8,18 +8,25 @@ use crate::event;
 use crate::os::OsQueue;
 use crate::sys;
 
-/// Register notifications of process signals.
+/// Notifications of process signals.
 ///
-/// On platforms that support kqueue this will use the `EVFILT_SIGNAL` event
-/// filter, on Linux it uses signalfd.
 ///
 /// # Notes
 ///
-/// This will **overwrite** the current signal handler. This means that the
-/// program is not interrupt, or in any way notified of signal, the assiocated
-/// [`OsQueue`] is [polled] is called.
+/// This will block all signals in the signal set given when creating `Signals`,
+/// using `sigprocmask`. This means that the program is not interrupt, or in any
+/// way notified of signal until the assiocated [`OsQueue`] is [polled].
 ///
 /// [polled]: crate::poll
+///
+/// # Implementation notes
+///
+/// On platforms that support kqueue this will use the `EVFILT_SIGNAL` event
+/// filter, see [implementation notes of the `os` module] to see what platform
+/// supports kqueue. On Linux it uses [signalfd].
+///
+/// [implementation notes of the `os` module]: ../index.html#implementation-notes
+/// [signalfd]: http://man7.org/linux/man-pages/man2/signalfd.2.html
 ///
 /// # Examples
 ///
@@ -35,7 +42,7 @@ use crate::sys;
 ///     let mut os_queue = OsQueue::new()?;
 ///     let mut events = Vec::new();
 ///
-///     // Create a signaler that will catch signals for us.
+///     // Create a `Signals` instance that will catch signals for us.
 ///     let mut signals = Signals::new(&mut os_queue, SignalSet::all(), SIGNAL_ID)?;
 ///
 ///     # // Don't want to let the example run for ever.
@@ -50,10 +57,7 @@ use crate::sys;
 ///                 // Receive the signal send.
 ///                 SIGNAL_ID => match signals.receive()? {
 ///                     Some(Signal::Interrupt) => println!("Got interrupt signal"),
-///                     Some(Signal::Terminate) => {
-///                         println!("Got terminate signal");
-///                         return Ok(());
-///                     },
+///                     Some(Signal::Terminate) => println!("Got terminate signal"),
 ///                     Some(Signal::Quit) => println!("Got quit signal"),
 ///                     _ => println!("Got unknown signal event: {:?}", event),
 ///                 },
@@ -73,7 +77,7 @@ impl Signals {
     /// Create a new signal notifier.
     ///
     /// This will cause the associated `OsQueue` instance to receive events when
-    /// the process receives the one of the signals in the signal set.
+    /// the process receives one of the signals in the signal set.
     pub fn new(os_queue: &mut OsQueue, signals: SignalSet, id: event::Id) -> io::Result<Signals> {
         sys::Signals::new(os_queue.selector(), signals, id)
             .map(|inner| Signals { inner })
