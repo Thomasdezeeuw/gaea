@@ -26,9 +26,11 @@ use crate::{event, sys};
 ///
 /// use mio_st::{event, poll};
 /// use mio_st::net::TcpStream;
+/// # use mio_st::net::TcpListener;
 /// use mio_st::os::{OsQueue, RegisterOption};
 ///
-/// let address = "127.0.0.1:8000".parse()?;
+/// let address = "127.0.0.1:8999".parse()?;
+/// # let listener = TcpListener::bind(address)?;
 /// let mut stream = TcpStream::connect(address)?;
 ///
 /// let mut os_queue = OsQueue::new()?;
@@ -41,7 +43,8 @@ use crate::{event, sys};
 ///
 /// // If event ID 0 was returned by `poll` then the stream will be ready to
 /// // read or write.
-/// #     Ok(())
+/// # drop(listener);
+/// # Ok(())
 /// # }
 /// ```
 #[derive(Debug)]
