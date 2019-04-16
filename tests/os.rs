@@ -183,11 +183,15 @@ fn awakener() {
         .expect("unable to create awakener");
 
     // Waking on the same thread.
+    awakener.wake().expect("unable to wake");
+    expect_events(&mut os_queue, &mut events, vec![
+        Event::new(event_id, Ready::READABLE),
+    ]);
+
+    // Multiple wakes between polls.
     for _ in 0..3 {
         awakener.wake().expect("unable to wake");
     }
-
-    // Depending on the platform we can get 3 or 1 event.
     expect_events(&mut os_queue, &mut events, vec![
         Event::new(event_id, Ready::READABLE),
     ]);
