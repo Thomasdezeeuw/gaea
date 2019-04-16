@@ -5,7 +5,12 @@ use std::process::{Child, Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-use mio_st::os::{Signal, SignalSet};
+use mio_st::event;
+use mio_st::os::{Signal, Signals, SignalSet};
+
+mod util;
+
+use self::util::init_with_os_queue;
 
 #[test]
 fn signal_bit_or() {
@@ -70,6 +75,16 @@ fn signal_set() {
             assert!(signals.contains(&expected));
         }
     }
+}
+
+#[test]
+fn receive_no_signal() {
+    let (mut os_queue, _) = init_with_os_queue();
+
+    let id = event::Id(0);
+    let mut signals = Signals::new(&mut os_queue, SignalSet::all(), id)
+        .expect("unable to create Signals");
+    assert_eq!(signals.receive().expect("unable to receive signal"), None);
 }
 
 #[test]
