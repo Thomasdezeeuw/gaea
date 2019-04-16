@@ -354,6 +354,11 @@ fn tcp_listener_edge_poll_option_no_drain() {
                     assert!(listener.accept().is_ok());
                     seen_event = true;
                 },
+                // On FreeBSD a second event is generated, which is not really
+                // worse so we'll accept it here.
+                #[cfg(target_os = "freebsd")]
+                ID1 => {},
+                #[cfg(not(target_os = "freebsd"))]
                 ID1 => panic!("unexpected event for edge TCP listener"),
                 _ => unreachable!(),
             }
