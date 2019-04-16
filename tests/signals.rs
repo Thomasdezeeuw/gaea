@@ -5,6 +5,73 @@ use std::process::{Child, Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
+use mio_st::os::{Signal, SignalSet};
+
+#[test]
+fn signal_bit_or() {
+    // `Signal` and `Signal` (and `Signal`).
+    assert_eq!(Signal::Terminate | Signal::Quit | Signal::Interrupt, SignalSet::all());
+    // `Signal` and `SignalSet`.
+    assert_eq!(Signal::Terminate | SignalSet::empty(), Signal::Terminate.into());
+
+    // `SignalSet` and `Signal`.
+    assert_eq!(SignalSet::empty() | Signal::Quit, Signal::Quit.into());
+    // `SignalSet` and `SignalSet`.
+    assert_eq!(SignalSet::empty() | Signal::Interrupt, Signal::Interrupt.into());
+
+    // Overwriting.
+    assert_eq!(Signal::Terminate | Signal::Terminate, Signal::Terminate.into());
+    assert_eq!(Signal::Terminate | SignalSet::all(), SignalSet::all());
+    assert_eq!(SignalSet::all() | Signal::Quit, SignalSet::all());
+    assert_eq!(SignalSet::all() | SignalSet::all(), SignalSet::all());
+    assert_eq!(SignalSet::all() | SignalSet::empty(), SignalSet::all());
+}
+
+#[test]
+fn signal_set() {
+    let tests = vec![
+        (SignalSet::empty(), 0, vec![]),
+        (SignalSet::all(), 3, vec![Signal::Interrupt, Signal::Terminate, Signal::Quit]),
+        (Signal::Interrupt.into(), 1, vec![Signal::Interrupt]),
+        (Signal::Terminate.into(), 1, vec![Signal::Terminate]),
+        (Signal::Quit.into(), 1, vec![Signal::Quit]),
+        (Signal::Interrupt | Signal::Terminate, 2, vec![Signal::Interrupt, Signal::Terminate]),
+        (Signal::Interrupt | Signal::Quit, 2, vec![Signal::Interrupt, Signal::Quit]),
+        (Signal::Terminate | Signal::Quit, 2, vec![Signal::Terminate, Signal::Quit]),
+        (Signal::Interrupt | Signal::Terminate | Signal::Quit, 3,
+            vec![Signal::Interrupt, Signal::Terminate, Signal::Quit]),
+    ];
+
+    for (set, size, expected) in tests {
+        let set: SignalSet = set;
+        assert_eq!(set.size(), size);
+
+        // Test `contains`.
+        let mut contains_iter = (&expected).into_iter().cloned();
+        while let Some(signal) = contains_iter.next() {
+            assert!(set.contains(signal));
+            assert!(set.contains::<SignalSet>(signal.into()));
+
+            // Set of the remaining signals.
+            let mut contains_set: SignalSet = signal.into();
+            for signal in contains_iter.clone() {
+                contains_set = contains_set | signal;
+            }
+            assert!(set.contains(contains_set));
+        }
+
+        // Test `SignalSetIter`.
+        assert_eq!(set.into_iter().len(), size);
+        assert_eq!(set.into_iter().count(), size);
+        assert_eq!(set.into_iter().size_hint(), (size, Some(size)));
+        let signals: Vec<Signal> = set.into_iter().collect();
+        assert_eq!(signals.len(), expected.len());
+        for expected in expected {
+            assert!(signals.contains(&expected));
+        }
+    }
+}
+
 #[test]
 fn signals_examples() {
     let child = run_example("signals");

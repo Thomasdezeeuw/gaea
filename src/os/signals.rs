@@ -308,3 +308,35 @@ impl BitOr<SignalSet> for Signal {
         rhs | self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::os::Signal;
+
+    // More tests can be found in `tests/signals.rs`. This is only tested here
+    // because it's not part of the public API.
+
+    #[test]
+    fn signal_from_raw() {
+        assert_eq!(Signal::from_raw(libc::SIGINT), Some(Signal::Interrupt));
+        assert_eq!(Signal::from_raw(libc::SIGQUIT), Some(Signal::Quit));
+        assert_eq!(Signal::from_raw(libc::SIGTERM), Some(Signal::Terminate));
+
+        // Unsupported signals.
+        assert_eq!(Signal::from_raw(libc::SIGSTOP), None);
+    }
+
+    #[test]
+    fn signal_into_raw() {
+        assert_eq!(Signal::Interrupt.into_raw(), libc::SIGINT);
+        assert_eq!(Signal::Quit.into_raw(), libc::SIGQUIT);
+        assert_eq!(Signal::Terminate.into_raw(), libc::SIGTERM);
+    }
+
+    #[test]
+    fn raw_signal() {
+        assert_eq!(Signal::from_raw(libc::SIGINT).unwrap().into_raw(), libc::SIGINT);
+        assert_eq!(Signal::from_raw(libc::SIGQUIT).unwrap().into_raw(), libc::SIGQUIT);
+        assert_eq!(Signal::from_raw(libc::SIGTERM).unwrap().into_raw(), libc::SIGTERM);
+    }
+}
