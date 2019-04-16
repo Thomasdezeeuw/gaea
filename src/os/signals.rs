@@ -90,6 +90,21 @@ impl Signals {
 }
 
 /// Set of [`Signal`]s used in registering signal notifications with [`Signals`].
+///
+/// # Examples
+///
+/// ```
+/// use mio_st::os::{Signal, SignalSet};
+///
+/// // Signal set can be created by bit-oring (`|`) them together.
+/// let set: SignalSet = Signal::Interrupt | Signal::Quit;
+/// assert_eq!(set.size(), 2);
+///
+/// assert!(set.contains(Signal::Interrupt));
+/// assert!(set.contains(Signal::Quit));
+/// assert!(!set.contains(Signal::Terminate));
+/// assert!(set.contains(Signal::Interrupt | Signal::Quit));
+/// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct SignalSet(u8);
 
@@ -121,6 +136,22 @@ impl SignalSet {
     /// # Notes
     ///
     /// This can also be used with [`Signal`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mio_st::os::{Signal, SignalSet};
+    ///
+    /// let set = SignalSet::all();
+    ///
+    /// assert!(set.contains(Signal::Interrupt));
+    /// assert!(set.contains(Signal::Quit));
+    /// assert!(set.contains(Signal::Interrupt | Signal::Quit));
+    ///
+    /// let empty = SignalSet::empty();
+    /// assert!(!empty.contains(Signal::Terminate));
+    /// assert!(!empty.contains(Signal::Terminate | Signal::Quit));
+    /// ```
     pub fn contains<S>(self, other: S) -> bool
         where S: Into<SignalSet>,
     {
