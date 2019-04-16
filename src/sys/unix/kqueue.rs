@@ -175,7 +175,7 @@ impl Selector {
 
     // Used by `Awakener`.
     pub fn wake(&self, id: event::Id) -> io::Result<()> {
-        let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_CLEAR | libc::EV_RECEIPT, id);
+        let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_RECEIPT, id);
         kevent.fflags = libc::NOTE_TRIGGER;
         kevent_register(self.kq, &mut [kevent], &[])
     }
