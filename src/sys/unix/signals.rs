@@ -45,7 +45,7 @@ mod signalfd {
             let info_ref: &mut [u8] = unsafe { slice::from_raw_parts_mut(&mut info as *mut _ as *mut u8, mem::size_of::<libc::signalfd_siginfo>()) };
             let n = loop {
                 match self.fd.read(info_ref) {
-                    Ok(ok) => break ok,
+                    Ok(n) => break n,
                     Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => return Ok(None),
                     Err(ref err) if err.kind() == io::ErrorKind::Interrupted => continue,
                     Err(err) => return Err(err),
@@ -75,16 +75,23 @@ mod kqueue {
     /// Signaler backed by kqueue (`EVFILT_SIGNAL`).
     #[derive(Debug)]
     pub struct Signals {
+        // Separate from the associated kqueue.
         kq: Selector,
     }
 
     impl Signals {
         pub fn new(selector: &Selector, signals: SignalSet, id: event::Id) -> io::Result<Signals> {
+            // Create a new kqueue.
             let set = create_sigset(signals)?;
             let kq = Selector::new()?;
+
+            // Next register signals with our new kqueue.
             kq.register_signals(id, signals)
+                // Register the new kqueue instance with the associated kqueue,
+                // to receive events on the `OsQueue`.
                 .and_then(|()| selector.register(kq.as_raw_fd(), id,
                     Interests::READABLE, RegisterOption::LEVEL))
+                // Once all setup is done block the signals.
                 .and_then(|()| block_signals(&set))
                 .map(|()| Signals { kq })
         }
@@ -100,12 +107,12 @@ mod kqueue {
             match n_events {
                 -1 => Err(io::Error::last_os_error()),
                 0 => Ok(None), // No signals.
-                n => {
-                    assert_eq!(n, 1);
+                1 => {
                     let filter = kevent.filter;
                     assert_eq!(filter, libc::EVFILT_SIGNAL);
                     Ok(Signal::from_raw(kevent.ident as libc::c_int))
                 },
+                _ => unreachable!(),
             }
         }
     }

@@ -316,6 +316,7 @@ fn contains_flag(flags: kevent_flags_t, flag: kevent_flags_t) -> bool {
     (flags & flag) != 0
 }
 
+// Used in `Signals`.
 impl AsRawFd for Selector {
     fn as_raw_fd(&self) -> RawFd {
         self.kq
