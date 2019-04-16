@@ -180,7 +180,7 @@ impl Selector {
         kevent_register(self.kq, &mut [kevent], &[])
     }
 
-    // Used by `Signaler`.
+    // Used by `Signals`.
     pub fn register_signals(&self, id: event::Id, signals: SignalSet) -> io::Result<()> {
         // An event for each signal, keep in sync with the number of signals in
         // `os::SignalSet`.
