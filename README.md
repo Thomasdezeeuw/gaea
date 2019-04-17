@@ -17,14 +17,14 @@ features.
 ## Differences compared to mio
 
 The main two differences compared to [mio] are:
- - No multi-threaded support.
+ - Focus on single threaded performance.
  - No Windows support.
 
 The goal of this crate was to reduce the overhead of locks and/or atomic
-operations, at the cost of not supporting multiple threads. This means the usage
-of this crates, compared to mio, changes to using a single `Poll` instance per
-thread. Where when using mio you might use a single `Poll` instance for the
-entire application.
+operations, at the cost of dropping the multi-threaded user queue. This means
+the usage of this crates, compared to mio, changes to using a single `OsQueue`
+(`Poll` in mio) per thread. Where when using mio you might use a single `Poll`
+instance for the entire application.
 
 When reworking the code Windows support was removed because the underlying
 polling technique provided by the OS differs too much from epoll and kqueue.
@@ -42,8 +42,8 @@ The following platforms are supported:
 The following platforms should work, as in the code compiles:
 
  - FreeBSD,
- - NetBSD, and
- - OpenBSD.
+ - ~~NetBSD~~ (see issue #69), and
+ - ~~OpenBSD~~ (see issue #69).
 
 
 ## Documentation
