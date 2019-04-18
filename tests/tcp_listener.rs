@@ -51,7 +51,6 @@ fn tcp_listener() {
 }
 
 #[test]
-#[cfg_attr(feature="disable_test_ipv6", ignore = "skipping IPv6 test")]
 fn tcp_listener_ipv6() {
     let (mut os_queue, mut events) = init_with_os_queue();
 

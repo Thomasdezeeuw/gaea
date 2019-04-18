@@ -81,7 +81,6 @@ fn udp_socket() {
 }
 
 #[test]
-#[cfg_attr(feature="disable_test_ipv6", ignore = "skipping IPv6 test")]
 fn udp_socket_ipv6() {
     let (mut os_queue, mut events) = init_with_os_queue();
 
@@ -199,7 +198,6 @@ fn connected_udp_socket() {
 }
 
 #[test]
-#[cfg_attr(feature="disable_test_ipv6", ignore = "skipping IPv6 test")]
 fn connected_udp_socket_ipv6() {
     let (mut os_queue, mut events) = init_with_os_queue();
 
