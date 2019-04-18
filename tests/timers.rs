@@ -1,14 +1,12 @@
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use log::error;
-
 use mio_st::event::{self, Capacity, Event, Ready, Source};
 use mio_st::Timers;
 
 mod util;
 
-use self::util::{init, next_event_available, EventsCapacity};
+use self::util::{init, next_event_available, expect_events, EventsCapacity};
 
 const NEXT_EVENT_MARGIN: Duration = Duration::from_millis(1);
 
@@ -164,27 +162,4 @@ fn roughly_equal(left: Duration, right: Duration) {
     const ADD: Duration = Duration::from_secs(100);
     let diff = (ADD + left) - right;
     assert!(diff < (NEXT_EVENT_MARGIN + ADD), "wanted {:?}, but got {:?}", left, right);
-}
-
-/// Poll `Timers` for events.
-fn expect_events(timers: &mut Timers, events: &mut Vec<Event>, mut expected: Vec<Event>) {
-    events.clear();
-    Source::<_, ()>::poll(timers, events).expect("unable to poll timers");
-
-    for event in events.drain(..) {
-        let index = expected.iter()
-            .position(|expected| {
-                event.id() == expected.id() &&
-                event.readiness().contains(expected.readiness())
-            });
-
-        if let Some(index) = index {
-            expected.swap_remove(index);
-        } else {
-            // Must accept sporadic events.
-            error!("got unexpected event: {:?}", event);
-        }
-    }
-
-    assert!(expected.is_empty(), "the following expected events were not found: {:?}", expected);
 }
