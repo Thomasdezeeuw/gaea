@@ -8,8 +8,6 @@ mod util;
 
 use self::util::{init, next_event_available, expect_events, EventsCapacity};
 
-const NEXT_EVENT_MARGIN: Duration = Duration::from_millis(1);
-
 #[test]
 fn timers() {
     init();
@@ -156,10 +154,11 @@ fn timers_events_capacity() {
 }
 
 /// Assert that `left` and `right` are roughly equal, with a margin of
-/// `NEXT_EVENT_MARGIn` difference.
+/// `DURATION_MARGIN` difference.
 fn roughly_equal(left: Duration, right: Duration) {
+    const DURATION_MARGIN: Duration = Duration::from_millis(1);
     // Add a duration to not underflow.
     const ADD: Duration = Duration::from_secs(100);
     let diff = (ADD + left) - right;
-    assert!(diff < (NEXT_EVENT_MARGIN + ADD), "wanted {:?}, but got {:?}", left, right);
+    assert!(diff < (DURATION_MARGIN + ADD), "wanted {:?}, but got {:?}", left, right);
 }
