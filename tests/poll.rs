@@ -12,7 +12,7 @@ struct SleepySource;
 impl<ES, E> event::Source<ES, E> for SleepySource
     where ES: event::Sink,
 {
-    fn next_event_available(&self) -> Option<Duration> {
+    fn max_timeout(&self) -> Option<Duration> {
         None
     }
 
@@ -32,7 +32,7 @@ struct AvailableSource(Duration);
 impl<ES, E> event::Source<ES, E> for AvailableSource
     where ES: event::Sink,
 {
-    fn next_event_available(&self) -> Option<Duration> {
+    fn max_timeout(&self) -> Option<Duration> {
         Some(self.0)
     }
 
@@ -72,7 +72,7 @@ impl<E2, ES, E> event::Source<ES, E> for ResultSource<E2>
           E: From<E2>,
           E2: Clone,
 {
-    fn next_event_available(&self) -> Option<Duration> {
+    fn max_timeout(&self) -> Option<Duration> {
         None
     }
 

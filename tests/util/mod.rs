@@ -33,12 +33,12 @@ pub fn init_with_os_queue() -> (OsQueue, Vec<Event>) {
     (os_queue, Vec::new())
 }
 
-/// Get the next available event with having to worry about the generic
+/// Determine the maximum timeout with having to worry about the generic
 /// parameters.
-pub fn next_event_available<ES>(event_source: &ES) -> Option<Duration>
+pub fn max_timeout<ES>(event_source: &ES) -> Option<Duration>
     where ES: event::Source<Vec<Event>, io::Error>,
 {
-    event_source.next_event_available()
+    event_source.max_timeout()
 }
 
 /// Poll `event_source` and compare the retrieved events with the `expected`

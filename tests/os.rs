@@ -9,7 +9,7 @@ use mio_st::unix::new_pipe;
 
 mod util;
 
-use self::util::{assert_error, next_event_available, expect_no_events, expect_events, init, init_with_os_queue, EventsCapacity, TIMEOUT_MARGIN};
+use self::util::{assert_error, max_timeout, expect_no_events, expect_events, init, init_with_os_queue, EventsCapacity, TIMEOUT_MARGIN};
 
 struct TestEvented {
     registrations: Vec<(event::Id, Interests, RegisterOption)>,
@@ -114,7 +114,7 @@ fn os_queue_empty_source() {
     let (mut os_queue, mut events) = init_with_os_queue();
 
     // Test `poll` first.
-    assert_eq!(next_event_available(&mut os_queue), None);
+    assert_eq!(max_timeout(&mut os_queue), None);
     event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert!(events.is_empty(), "unexpected events");
 

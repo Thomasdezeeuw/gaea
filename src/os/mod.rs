@@ -421,7 +421,7 @@ impl<ES, E> event::Source<ES, E> for OsQueue
     where ES: event::Sink,
           E: From<io::Error>,
 {
-    fn next_event_available(&self) -> Option<Duration> {
+    fn max_timeout(&self) -> Option<Duration> {
         // Can't tell if an event is available.
         None
     }

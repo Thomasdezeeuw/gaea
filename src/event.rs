@@ -35,7 +35,7 @@ use core::time::Duration;
 ///           E: From<MyError>, // We add this bound to allow use to convert
 ///                             // `MyError` into the generic error `E`.
 /// {
-///     fn next_event_available(&self) -> Option<Duration> {
+///     fn max_timeout(&self) -> Option<Duration> {
 ///         if !self.0.is_empty() {
 ///             // If we have an event ready we don't want to block.
 ///             Some(Duration::from_millis(0))
@@ -79,16 +79,18 @@ pub trait Source<ES, E>
 {
     /// The duration until the next event will be available.
     ///
-    /// This is used to determine what timeout to use in a [blocking call] to
-    /// poll. For example if we have a queue of timers, of which the next one
+    /// This is used by [`poll`] to determine what timeout to use in a [blocking
+    /// call]. For example if we have a queue of timers, of which the next one
     /// expires in one second, we don't want to block for more then one second
-    /// and thus we should return `Some(1 second)` to ensure that.
+    /// and thus we should return `Some(1 second)` to ensure that. Otherwise
+    /// we'll overrun the timer by nine seconds.
     ///
     /// If the duration until the next available event is unknown `None` should
     /// be returned.
     ///
+    /// [`poll`]: crate::poll
     /// [blocking call]: Source::blocking_poll
-    fn next_event_available(&self) -> Option<Duration>;
+    fn max_timeout(&self) -> Option<Duration>;
 
     /// Poll for readiness events.
     ///
@@ -96,8 +98,8 @@ pub trait Source<ES, E>
     /// method may **not** block.
     ///
     /// Some implementation of [`event::Sink`]s have a limited available
-    /// capacity. This method may not add more events then
-    /// [`event::Sink::capacity_left`] returns, if it returns a capacity limit.
+    /// capacity. This method may **not** add more events then
+    /// [`event::Sink::capacity_left`] returns, iff it returns a capacity limit.
     /// Available events that don't fit in the event sink in a single call to
     /// poll should remain in the source and should be added to the event sink
     /// in future calls to poll.
@@ -126,8 +128,8 @@ impl<S, ES, E> Source<ES, E> for &mut S
     where S: Source<ES, E>,
           ES: Sink,
 {
-    fn next_event_available(&self) -> Option<Duration> {
-        (&**self).next_event_available()
+    fn max_timeout(&self) -> Option<Duration> {
+        (&**self).max_timeout()
     }
 
     fn poll(&mut self, event_sink: &mut ES) -> Result<(), E> {

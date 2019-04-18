@@ -104,7 +104,7 @@ impl Timers {
 impl<ES, E> event::Source<ES, E> for Timers
     where ES: event::Sink,
 {
-    fn next_event_available(&self) -> Option<Duration> {
+    fn max_timeout(&self) -> Option<Duration> {
         self.deadlines.peek().map(|deadline| {
             let now = Instant::now();
             if deadline.0.deadline <= now {
