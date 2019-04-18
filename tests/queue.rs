@@ -7,7 +7,7 @@ use mio_st::{Event, Queue};
 
 mod util;
 
-use self::util::{init, EventsCapacity};
+use self::util::{init, next_event_available, EventsCapacity};
 
 #[test]
 fn queue() {
@@ -69,12 +69,6 @@ fn queue_events_capacity() {
     queue.add(event);
     Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
     assert_eq!(events.1, 2);
-}
-
-/// Get the next available event with having to worry about the generic
-/// parameters.
-fn next_event_available(queue: &mut Queue) -> Option<Duration> {
-    Source::<Vec<Event>, ()>::next_event_available(queue)
 }
 
 /// Poll `Queue` for events.
