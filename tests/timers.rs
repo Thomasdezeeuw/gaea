@@ -6,7 +6,7 @@ use mio_st::Timers;
 
 mod util;
 
-use self::util::{init, next_event_available, expect_events, expect_no_events, EventsCapacity};
+use self::util::{init, max_timeout, expect_events, expect_no_events, EventsCapacity};
 
 #[test]
 fn timers() {
@@ -16,18 +16,18 @@ fn timers() {
     let id = event::Id(0);
 
     // No deadlines, no timeout and no events.
-    assert_eq!(next_event_available(&mut timers), None);
+    assert_eq!(max_timeout(&mut timers), None);
     expect_no_events(&mut timers);
 
     timers.add_deadline(id, Instant::now());
     // Now we have a deadline which already passed, so no blocking.
-    assert_eq!(next_event_available(&mut timers), Some(Duration::from_millis(0)));
+    assert_eq!(max_timeout(&mut timers), Some(Duration::from_millis(0)));
     expect_events(&mut timers, &mut events, vec![Event::new(id, Ready::TIMER)]);
 
     let timeout = Duration::from_millis(50);
     timers.add_timeout(id, timeout);
     // Have a deadline. But it hasn't passed yet, so no events.
-    roughly_equal(next_event_available(&mut timers).unwrap(), timeout);
+    roughly_equal(max_timeout(&mut timers).unwrap(), timeout);
     expect_no_events(&mut timers);
 
     // But after the deadline expires we should have an event.
@@ -35,7 +35,7 @@ fn timers() {
     expect_events(&mut timers, &mut events, vec![Event::new(id, Ready::TIMER)]);
 
     // And no more after that.
-    assert_eq!(next_event_available(&mut timers), None);
+    assert_eq!(max_timeout(&mut timers), None);
     expect_no_events(&mut timers);
 }
 
@@ -67,7 +67,7 @@ fn timers_multiple_deadlines_same_id() {
     timers.add_timeout(event::Id(0), timeout * 10);
     timers.add_timeout(event::Id(0), timeout);
 
-    roughly_equal(next_event_available(&mut timers).unwrap(), timeout);
+    roughly_equal(max_timeout(&mut timers).unwrap(), timeout);
 
     sleep(timeout);
     expect_events(&mut timers, &mut events, vec![Event::new(event::Id(0), Ready::TIMER)]);
@@ -85,7 +85,7 @@ fn timers_multiple_deadlines_same_time_andid() {
     timers.add_timeout(event::Id(0), timeout);
     timers.add_timeout(event::Id(0), timeout);
 
-    roughly_equal(next_event_available(&mut timers).unwrap(), timeout);
+    roughly_equal(max_timeout(&mut timers).unwrap(), timeout);
 
     sleep(timeout);
     expect_events(&mut timers, &mut events, vec![

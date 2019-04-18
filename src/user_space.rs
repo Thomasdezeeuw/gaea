@@ -58,7 +58,7 @@ impl Queue {
 impl<ES, E> event::Source<ES, E> for Queue
     where ES: event::Sink,
 {
-    fn next_event_available(&self) -> Option<Duration> {
+    fn max_timeout(&self) -> Option<Duration> {
         if !self.events.is_empty() {
             Some(Duration::from_millis(0))
         } else {

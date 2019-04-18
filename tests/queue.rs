@@ -5,7 +5,7 @@ use mio_st::{Event, Queue};
 
 mod util;
 
-use self::util::{init, next_event_available, expect_events, EventsCapacity};
+use self::util::{init, max_timeout, expect_events, EventsCapacity};
 
 #[test]
 fn queue() {
@@ -13,12 +13,12 @@ fn queue() {
     let mut queue = Queue::new();
     let mut events = Vec::new();
 
-    assert_eq!(next_event_available(&mut queue), None);
+    assert_eq!(max_timeout(&mut queue), None);
 
     // Single event.
     let event = Event::new(event::Id(0), Ready::READABLE);
     queue.add(event);
-    assert_eq!(next_event_available(&mut queue), Some(Duration::from_millis(0)));
+    assert_eq!(max_timeout(&mut queue), Some(Duration::from_millis(0)));
     expect_events(&mut queue, &mut events, vec![event]);
 
     // Multiple events.
@@ -26,7 +26,7 @@ fn queue() {
     queue.add(Event::new(event::Id(0), Ready::WRITABLE));
     queue.add(Event::new(event::Id(0), Ready::READABLE | Ready::WRITABLE));
     queue.add(Event::new(event::Id(1), Ready::READABLE | Ready::WRITABLE | Ready::ERROR));
-    assert_eq!(next_event_available(&mut queue), Some(Duration::from_millis(0)));
+    assert_eq!(max_timeout(&mut queue), Some(Duration::from_millis(0)));
     expect_events(&mut queue, &mut events, vec![
         Event::new(event::Id(0), Ready::READABLE),
         Event::new(event::Id(0), Ready::WRITABLE),

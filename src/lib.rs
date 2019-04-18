@@ -277,7 +277,7 @@ pub use crate::os::OsQueue;
 /// #     where ES: event::Sink,
 /// #           E: From<SourceError1>,
 /// # {
-/// #     fn next_event_available(&self) -> Option<Duration> {
+/// #     fn max_timeout(&self) -> Option<Duration> {
 /// #         None
 /// #     }
 /// #
@@ -290,7 +290,7 @@ pub use crate::os::OsQueue;
 /// #     where ES: event::Sink,
 /// #           E: From<SourceError2>,
 /// # {
-/// #     fn next_event_available(&self) -> Option<Duration> {
+/// #     fn max_timeout(&self) -> Option<Duration> {
 /// #         None
 /// #     }
 /// #
@@ -351,7 +351,7 @@ pub fn poll<ES, E>(
 
     // Compute the maximum timeout we can use.
     let timeout = event_sources.iter().fold(timeout, |timeout, event_source| {
-        min_timeout(timeout, event_source.next_event_available())
+        min_timeout(timeout, event_source.max_timeout())
     });
 
     let mut iter = event_sources.iter_mut();
