@@ -1,13 +1,11 @@
 use std::time::Duration;
 
-use log::error;
-
 use mio_st::event::{self, Capacity, Ready, Source};
 use mio_st::{Event, Queue};
 
 mod util;
 
-use self::util::{init, next_event_available, EventsCapacity};
+use self::util::{init, next_event_available, expect_events, EventsCapacity};
 
 #[test]
 fn queue() {
@@ -69,28 +67,4 @@ fn queue_events_capacity() {
     queue.add(event);
     Source::<_, ()>::poll(&mut queue, &mut events).unwrap();
     assert_eq!(events.1, 2);
-}
-
-/// Poll `Queue` for events.
-fn expect_events(queue: &mut Queue, events: &mut Vec<Event>, mut expected: Vec<Event>) {
-    events.clear();
-    Source::<_, ()>::poll(queue, events)
-        .expect("unable to poll user space queue");
-
-    for event in events.drain(..) {
-        let index = expected.iter()
-            .position(|expected| {
-                event.id() == expected.id() &&
-                event.readiness().contains(expected.readiness())
-            });
-
-        if let Some(index) = index {
-            expected.swap_remove(index);
-        } else {
-            // Must accept sporadic events.
-            error!("got unexpected event: {:?}", event);
-        }
-    }
-
-    assert!(expected.is_empty(), "the following expected events were not found: {:?}", expected);
 }

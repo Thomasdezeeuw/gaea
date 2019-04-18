@@ -41,12 +41,14 @@ pub fn next_event_available<ES>(event_source: &ES) -> Option<Duration>
     event_source.next_event_available()
 }
 
-/// Poll `os_queue` and compare the retrieved events with the `expected` ones.
-/// The event is only loosely checked; it only checks if an events readiness
-/// contains the expected readiness and the ids match.
-pub fn expect_events(os_queue: &mut OsQueue, events: &mut Vec<Event>, mut expected: Vec<Event>) {
+/// Poll `event_source` and compare the retrieved events with the `expected`
+/// ones. The event is only loosely checked; it only checks if an events
+/// readiness contains the expected readiness and the ids match.
+pub fn expect_events<ES>(event_source: &mut ES, events: &mut Vec<Event>, mut expected: Vec<Event>)
+    where ES: event::Source<Vec<Event>, io::Error>,
+{
     events.clear();
-    poll::<_, io::Error>(&mut [os_queue], events, Some(Duration::from_millis(500)))
+    poll::<_, io::Error>(&mut [event_source], events, Some(Duration::from_millis(500)))
         .expect("unable to poll");
 
     for event in events.drain(..) {
