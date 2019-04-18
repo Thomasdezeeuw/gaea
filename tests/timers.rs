@@ -6,7 +6,7 @@ use mio_st::Timers;
 
 mod util;
 
-use self::util::{init, next_event_available, expect_events, EventsCapacity};
+use self::util::{init, next_event_available, expect_events, expect_no_events, EventsCapacity};
 
 #[test]
 fn timers() {
@@ -17,8 +17,7 @@ fn timers() {
 
     // No deadlines, no timeout and no events.
     assert_eq!(next_event_available(&mut timers), None);
-    Source::<_, ()>::poll(&mut timers, &mut events).unwrap();
-    assert!(events.is_empty());
+    expect_no_events(&mut timers);
 
     timers.add_deadline(id, Instant::now());
     // Now we have a deadline which already passed, so no blocking.
@@ -27,14 +26,17 @@ fn timers() {
 
     let timeout = Duration::from_millis(50);
     timers.add_timeout(id, timeout);
-    // Have a deadline, but it hasn't passed yet.
+    // Have a deadline. But it hasn't passed yet, so no events.
     roughly_equal(next_event_available(&mut timers).unwrap(), timeout);
-    // So no events.
-    expect_events(&mut timers, &mut events, vec![]);
+    expect_no_events(&mut timers);
 
     // But after the deadline expires we should have an event.
     sleep(timeout);
     expect_events(&mut timers, &mut events, vec![Event::new(id, Ready::TIMER)]);
+
+    // And no more after that.
+    assert_eq!(next_event_available(&mut timers), None);
+    expect_no_events(&mut timers);
 }
 
 #[test]
@@ -96,26 +98,24 @@ fn timers_multiple_deadlines_same_time_andid() {
 fn timers_remove_deadline() {
     init();
     let mut timers = Timers::new();
-    let mut events = Vec::new();
     let id = event::Id(0);
     let timeout = Duration::from_millis(50);
 
+    // Event shouldn't trigger yet.
     timers.add_deadline(id, Instant::now() + timeout);
-    expect_events(&mut timers, &mut events, vec![]);
+    expect_no_events(&mut timers);
 
+    // Removing it shouldn't trigger it at all.
     timers.remove_deadline(id);
-
     sleep(timeout);
-    expect_events(&mut timers, &mut events, vec![]);
+    expect_no_events(&mut timers);
 
+    // Same as above, but then using `add_timeout`.
     timers.add_timeout(id, timeout);
-    expect_events(&mut timers, &mut events, vec![]);
-
-    // This should also remove the timeout.
+    expect_no_events(&mut timers);
     timers.remove_deadline(id);
-
     sleep(timeout);
-    expect_events(&mut timers, &mut events, vec![]);
+    expect_no_events(&mut timers);
 }
 
 #[test]

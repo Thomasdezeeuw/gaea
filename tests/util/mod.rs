@@ -69,6 +69,16 @@ pub fn expect_events<ES>(event_source: &mut ES, events: &mut Vec<Event>, mut exp
     assert!(expected.is_empty(), "the following expected events were not found: {:?}", expected);
 }
 
+/// Poll `event_source` and make sure no events are returned.
+pub fn expect_no_events<ES>(event_source: &mut ES)
+    where ES: event::Source<Vec<Event>, io::Error>,
+{
+    let mut events = Vec::new();
+    poll::<_, io::Error>(&mut [event_source], &mut events, Some(Duration::from_millis(50)))
+        .expect("unable to poll");
+    assert!(events.is_empty(), "got unexpected events: {:?}", events);
+}
+
 /// An `event::Sink` implementation to test `event::Source` using different
 /// `Capacity`s.
 pub struct EventsCapacity(pub Capacity, pub usize);
