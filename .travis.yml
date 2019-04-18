@@ -19,4 +19,6 @@ rust:
   - stable
   - beta
   - nightly
+# Enable IPv6 on Linux machines.
+before_script: [ "$TRAVIS_OS_NAME" = "linux" ] && sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
 script: .ci/test.sh
