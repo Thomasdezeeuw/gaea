@@ -79,6 +79,7 @@ impl Signals {
     /// This will cause the associated `OsQueue` instance to receive events when
     /// the process receives one of the signals in the signal set.
     pub fn new(os_queue: &mut OsQueue, signals: SignalSet, id: event::Id) -> io::Result<Signals> {
+        debug_assert!(signals.size() != 0, "can't create `Signals` with an empty signal set");
         sys::Signals::new(os_queue.selector(), signals, id)
             .map(|inner| Signals { inner })
     }

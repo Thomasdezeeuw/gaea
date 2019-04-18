@@ -88,7 +88,7 @@ fn receive_no_signal() {
 }
 
 #[test]
-fn signals_examples() {
+fn signals_example() {
     let child = run_example("signals");
 
     // Give the process some time to startup.
@@ -180,4 +180,13 @@ fn read_output(mut child: ChildCommand) -> String {
     let mut output = String::new();
     stdout.read_to_string(&mut output).expect("error reading output of example");
     output
+}
+
+#[test]
+#[should_panic(expected = "can't create `Signals` with an empty signal set")]
+fn sender_readable_interests() {
+    let (mut os_queue, _) = init_with_os_queue();
+
+    let _signals = Signals::new(&mut os_queue, SignalSet::empty(), event::Id(0))
+        .unwrap();
 }
