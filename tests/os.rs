@@ -9,7 +9,7 @@ use mio_st::unix::new_pipe;
 
 mod util;
 
-use self::util::{assert_error, expect_events, init, init_with_os_queue, EventsCapacity, TIMEOUT_MARGIN};
+use self::util::{assert_error, next_event_available, expect_no_events, expect_events, init, init_with_os_queue, EventsCapacity, TIMEOUT_MARGIN};
 
 struct TestEvented {
     registrations: Vec<(event::Id, Interests, RegisterOption)>,
@@ -113,18 +113,18 @@ fn os_queue_erroneous_registration() {
 fn os_queue_empty_source() {
     let (mut os_queue, mut events) = init_with_os_queue();
 
-    assert_eq!(event::Source::<Vec<Event>, io::Error>::next_event_available(&mut os_queue), None);
-
+    // Test `poll` first.
+    assert_eq!(next_event_available(&mut os_queue), None);
     event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert!(events.is_empty(), "unexpected events");
 
     let timeout = Duration::from_millis(100);
     let start = Instant::now();
-    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(timeout)).unwrap();
+    // Then `blocking_poll`.
+    expect_no_events(&mut os_queue);
     #[cfg(not(feature="disable_test_deadline"))]
     assert!(start.elapsed() <= timeout + TIMEOUT_MARGIN,
         "polling took too long: {:?}, wanted: <= {:?}.", start.elapsed(), timeout + TIMEOUT_MARGIN);
-    assert!(events.is_empty(), "unexpected events");
 }
 
 #[test]
@@ -207,9 +207,7 @@ fn awakener() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
-        .expect("unable to poll");
-    assert!(events.is_empty());
+    expect_no_events(&mut os_queue);
 
     handle.join().unwrap();
 }
@@ -247,9 +245,7 @@ fn awakener_try_clone() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
-        .expect("unable to poll");
-    assert!(events.is_empty());
+    expect_no_events(&mut os_queue);
 }
 
 #[test]
@@ -288,9 +284,7 @@ fn awakener_multiple_wakeups() {
         Event::new(event_id, Ready::READABLE),
     ]);
 
-    event::Source::<_, io::Error>::blocking_poll(&mut os_queue, &mut events, Some(Duration::from_millis(100)))
-        .expect("unable to poll");
-    assert!(events.is_empty());
+    expect_no_events(&mut os_queue);
 
     handle1.join().unwrap();
     handle2.join().unwrap();
