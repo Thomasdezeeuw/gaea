@@ -33,6 +33,14 @@ pub fn init_with_os_queue() -> (OsQueue, Vec<Event>) {
     (os_queue, Vec::new())
 }
 
+/// Get the next available event with having to worry about the generic
+/// parameters.
+pub fn next_event_available<ES>(event_source: &ES) -> Option<Duration>
+    where ES: event::Source<Vec<Event>, io::Error>,
+{
+    event_source.next_event_available()
+}
+
 /// Poll `os_queue` and compare the retrieved events with the `expected` ones.
 /// The event is only loosely checked; it only checks if an events readiness
 /// contains the expected readiness and the ids match.

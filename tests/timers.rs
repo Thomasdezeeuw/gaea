@@ -8,7 +8,7 @@ use mio_st::Timers;
 
 mod util;
 
-use self::util::{init, EventsCapacity};
+use self::util::{init, next_event_available, EventsCapacity};
 
 const NEXT_EVENT_MARGIN: Duration = Duration::from_millis(1);
 
@@ -164,12 +164,6 @@ fn roughly_equal(left: Duration, right: Duration) {
     const ADD: Duration = Duration::from_secs(100);
     let diff = (ADD + left) - right;
     assert!(diff < (NEXT_EVENT_MARGIN + ADD), "wanted {:?}, but got {:?}", left, right);
-}
-
-/// Get the next available event with having to worry about the generic
-/// parameters.
-fn next_event_available(timers: &mut Timers) -> Option<Duration> {
-    Source::<Vec<Event>, ()>::next_event_available(timers)
 }
 
 /// Poll `Timers` for events.
