@@ -210,6 +210,23 @@ pub use crate::os::OsQueue;
 /// [blocking poll]: event::Source::blocking_poll
 /// [polled]: event::Source::poll
 ///
+/// # Handling different error types
+///
+/// Each `event::Source` might have a different *concrete* error type, for
+/// example [`OsQueue`] has a *concrete* error type of [`io::Error`]. However we
+/// would still like to have a single error type returned from a call to poll.
+/// To facilitate this each event source will convert there *concrete* error
+/// into a user defined error (the generic parameter `E`), this way different
+/// error types can be collected into a single type. In most cases this will be
+/// `io::Error`, but this can also be custom enum type as see the second example
+/// below.
+///
+/// Note that some event source don't return an error, for example both
+/// [`Queue`] and [`Timers`] don't return an error as they are both implemented
+/// in user space and will accept any type as error type (as they don't use it).
+///
+/// [`io::Error`]: std::io::Error
+///
 /// # Examples
 ///
 /// Polling from an [`OsQueue`], [`Queue`] and [`Timers`].
@@ -238,6 +255,89 @@ pub use crate::os::OsQueue;
 /// // blocking because an event is ready.
 /// assert_eq!(event_sink[0], Event::new(event::Id(0), Ready::TIMER));
 ///
+/// # Ok(())
+/// # }
+/// ```
+///
+/// Using a custom enum error that collects errors from the different event
+/// sources.
+///
+/// ```
+/// # use std::time::Duration;
+/// #
+/// # use mio_st::event;
+/// use mio_st::poll;
+///
+/// /// Our custom `event::Source`s.
+/// // Note: implementations not shown for brevity. See `event::Source` for an
+/// // example implementation.
+/// struct EventSource1;
+/// struct EventSource2;
+/// #
+/// # impl<ES, E> event::Source<ES, E> for EventSource1
+/// #     where ES: event::Sink,
+/// #           E: From<SourceError1>,
+/// # {
+/// #     fn next_event_available(&self) -> Option<Duration> {
+/// #         None
+/// #     }
+/// #
+/// #     fn poll(&mut self, _event_sink: &mut ES) -> Result<(), E> {
+/// #         Ok(())
+/// #     }
+/// # }
+/// #
+/// # impl<ES, E> event::Source<ES, E> for EventSource2
+/// #     where ES: event::Sink,
+/// #           E: From<SourceError2>,
+/// # {
+/// #     fn next_event_available(&self) -> Option<Duration> {
+/// #         None
+/// #     }
+/// #
+/// #     fn poll(&mut self, _event_sink: &mut ES) -> Result<(), E> {
+/// #         Ok(())
+/// #     }
+/// # }
+///
+/// /// `event::Source` error types.
+/// struct SourceError1;
+/// struct SourceError2;
+///
+/// /// Our custom error type.
+/// #[derive(Debug)]
+/// enum MyError {
+///     Source1,
+///     Source2,
+/// }
+///
+/// // Implementing `From` allows the error to be converted into our custom
+/// // error type.
+/// // Note: this is also implemented for `SourceError2`, but not show for
+/// // brevity.
+/// impl From<SourceError1> for MyError {
+///     fn from(_err: SourceError1) -> MyError {
+///         MyError::Source1
+///     }
+/// }
+/// #
+/// # impl From<SourceError2> for MyError {
+/// #     fn from(_err: SourceError2) -> MyError {
+/// #         MyError::Source2
+/// #     }
+/// # }
+///
+/// # fn main() -> Result<(), MyError> {
+/// // Our event sources.
+/// let mut event_source1 = EventSource1; // With error type `SourceError1`.
+/// let mut event_source2 = EventSource2; // With error type `SourceError2`.
+/// // And event sink.
+/// let mut event_sink = Vec::new();
+///
+/// // Poll both event sources converting any errors into our `MyError` type.
+/// poll::<_, MyError>(&mut [&mut event_source1, &mut event_source2], &mut event_sink, None)?;
+///
+/// // Handle events, etc.
 /// # Ok(())
 /// # }
 /// ```
