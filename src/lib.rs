@@ -1,7 +1,7 @@
 //! A low-level library to build event driven applications. The core of the
 //! library is [`poll`], which polls multiple [event sources] for readiness
 //! events. Based on these readiness events the application will continue, e.g.
-//! by polling a [`Future`].
+//! by running a [`Future`].
 //!
 //! A number of readiness event sources are provided:
 //!
@@ -12,22 +12,108 @@
 //! [event sources]: event::Source
 //! [`Future`]: std::future::Future
 //!
-//! # Usage
+//! # Getting started
 //!
-//! Using the library starts by creating one or more [event sources]. Next an
-//! [event sink] is required, this used to store the events from the event
-//! sources. But as it's a trait this can also be scheduler of some kind to
-//! directly schedule processes for which a readiness event is added.
+//! Using the crate starts by creating one or more [`event::Source`]s.
 //!
-//! Next the event source can be [polled], using the events sink and a timeout.
-//! This will poll all sources and block until a readiness event is available in
-//! any of the sources or until the timeout expires. Next it's the applications
-//! turn to process each event. Do this in a loop and you've got yourself an
-//! event loop.
+//! ```
+//! # use mio_st::{OsQueue, Queue};
+//! # fn main() -> std::io::Result<()> {
+//! // `OsQueue` implements `event::Source` and is backed by epoll or kqueue.
+//! let os_queue = OsQueue::new()?;
+//! // `Queue` is a user space readiness event queue, which also implements
+//! // `event::Source`.
+//! let queue = Queue::new();
+//! # drop((os_queue, queue));
+//! # Ok(())
+//! # }
+//! ```
 //!
-//! [event source]: event::Source
-//! [event sink]: event::Sink
-//! [polled]: poll
+//! As the name suggest `event::Source`s are the sources of readiness events,
+//! these can be polled for readiness events (we'll get back to this later).
+//! This crate provides three [`OsQueue`], [`Queue`] and [`Timers`]. But as
+//! `event::Source` is a trait it can be implemented outside of this crate.
+//!
+//! Next an [`event::Sink`] is required, this used to store the readiness events
+//! from the event sources.
+//!
+//! ```
+//! // `Vec`tor implements `event::Sink`.
+//! let events = Vec::new();
+//! # drop::<Vec<mio_st::Event>>(events);
+//! ```
+//!
+//! Just like `event::Source`, `event::Sink` is also a trait. When, for example,
+//! building some kind of runtime `event::Source` can be directly implemented on
+//! the scheduler type and instead of adding an [`Event`] to a collection it
+//! will schedule a process/[`Future`]/task to run. For convenience `Vec`tors
+//! also implement `event::Sink`.
+//!
+//! Both the `event::Source`s and `event::Sink` should only be created once and
+//! reused in each call to [`poll`]. After we created both we can start
+//! [polling] the `event::Source`s.
+//!
+//! [polling]: poll
+//!
+//! ```
+//! # use std::io;
+//! # use std::time::Duration;
+//! # use mio_st::{poll, OsQueue, Queue};
+//! # fn main() -> io::Result<()> {
+//! # let mut os_queue = OsQueue::new()?;
+//! # let mut queue = Queue::new();
+//! # // Let poll return quickly.
+//! # queue.add(mio_st::Event::new(mio_st::event::Id(0), mio_st::Ready::READABLE));
+//! # let mut events = Vec::new();
+//! // Poll both `os_queue` and `queue` for readiness events, with a maximum
+//! // timeout of 1 seconds. Here we use an `io::Error` as error, see `poll`
+//! // docs for more information on handling errors from different event
+//! // sources.
+//! poll::<_, io::Error>(&mut [&mut os_queue, &mut queue], &mut events,
+//!     Some(Duration::from_secs(1)))?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! After the `event::Source`s are polled our `event::Sink` will be filled with
+//! readiness events, if there are any. These can be used to continue
+//! processing. Stick all the above in a loop and you've got yourself an event
+//! loop, congratulations!
+//!
+//! ```
+//! use std::io;
+//! use std::time::Duration;
+//!
+//! use mio_st::{poll, OsQueue, Queue};
+//!
+//! # fn main() -> std::io::Result<()> {
+//! // Create our `event::Source`s.
+//! let mut os_queue = OsQueue::new()?;
+//! let mut queue = Queue::new();
+//! # // Let poll return quickly.
+//! # queue.add(mio_st::Event::new(mio_st::event::Id(0), mio_st::Ready::READABLE));
+//!
+//! // And our `event::Sink`.
+//! let mut events = Vec::new();
+//!
+//! // TODO: add events and such here...
+//!
+//! // Our event loop.
+//! loop {
+//!     // Poll for readiness events.
+//!     poll::<_, io::Error>(&mut [&mut os_queue, &mut queue], &mut events,
+//!         Some(Duration::from_secs(1)))?;
+//!
+//!     // And process each event.
+//!     for event in events.drain(..) {
+//!         println!("Got event: id={}, readiness={:?}", event.id(),
+//!             event.readiness());
+//!     }
+//!
+//!     # return Ok(());
+//! }
+//! # }
+//! ```
 //!
 //! # Examples
 //!
