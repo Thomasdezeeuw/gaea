@@ -31,101 +31,10 @@
 //!
 //! # Examples
 //!
-//! The example below shows a simple non-blocking TCP server.
+//! More complete examples of how to use the crate can be found in the examples
+//! directory of the source code ([on GitHub]).
 //!
-//! ```
-//! # fn main() -> Result<(), Box<std::error::Error>> {
-//! use std::io;
-//! use std::collections::HashMap;
-//!
-//! use mio_st::net::{TcpListener, TcpStream};
-//! use mio_st::os::{OsQueue, RegisterOption};
-//! use mio_st::{event, poll};
-//!
-//! // An unique id to associate an event with a handle, in this case for our
-//! // TCP listener.
-//! const SERVER_ID: event::Id = event::Id(0);
-//!
-//! // Create a Operating System backed (epoll or kqueue) queue.
-//! let mut os_queue = OsQueue::new()?;
-//! // Create our event sink.
-//! let mut events = Vec::new();
-//!
-//! // Setup a TCP listener, which will be our server.
-//! let address = "127.0.0.1:12345".parse()?;
-//! let mut server = TcpListener::bind(address)?;
-//!
-//! // Register our TCP listener with `OsQueue`, this allows us to receive
-//! // readiness events about incoming connections.
-//! os_queue.register(&mut server, SERVER_ID, TcpListener::INTERESTS, RegisterOption::EDGE)?;
-//!
-//! // A hashmap with `event::Id` -> `TcpStream` connections.
-//! let mut connections = HashMap::new();
-//!
-//! // A simple counter to create new unique ids for each incoming connection.
-//! let mut current_id = event::Id(10);
-//!
-//! // Start our event loop.
-//! # let i = 0; // Don't run the event loop.
-//! loop {
-//! #   if i == 0 { return Ok(()) }
-//!     // Poll for events.
-//!     poll::<_, io::Error>(&mut [&mut os_queue], &mut events, None)?;
-//!
-//!     // Process each event.
-//!     for event in events.drain(..) {
-//!         // Depending on the event id we need to take an action.
-//!         match event.id() {
-//!             SERVER_ID => {
-//!                 // The server is ready to accept one or more connections.
-//!                 accept_connections(&mut server, &mut os_queue, &mut connections, &mut current_id)?;
-//!             },
-//!             connection_id => {
-//!                 // A connection is possibly ready, but it might a spurious
-//!                 // event.
-//!                 let connection = match connections.get_mut(&connection_id) {
-//!                     Some(connection) => connection,
-//!                     // Spurious event, we can safely ignore it.
-//!                     None => continue,
-//!                 };
-//!
-//!                 // Do something with the connection...
-//!                 # drop(connection)
-//!             },
-//!         }
-//!     }
-//! }
-//!
-//! fn accept_connections(server: &mut TcpListener, os_queue: &mut OsQueue, connections: &mut HashMap<event::Id, TcpStream>, current_id: &mut event::Id) -> io::Result<()> {
-//!     // Since we registered with edge-triggered events for our server we need
-//!     // to accept connections until we hit a would block "error".
-//!     loop {
-//!         let (mut connection, address) = match server.accept() {
-//!             Ok((connection, address)) => (connection, address),
-//!             Err(ref err) if would_block(err) => return Ok(()),
-//!             Err(err) => return Err(err),
-//!         };
-//!
-//!         // Generate a new id for the connection.
-//!         let id = *current_id;
-//!         *current_id = event::Id(current_id.0 + 1);
-//!
-//!         println!("got a new connection from: {}, id: {:?}", address, id);
-//!
-//!         // Register the TCP connection so we can handle events for it as
-//!         // well.
-//!         os_queue.register(&mut connection, id, TcpStream::INTERESTS, RegisterOption::EDGE)?;
-//!
-//!         // Store our connection so we can access it later.
-//!         connections.insert(id, connection);
-//!     }
-//! }
-//!
-//! fn would_block(err: &io::Error) -> bool {
-//!     err.kind() == io::ErrorKind::WouldBlock
-//! }
-//! # }
-//! ```
+//! [on GitHub]: https://github.com/Thomasdezeeuw/mio-st/tree/master/examples
 
 #![warn(anonymous_parameters,
         bare_trait_objects,
