@@ -106,19 +106,19 @@ impl RegisterOption {
 
     /// Returns true if the value includes level trigger.
     #[inline]
-    pub fn is_level(self) -> bool {
+    pub const fn is_level(self) -> bool {
         !self.is_edge()
     }
 
     /// Returns true if the value includes edge trigger.
     #[inline]
-    pub fn is_edge(self) -> bool {
+    pub const fn is_edge(self) -> bool {
         self.0 & EDGE != 0
     }
 
     /// Returns true if the value includes oneshot notification.
     #[inline]
-    pub fn is_oneshot(self) -> bool {
+    pub const fn is_oneshot(self) -> bool {
         self.0 & ONESHOT != 0
     }
 }
