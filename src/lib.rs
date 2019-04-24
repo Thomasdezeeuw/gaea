@@ -109,7 +109,6 @@
 //!         println!("Got event: id={}, readiness={:?}", event.id(),
 //!             event.readiness());
 //!     }
-//!
 //!     # return Ok(());
 //! }
 //! # }
