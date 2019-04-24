@@ -90,7 +90,7 @@ pub trait Source<ES, E>
     /// [blocking call]: Source::blocking_poll
     fn next_event_available(&self) -> Option<Duration>;
 
-    /// Poll for events.
+    /// Poll for readiness events.
     ///
     /// Any available readiness events must be added to `event_sink`. This
     /// method may **not** block.
@@ -116,7 +116,8 @@ pub trait Source<ES, E>
     ///
     /// The default implementation simply calls `poll`, thus it doesn't actually
     /// block.
-    fn blocking_poll(&mut self, event_sink: &mut ES, _timeout: Option<Duration>) -> Result<(), E> {
+    #[allow(unused_variables)] // Don't want to use "_timeout" in docs.
+    fn blocking_poll(&mut self, event_sink: &mut ES, timeout: Option<Duration>) -> Result<(), E> {
         self.poll(event_sink)
     }
 }
