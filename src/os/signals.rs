@@ -128,7 +128,7 @@ impl SignalSet {
     }
 
     /// Number of signals in the set.
-    pub fn size(self) -> usize {
+    pub const fn size(self) -> usize {
         self.0.count_ones() as usize
     }
 
