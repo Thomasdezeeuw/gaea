@@ -10,7 +10,7 @@ This is a fork of [mio] (v0.6.12, commit
 
 [mio]: https://github.com/carllerche/mio
 
-Rust version 1.31 or higher is required as mio-st makes use of Rust 2018 edition
+Rust version 1.33 or higher is required as mio-st makes use of Rust 2018 edition
 features.
 
 
