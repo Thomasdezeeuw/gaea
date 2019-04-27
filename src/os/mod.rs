@@ -83,6 +83,12 @@
 //! up to the system clock granularity (usually 1ms), and kernel scheduling
 //! delays mean that the blocking interval may be overrun by a small amount.
 //!
+//! ### Interrupts while polling
+//!
+//! Interrupts (`EINTR` in C and `io::ErrorKind::Interrupted` in Rust) are
+//! **not** handled, they are returned as errors. In most cases however these
+//! can simply be ignored, but it's up to the user how to deal with the "error".
+//!
 //! # Implementation notes
 //!
 //! `OsQueue` is backed by a readiness event queue provided by the operating
@@ -93,7 +99,7 @@
 //! |---------|----------|
 //! | FreeBSD | [kqueue](https://www.freebsd.org/cgi/man.cgi?query=kqueue) |
 //! | Linux   | [epoll](http://man7.org/linux/man-pages/man7/epoll.7.html) |
-//! | Mac OS  | [kqueue](https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man2/kqueue.2.html) |
+//! | macOS   | [kqueue](https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man2/kqueue.2.html) |
 //! | NetBSD  | [kqueue](http://netbsd.gw.com/cgi-bin/man-cgi?kqueue) |
 //! | OpenBSD | [kqueue](https://man.openbsd.org/kqueue) |
 //!
@@ -425,7 +431,7 @@ impl<ES, E> event::Source<ES, E> for OsQueue
     }
 
     fn blocking_poll(&mut self, event_sink: &mut ES, timeout: Option<Duration>) -> Result<(), E> {
-        trace!("polling OS selector: timeout={:?}", timeout);
+        trace!("polling OS queue: timeout={:?}", timeout);
         self.selector.select(event_sink, timeout)
             .map_err(Into::into)
     }
