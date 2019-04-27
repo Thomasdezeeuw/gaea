@@ -44,7 +44,7 @@ impl Selector {
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
                 let ep_events = ep_events[..n as usize].iter()
-                    .map(|e| ep_event_to_event(e));
+                    .map(ep_event_to_event);
                 event_sink.extend(ep_events);
                 Ok(())
             },
