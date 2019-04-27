@@ -97,7 +97,7 @@ impl Signals {
 /// ```
 /// use mio_st::os::{Signal, SignalSet};
 ///
-/// // Signal set can be created by bit-oring (`|`) them together.
+/// // Signal set can be created by bit-oring (`|`) signals together.
 /// let set: SignalSet = Signal::Interrupt | Signal::Quit;
 /// assert_eq!(set.size(), 2);
 ///
@@ -192,7 +192,7 @@ impl IntoIterator for SignalSet {
     type IntoIter = SignalSetIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        SignalSetIter(self, 0)
+        SignalSetIter(self)
     }
 }
 
@@ -202,28 +202,23 @@ impl IntoIterator for SignalSet {
 ///
 /// The order in which the signals are iterated over is undefined.
 #[derive(Debug)]
-pub struct SignalSetIter(SignalSet, u8);
+pub struct SignalSetIter(SignalSet);
 
 impl Iterator for SignalSetIter {
     type Item = Signal;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.1 >= 3 {
-            None
-        } else {
-            let signal = match self.1 {
-                0 => Signal::Interrupt,
-                1 => Signal::Quit,
-                2 => Signal::Terminate,
-                _ => unreachable!(),
-            };
-            self.1 += 1;
-            if self.0.contains(signal) {
-                Some(signal)
-            } else {
-                self.next()
-            }
-        }
+        let n = (self.0).0.trailing_zeros();
+        match n {
+            0 => Some(Signal::Interrupt),
+            1 => Some(Signal::Quit),
+            2 => Some(Signal::Terminate),
+            _ => None,
+        }.map(|signal| {
+            // Remove the signal from the set.
+            (self.0).0 &= !(1 << n);
+            signal
+        })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

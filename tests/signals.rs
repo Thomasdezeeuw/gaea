@@ -78,6 +78,16 @@ fn signal_set() {
 }
 
 #[test]
+fn signal_set_iter_length() {
+    let set = Signal::Interrupt | Signal::Terminate | Signal::Quit;
+    let mut iter = set.into_iter();
+    assert!(iter.next().is_some());
+    assert_eq!(iter.len(), 2);
+    assert_eq!(iter.size_hint(), (2, Some(2)));
+    assert_eq!(iter.count(), 2);
+}
+
+#[test]
 fn receive_no_signal() {
     let (mut os_queue, _) = init_with_os_queue();
 
