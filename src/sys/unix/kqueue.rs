@@ -94,8 +94,7 @@ impl Selector {
             -1 => Err(io::Error::last_os_error()),
             0 => Ok(()), // Reached the time limit, no events are pulled.
             n => {
-                let kevents = kevents[..n as usize].iter()
-                    .map(|e| kevent_to_event(e));
+                let kevents = kevents[..n as usize].iter().map(kevent_to_event);
                 event_sink.extend(kevents);
                 Ok(())
             },
@@ -146,7 +145,7 @@ impl Selector {
 
     pub fn deregister(&self, fd: RawFd) -> io::Result<()> {
         let flags = libc::EV_DELETE | libc::EV_RECEIPT;
-        // id is not used.
+        // Id is not used.
         let mut changes: [libc::kevent; 2] = [
             new_kevent(fd as libc::uintptr_t, libc::EVFILT_WRITE, flags, event::Id(::std::usize::MAX)),
             new_kevent(fd as libc::uintptr_t, libc::EVFILT_READ, flags, event::Id(::std::usize::MAX)),
