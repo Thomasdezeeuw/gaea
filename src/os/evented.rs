@@ -74,7 +74,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`OsQueue.register`]: crate::os::OsQueue::register
-    fn register(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()>;
+    fn register(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()>;
 
     /// Reregister `self` with the given `OsQueue` instance.
     ///
@@ -82,7 +82,7 @@ pub trait Evented {
     /// instead.
     ///
     /// [`OsQueue.reregister`]: crate::os::OsQueue::reregister
-    fn reregister(&mut self, selector: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()>;
+    fn reregister(&mut self, os_queue: &mut OsQueue, id: event::Id, interests: Interests, opt: RegisterOption) -> io::Result<()>;
 
     /// Deregister `self` from the given `OsQueue` instance
     ///
@@ -90,5 +90,5 @@ pub trait Evented {
     /// instead.
     ///
     /// [`OsQueue.deregister`]: crate::os::OsQueue::deregister
-    fn deregister(&mut self, selector: &mut OsQueue) -> io::Result<()>;
+    fn deregister(&mut self, os_queue: &mut OsQueue) -> io::Result<()>;
 }
