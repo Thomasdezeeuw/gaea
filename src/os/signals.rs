@@ -109,9 +109,6 @@ impl Signals {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct SignalSet(u8);
 
-// NOTE: when adding here increase the size of events in
-// `kqueue::Selector::register_signals` and the `Iterator` implementation for
-// `SignalSetIter`.
 const INTERRUPT: u8 = 1;
 const QUIT: u8 = 1 << 1;
 const TERMINATE: u8 = 1 << 2;
