@@ -27,13 +27,13 @@ use core::time::Duration;
 /// struct MyEventSource(Vec<Event>);
 ///
 /// /// The error returned by our even source implementation.
-/// struct MyError;
+/// struct SourceError;
 ///
 /// impl<ES, E> event::Source<ES, E> for MyEventSource
 ///     where ES: event::Sink, // We keep the event sink generic to support all
 ///                            // kinds of event sinks.
-///           E: From<MyError>, // We add this bound to allow use to convert
-///                             // `MyError` into the generic error `E`.
+///           E: From<SourceError>, // We add this bound to allow use to convert
+///                                 // `SourceError` into the generic error `E`.
 /// {
 ///     fn max_timeout(&self) -> Option<Duration> {
 ///         if !self.0.is_empty() {
@@ -56,22 +56,24 @@ use core::time::Duration;
 ///         }
 ///     }
 /// }
-/// # fn poll_events<ES>(_event_sink: &mut ES) -> Result<(), MyError> { Ok(()) }
+/// # fn poll_events<ES>(_event_sink: &mut ES) -> Result<(), SourceError> { Ok(()) }
 ///
-/// // Implementing `From` for `()` allows us to use it as an error in our call
-/// // to poll below..
-/// impl From<MyError> for () {
-///     fn from(_err: MyError) -> () {
-///         ()
+/// #[derive(Debug)]
+/// struct MyError;
+///
+/// // Implementing `From` for `MyError` allows us to use it as an error in our call
+/// // to poll below.
+/// impl From<SourceError> for MyError {
+///     fn from(_err: SourceError) -> MyError {
+///         MyError
 ///     }
 /// }
 ///
-/// # fn main() -> Result<(), ()> {
-/// // Now can use our event source with `()` as error type.
+/// # fn main() -> Result<(), MyError> {
+/// // Now we can use our event source with `MyError` as error type.
 /// let mut my_source = MyEventSource(Vec::new());
 /// let mut events = Vec::new();
-/// poll::<_, ()>(&mut [&mut my_source], &mut events, None)?;
-/// # Ok(())
+/// poll(&mut [&mut my_source], &mut events, None)
 /// # }
 /// ```
 pub trait Source<ES, E>
