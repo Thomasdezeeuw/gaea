@@ -68,8 +68,7 @@ mod eventfd {
 #[cfg(target_os = "linux")]
 pub use self::eventfd::Awakener;
 
-#[cfg(any(target_os = "freebsd", target_os = "macos",
-          target_os = "netbsd", target_os = "openbsd"))]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
 mod kqueue {
     use std::io;
 
@@ -109,6 +108,74 @@ mod kqueue {
     }
 }
 
-#[cfg(any(target_os = "freebsd", target_os = "macos",
-          target_os = "netbsd", target_os = "openbsd"))]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
 pub use self::kqueue::Awakener;
+
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+mod pipe {
+    use std::fs::File;
+    use std::io::{self, Read, Write};
+    use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
+
+    use crate::event;
+    use crate::os::{Interests, RegisterOption};
+    use crate::sys::Selector;
+    use crate::unix::new_pipe;
+
+    /// Awakener backed by a unix pipe.
+    ///
+    /// Awakener controls both the sending and receiving ends and empties the
+    /// pipe if writing to it (waking) fails.
+    #[derive(Debug)]
+    pub struct Awakener {
+        sender: File,
+        receiver: File,
+    }
+
+    impl Awakener {
+        pub fn new(selector: &Selector, id: event::Id) -> io::Result<Awakener> {
+            let (sender, receiver) = new_pipe()?;
+            selector.register(receiver.as_raw_fd(), id, Interests::READABLE, RegisterOption::EDGE)?;
+            Ok(Awakener {
+                sender: unsafe { File::from_raw_fd(sender.into_raw_fd()) },
+                receiver: unsafe { File::from_raw_fd(receiver.into_raw_fd()) },
+            })
+        }
+
+        pub fn try_clone(&self) -> io::Result<Awakener> {
+            Ok(Awakener {
+                sender: self.sender.try_clone()?,
+                receiver: self.receiver.try_clone()?,
+            })
+        }
+
+        pub fn wake(&self) -> io::Result<()> {
+            match (&self.sender).write(&[1]) {
+                Ok(_) => Ok(()),
+                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
+                    // The reading end is full so we'll empty the buffer and try
+                    // again.
+                    self.empty();
+                    self.wake()
+                },
+                Err(ref err) if err.kind() == io::ErrorKind::Interrupted => self.wake(),
+                Err(err) => Err(err)
+            }
+        }
+
+        /// Empty the pipe's buffer, only need to call this if `wake` fails.
+        /// This ignores any errors.
+        fn empty(&self)  {
+            let mut buf = [0; 4096];
+            loop {
+                match (&self.receiver).read(&mut buf) {
+                    Ok(n) if n > 0 => continue,
+                    _ => return,
+                }
+            }
+        }
+    }
+}
+
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+pub use self::pipe::Awakener;
