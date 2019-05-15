@@ -77,6 +77,7 @@ impl Selector {
         where ES: event::Sink,
     {
         let mut kevents: [libc::kevent; EVENTS_CAP] = unsafe { mem::uninitialized() };
+        #[allow(trivial_numeric_casts)]
         let events_cap = event_sink.capacity_left().min(EVENTS_CAP) as nchanges_t;
 
         let timespec = timeout.map(timespec_from_duration);
@@ -155,6 +156,7 @@ impl Selector {
     }
 
     // Used by `Awakener`.
+    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     pub fn setup_awakener(&self, id: event::Id) -> io::Result<()> {
         // First attempt to accept user space notifications.
         let kevent = new_kevent(0, libc::EVFILT_USER,
@@ -163,6 +165,7 @@ impl Selector {
     }
 
     // Used by `Awakener`.
+    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     pub fn try_clone(&self) -> io::Result<Selector> {
         let new_kq = unsafe { libc::dup(self.kq) };
         if new_kq == -1 {
@@ -173,6 +176,7 @@ impl Selector {
     }
 
     // Used by `Awakener`.
+    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     pub fn wake(&self, id: event::Id) -> io::Result<()> {
         let mut kevent = new_kevent(0, libc::EVFILT_USER, libc::EV_ADD | libc::EV_RECEIPT, id);
         kevent.fflags = libc::NOTE_TRIGGER;
@@ -228,8 +232,9 @@ fn kevent_to_event(kevent: &libc::kevent) -> Event {
     match kevent.filter {
         libc::EVFILT_READ => readiness |= Ready::READABLE,
         libc::EVFILT_WRITE => readiness |= Ready::WRITABLE,
-        // Used by the `Awakener`. On platforms that use `eventfd` it will emit
-        // a readable event so we'll fake that here as well.
+        // Used by the `Awakener`. On platforms that use `eventfd` or a unix
+        // pipe it will emit a readable event so we'll fake that here as well.
+        #[cfg(any(target_os = "freebsd", target_os = "macos"))]
         libc::EVFILT_USER => readiness |= Ready::READABLE,
         _ => {},
     }
