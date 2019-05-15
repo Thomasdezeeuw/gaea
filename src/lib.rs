@@ -145,6 +145,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(all(not(feature = "std"), feature = "user_space"))]
+extern crate alloc;
+
 use core::cmp::min;
 use core::time::Duration;
 
@@ -154,7 +157,7 @@ use log::trace;
 mod sys;
 #[cfg(feature = "std")]
 mod timers;
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "user_space"))]
 mod user_space;
 
 pub mod event;
@@ -175,7 +178,7 @@ pub mod unix {
 
 #[cfg(feature = "std")]
 pub use crate::timers::Timers;
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "user_space"))]
 pub use crate::user_space::Queue;
 
 #[doc(no_inline)]
