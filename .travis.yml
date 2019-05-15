@@ -13,6 +13,9 @@ matrix:
   - rust: stable
     name: "Build check no features"
     script: cargo build --no-default-features
+  - rust: nightly
+    name: "Build check user_space feature"
+    script: cargo build --no-default-features --features user_space
 language: rust
 rust:
   - 1.33.0

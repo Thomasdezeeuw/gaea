@@ -1,6 +1,9 @@
 //! Module with user space readiness event queue.
 
-use std::time::Duration;
+#[cfg(all(not(feature = "std"), feature = "user_space"))]
+use alloc::vec::Vec;
+
+use core::time::Duration;
 
 use log::trace;
 
