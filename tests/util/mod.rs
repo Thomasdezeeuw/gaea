@@ -19,9 +19,8 @@ pub const TIMEOUT_MARGIN: Duration = Duration::from_millis(10);
 
 /// Initialise the test setup, things like logging etc.
 pub fn init() {
-    let env = env_logger::Env::new().filter("LOG_LEVEL");
     // Logger could already be set, so we ignore the result.
-    drop(env_logger::try_init_from_env(env));
+    drop(std_logger::try_init());
 }
 
 /// Initialise the test setup (same as `init`) and create a `OsQueue` and an

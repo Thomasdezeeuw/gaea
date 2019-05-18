@@ -21,7 +21,7 @@ libc = "0.2.55"
 log  = "0.4.6"
 
 [dev-dependencies]
-env_logger = "0.6.0"
+std-logger = { version = "0.3.3", default-features = false }
 
 [features]
 default = ["std"]
