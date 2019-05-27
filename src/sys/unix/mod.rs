@@ -6,10 +6,10 @@ mod udp;
 
 pub mod pipe;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 mod epoll;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::epoll::Selector;
 
 #[cfg(any(target_os = "freebsd", target_os = "macos",
