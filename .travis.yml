@@ -11,6 +11,9 @@ matrix:
     name: "Build check Linux musl"
     script: .ci/build_check.sh "x86_64-unknown-linux-musl"
   - rust: stable
+    name: "Build check Android"
+    script: .ci/build_check.sh "aarch64-linux-android"
+  - rust: stable
     name: "Build check no features"
     script: cargo build --no-default-features
   - rust: nightly
