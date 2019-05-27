@@ -386,11 +386,12 @@ fn connected_udp_socket_unconnected_methods() {
     ]);
 
     // Can't use `send_to`.
-    // Linux actually allows `send_to` even if the socket is connected.
-    #[cfg(not(target_os = "linux"))]
+    // Linux (and Android) actually allow `send_to` even if the socket is
+    // connected.
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
     assert_error(socket1.send_to(DATA1, address2), "already connected");
     // Even if the address is the same.
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
     assert_error(socket1.send_to(DATA1, address3), "already connected");
 
     socket2.send_to(DATA2, address3).unwrap();

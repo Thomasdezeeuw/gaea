@@ -2,7 +2,7 @@ use std::{io, mem, ptr};
 
 use crate::os::signals::SignalSet;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod signalfd {
     use std::fs::File;
     use std::io::{self, Read};
@@ -57,7 +57,7 @@ mod signalfd {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::signalfd::Signals;
 
 #[cfg(any(target_os = "freebsd", target_os = "macos",

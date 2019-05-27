@@ -1,4 +1,4 @@
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod eventfd {
     use std::fs::File;
     use std::io::{self, Read, Write};
@@ -65,7 +65,7 @@ mod eventfd {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::eventfd::Awakener;
 
 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
