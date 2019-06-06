@@ -1,5 +1,7 @@
 use std::fs::File;
 use std::io::{self, Read, Write};
+#[cfg(feature = "nightly")]
+use std::io::{IoSlice, IoSliceMut};
 use std::mem;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 
@@ -131,6 +133,11 @@ impl Read for Receiver {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.read(buf)
     }
+
+    #[cfg(feature = "nightly")]
+    fn read_vectored(&mut self, bufs: &mut [IoSliceMut]) -> io::Result<usize> {
+        self.inner.read_vectored(bufs)
+    }
 }
 
 /// Sending end of an unix pipe.
@@ -177,6 +184,11 @@ impl IntoRawFd for Sender {
 impl Write for Sender {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.inner.write(buf)
+    }
+
+    #[cfg(feature = "nightly")]
+    fn write_vectored(&mut self, bufs: &[IoSlice]) -> io::Result<usize> {
+        self.inner.write_vectored(bufs)
     }
 
     fn flush(&mut self) -> io::Result<()> {

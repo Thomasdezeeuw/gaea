@@ -1,4 +1,6 @@
 use std::io::{self, Read, Write};
+#[cfg(feature = "nightly")]
+use std::io::{IoSlice, IoSliceMut};
 use std::mem::size_of_val;
 use std::net::{self, SocketAddr};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
@@ -98,11 +100,21 @@ impl Read for TcpStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.stream.read(buf)
     }
+
+    #[cfg(feature = "nightly")]
+    fn read_vectored(&mut self, bufs: &mut [IoSliceMut]) -> io::Result<usize> {
+        self.stream.read_vectored(bufs)
+    }
 }
 
 impl Write for TcpStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.stream.write(buf)
+    }
+
+    #[cfg(feature = "nightly")]
+    fn write_vectored(&mut self, bufs: &[IoSlice]) -> io::Result<usize> {
+        self.stream.write_vectored(bufs)
     }
 
     fn flush(&mut self) -> io::Result<()> {
