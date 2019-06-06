@@ -8,8 +8,8 @@ matrix:
   fast_finish: false
   include:
   - rust: nightly
-    name: "Testing nightly feature"
-    script: cargo test --verbose --features nightly
+    name: "Test nightly feature"
+    script: .ci/test.sh nightly
   - rust: stable
     name: "Build check Linux musl"
     script: .ci/build_check.sh "x86_64-unknown-linux-musl"
