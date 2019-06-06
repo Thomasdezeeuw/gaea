@@ -14,8 +14,8 @@ mod util;
 
 use self::util::{any_local_address, any_local_ipv6_address, assert_error, assert_would_block, expect_events, init, init_with_os_queue};
 
-const DATA1: &'static [u8; 12] = b"Hello world!";
-const DATA2: &'static [u8; 11] = b"Hello mars!";
+const DATA1: &[u8] = b"Hello world!";
+const DATA2: &[u8] = b"Hello mars!";
 
 const ID1: event::Id = event::Id(0);
 const ID2: event::Id = event::Id(1);
