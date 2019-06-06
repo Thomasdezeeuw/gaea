@@ -21,7 +21,7 @@ use crate::{event, sys};
 /// # Examples
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io;
 ///
 /// use mio_st::{event, poll};
@@ -196,7 +196,7 @@ impl AsRawFd for TcpStream {
 /// # Examples
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io;
 /// use std::time::Duration;
 ///

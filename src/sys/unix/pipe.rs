@@ -24,7 +24,7 @@ use crate::sys::unix::EventedFd;
 /// # Examples
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io::{self, Read, Write};
 ///
 /// use mio_st::os::{OsQueue, RegisterOption};

@@ -31,7 +31,7 @@ use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 /// Basic usage
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::net::TcpListener;
 /// use std::os::unix::io::AsRawFd;
 ///

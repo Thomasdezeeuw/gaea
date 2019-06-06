@@ -19,7 +19,7 @@ use crate::event::{self, Event};
 /// # Examples
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use mio_st::{Event, Queue, Ready, event, poll};
 ///
 /// let mut queue = Queue::new();

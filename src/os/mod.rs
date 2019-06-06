@@ -54,7 +54,7 @@
 //! For example:
 //!
 //! ```
-//! # fn main() -> Result<(), Box<std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use std::thread;
 //! use std::time::Duration;
 //!
@@ -168,7 +168,7 @@ impl OsQueue {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     /// use std::time::Duration;
     ///
@@ -243,7 +243,7 @@ impl OsQueue {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::net::TcpStream;
@@ -306,7 +306,7 @@ impl OsQueue {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::{event, poll};
@@ -374,7 +374,7 @@ impl OsQueue {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     /// use std::time::Duration;
     ///
