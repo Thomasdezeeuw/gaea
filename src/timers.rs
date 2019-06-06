@@ -19,7 +19,7 @@ use crate::event::{self, Event, Ready};
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::time::Instant;
 ///
-/// use mio_st::{Event, Timers, Ready, event, poll};
+/// use gaea::{Event, Timers, Ready, event, poll};
 ///
 /// let mut timers = Timers::new();
 /// let mut events = Vec::new();

@@ -1,8 +1,8 @@
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use mio_st::event::{self, Capacity, Event, Ready, Source};
-use mio_st::Timers;
+use gaea::event::{self, Capacity, Event, Ready, Source};
+use gaea::Timers;
 
 mod util;
 

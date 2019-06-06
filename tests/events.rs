@@ -1,4 +1,4 @@
-use mio_st::event::{self, Capacity, Event, Ready, Sink};
+use gaea::event::{self, Capacity, Event, Ready, Sink};
 
 #[test]
 fn events_vec() {

@@ -1,16 +1,21 @@
-# Mio-st - Metal IO, single threaded
+# Gaea
 
-[![Build Status](https://travis-ci.org/Thomasdezeeuw/mio-st.svg?branch=master)](https://travis-ci.org/Thomasdezeeuw/mio-st)
+[![Build Status](https://travis-ci.org/Thomasdezeeuw/gaea.svg?branch=master)](https://travis-ci.org/Thomasdezeeuw/gaea)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Crates.io](https://img.shields.io/crates/v/mio_st.svg)](https://crates.io/crates/mio-st)
-[![Docs](https://docs.rs/mio-st/badge.svg)](https://docs.rs/mio-st)
+[![Crates.io](https://img.shields.io/crates/v/gaea.svg)](https://crates.io/crates/gaea)
+[![Docs](https://docs.rs/gaea/badge.svg)](https://docs.rs/gaea)
 
-This is a fork of [mio] (v0.6.12, commit
+Low-level library to build event driven applications, supporting lightweight
+non-blocking I/O.
+
+This crate started as a fork of [mio] (v0.6.12, commit
 4a716d0b687592368d9e283a6ea63aedb5877fc8), changed to run on a single thread.
+But since the has evolved dramatically changing to become the center of events,
+rather then just provided a cross-platform epoll/kqueue implementation.
 
 [mio]: https://github.com/carllerche/mio
 
-Rust version 1.33 or higher is required as mio-st makes use of Rust 2018 edition
+Rust version 1.33 or higher is required as gaea makes use of Rust 2018 edition
 features.
 
 
@@ -50,7 +55,7 @@ The following platforms should work, as in the code compiles:
 
 The [API documentation] is available on docs.rs.
 
-[API documentation]: https://docs.rs/mio-st
+[API documentation]: https://docs.rs/gaea
 
 
 ## License

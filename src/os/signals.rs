@@ -33,8 +33,8 @@ use crate::sys;
 /// ```
 /// use std::io;
 ///
-/// use mio_st::{event, OsQueue, poll};
-/// use mio_st::os::{Signal, Signals, SignalSet};
+/// use gaea::{event, OsQueue, poll};
+/// use gaea::os::{Signal, Signals, SignalSet};
 ///
 /// const SIGNAL_ID: event::Id = event::Id(10);
 ///
@@ -46,7 +46,7 @@ use crate::sys;
 ///     let mut signals = Signals::new(&mut os_queue, SignalSet::all(), SIGNAL_ID)?;
 ///
 ///     # // Don't want to let the example run for ever.
-///     # let awakener = mio_st::os::Awakener::new(&mut os_queue, event::Id(20))?;
+///     # let awakener = gaea::os::Awakener::new(&mut os_queue, event::Id(20))?;
 ///     # awakener.wake()?;
 ///     #
 ///     loop {
@@ -95,7 +95,7 @@ impl Signals {
 /// # Examples
 ///
 /// ```
-/// use mio_st::os::{Signal, SignalSet};
+/// use gaea::os::{Signal, SignalSet};
 ///
 /// // Signal set can be created by bit-oring (`|`) signals together.
 /// let set: SignalSet = Signal::Interrupt | Signal::Quit;
@@ -138,7 +138,7 @@ impl SignalSet {
     /// # Examples
     ///
     /// ```
-    /// use mio_st::os::{Signal, SignalSet};
+    /// use gaea::os::{Signal, SignalSet};
     ///
     /// let set = SignalSet::all();
     ///

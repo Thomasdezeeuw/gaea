@@ -1,7 +1,7 @@
 use std::io;
 
-use mio_st::os::{Signal, SignalSet, Signals};
-use mio_st::{event, poll, OsQueue};
+use gaea::os::{Signal, SignalSet, Signals};
+use gaea::{event, poll, OsQueue};
 
 const SIGNAL_ID: event::Id = event::Id(10);
 

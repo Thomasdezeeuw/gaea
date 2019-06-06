@@ -20,7 +20,7 @@ use crate::event::{self, Event};
 ///
 /// ```
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use mio_st::{Event, Queue, Ready, event, poll};
+/// use gaea::{Event, Queue, Ready, event, poll};
 ///
 /// let mut queue = Queue::new();
 /// let mut events = Vec::new();

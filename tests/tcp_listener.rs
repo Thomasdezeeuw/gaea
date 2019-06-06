@@ -4,10 +4,10 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use std::{io, net};
 
-use mio_st::event::{Event, Ready};
-use mio_st::net::TcpListener;
-use mio_st::os::{Interests, OsQueue, RegisterOption};
-use mio_st::{event, poll};
+use gaea::event::{Event, Ready};
+use gaea::net::TcpListener;
+use gaea::os::{Interests, OsQueue, RegisterOption};
+use gaea::{event, poll};
 
 mod util;
 

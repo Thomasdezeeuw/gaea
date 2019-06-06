@@ -29,9 +29,9 @@ use crate::{event, sys};
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io;
 ///
-/// use mio_st::{event, poll};
-/// use mio_st::net::UdpSocket;
-/// use mio_st::os::{Interests, RegisterOption, OsQueue};
+/// use gaea::{event, poll};
+/// use gaea::net::UdpSocket;
+/// use gaea::os::{Interests, RegisterOption, OsQueue};
 ///
 /// // Unique ids and addresses for both the sender and echoer.
 /// const SENDER_ID: event::Id = event::Id(0);
@@ -103,7 +103,7 @@ impl UdpSocket {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use mio_st::net::UdpSocket;
+    /// use gaea::net::UdpSocket;
     ///
     /// // We must bind it to an open address.
     /// let address = "127.0.0.1:7002".parse()?;
@@ -138,7 +138,7 @@ impl UdpSocket {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use mio_st::net::UdpSocket;
+    /// use gaea::net::UdpSocket;
     ///
     /// let address = "127.0.0.1:7003".parse()?;
     /// let mut socket = UdpSocket::bind(address)?;
@@ -159,9 +159,9 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::net::UdpSocket;
-    /// use mio_st::os::{RegisterOption, Interests};
-    /// use mio_st::{event, OsQueue, poll};
+    /// use gaea::net::UdpSocket;
+    /// use gaea::os::{RegisterOption, Interests};
+    /// use gaea::{event, OsQueue, poll};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -197,9 +197,9 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::net::UdpSocket;
-    /// use mio_st::os::{RegisterOption, Interests};
-    /// use mio_st::{event, OsQueue, poll};
+    /// use gaea::net::UdpSocket;
+    /// use gaea::os::{RegisterOption, Interests};
+    /// use gaea::{event, OsQueue, poll};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -242,9 +242,9 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::net::UdpSocket;
-    /// use mio_st::os::{RegisterOption, Interests};
-    /// use mio_st::{event, OsQueue, poll};
+    /// use gaea::net::UdpSocket;
+    /// use gaea::os::{RegisterOption, Interests};
+    /// use gaea::{event, OsQueue, poll};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -289,9 +289,9 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::net::UdpSocket;
-    /// use mio_st::os::{RegisterOption, Interests};
-    /// use mio_st::{event, OsQueue, poll};
+    /// use gaea::net::UdpSocket;
+    /// use gaea::os::{RegisterOption, Interests};
+    /// use gaea::{event, OsQueue, poll};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -344,9 +344,9 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::net::UdpSocket;
-    /// use mio_st::os::{RegisterOption, Interests};
-    /// use mio_st::{event, OsQueue, poll};
+    /// use gaea::net::UdpSocket;
+    /// use gaea::os::{RegisterOption, Interests};
+    /// use gaea::{event, OsQueue, poll};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -399,9 +399,9 @@ impl UdpSocket {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::net::UdpSocket;
-    /// use mio_st::os::{RegisterOption, Interests};
-    /// use mio_st::{event, OsQueue, poll};
+    /// use gaea::net::UdpSocket;
+    /// use gaea::os::{RegisterOption, Interests};
+    /// use gaea::{event, OsQueue, poll};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();

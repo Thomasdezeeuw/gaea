@@ -6,9 +6,9 @@ use std::collections::HashMap;
 use std::io::{self, Write};
 use std::net::SocketAddr;
 
-use mio_st::net::{TcpListener, TcpStream};
-use mio_st::os::{OsQueue, RegisterOption};
-use mio_st::{event, poll};
+use gaea::net::{TcpListener, TcpStream};
+use gaea::os::{OsQueue, RegisterOption};
+use gaea::{event, poll};
 
 // An unique id to associate an event with a handle, in this case for our TCP
 // listener.
