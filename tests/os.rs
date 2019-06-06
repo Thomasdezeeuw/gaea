@@ -114,7 +114,7 @@ fn os_queue_empty_source() {
     let (mut os_queue, mut events) = init_with_os_queue();
 
     // Test `poll` first.
-    assert_eq!(max_timeout(&mut os_queue), None);
+    assert_eq!(max_timeout(&os_queue), None);
     event::Source::<_, io::Error>::poll(&mut os_queue, &mut events).unwrap();
     assert!(events.is_empty(), "unexpected events");
 
@@ -164,7 +164,9 @@ fn queue_events_capacity() {
     // Add three more events.
     os_queue.reregister(&mut sender, event::Id(1), Interests::WRITABLE, opt).unwrap();
     os_queue.register(&mut receiver, event::Id(1), Interests::READABLE, opt).unwrap();
-    sender.write(b"Hello").unwrap();
+    const DATA: &[u8] = b"Hello";
+    let n = sender.write(DATA).unwrap();
+    assert_eq!(n, DATA.len());
     awakener.wake().unwrap();
 
     let mut events = EventsCapacity(Capacity::Growable, 0);

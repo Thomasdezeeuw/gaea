@@ -21,7 +21,12 @@ fn event() {
 #[test]
 fn event_equality() {
     let event = Event::new(event::Id(0), Ready::WRITABLE);
-    assert_eq!(event, event.clone());
+    assert_eq!(event, event);
+
+    // Cloned.
+    #[allow(clippy::clone_on_copy)] // Point of the test.
+    let event1 = event.clone();
+    assert_eq!(event, event1);
 
     // Same
     let event2 = Event::new(event::Id(0), Ready::WRITABLE);
@@ -137,14 +142,18 @@ fn id() {
     assert_eq!(event::Id::from(0), event::Id(0));
     assert_eq!(usize::from(id), 0);
     assert_eq!(id.0, 0);
-    assert_eq!(id, id.clone());
+    #[allow(clippy::clone_on_copy)] // Point of the test below.
+    let id1 = id.clone();
+    assert_eq!(id, id1);
 
     let max_value = usize::max_value();
     let id = event::Id(max_value);
     assert_eq!(event::Id::from(max_value), event::Id(max_value));
     assert_eq!(usize::from(id), max_value);
     assert_eq!(id.0, max_value);
-    assert_eq!(id, id.clone());
+    #[allow(clippy::clone_on_copy)] // Point of the test below.
+    let id1 = id.clone();
+    assert_eq!(id, id1);
 }
 
 #[test]

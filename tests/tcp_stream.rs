@@ -16,7 +16,7 @@ mod util;
 use self::util::{any_local_address, any_local_ipv6_address, assert_would_block, expect_events, init, init_with_os_queue};
 
 /// Data used in reading and writing tests.
-const DATA: &'static [u8; 12] = b"Hello world!";
+const DATA: &[u8] = b"Hello world!";
 
 const ID1: event::Id = event::Id(0);
 const ID2: event::Id = event::Id(1);
@@ -145,7 +145,8 @@ fn tcp_stream_peek() {
         sender.send(local_address).unwrap();
 
         let (mut stream, _) = listener.accept().unwrap();
-        stream.write(DATA).unwrap();
+        let n = stream.write(DATA).unwrap();
+        assert_eq!(n, DATA.len());
     });
 
     let address = receiver.recv().unwrap();
@@ -212,8 +213,8 @@ fn tcp_stream_shutdown_write() {
     ]);
 
     stream.shutdown(Shutdown::Write).unwrap();
-    let mut buf = [1; 5];
-    let err = stream.write(&mut buf).unwrap_err();
+    let buf = [1; 5];
+    let err = stream.write(&buf).unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::BrokenPipe);
 
     // Unblock the thread.
@@ -242,7 +243,7 @@ fn tcp_stream_shutdown_both() {
     let n = stream.read(&mut buf).unwrap();
     assert_eq!(n, 0);
 
-    let err = stream.write(&mut buf).unwrap_err();
+    let err = stream.write(&buf).unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::BrokenPipe);
 
     // Unblock the thread.
