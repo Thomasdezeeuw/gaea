@@ -34,3 +34,5 @@ user_space = []
 # Travis' macOS machines don't always meet the set deadline, this disables the
 # tests with strict deadlines.
 disable_test_deadline = []
+# Enables features only available in nightly builds of the Rust compiler.
+nightly = []
