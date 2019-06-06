@@ -25,7 +25,8 @@ fn signal_bit_or() {
     assert_eq!(SignalSet::empty() | Signal::Interrupt, Signal::Interrupt.into());
 
     // Overwriting.
-    assert_eq!(Signal::Terminate | Signal::Terminate, Signal::Terminate.into());
+    let signal = Signal::Terminate; // This is done to avoid a clippy warning.
+    assert_eq!(signal | Signal::Terminate, Signal::Terminate.into());
     assert_eq!(Signal::Terminate | SignalSet::all(), SignalSet::all());
     assert_eq!(SignalSet::all() | Signal::Quit, SignalSet::all());
     assert_eq!(SignalSet::all() | SignalSet::all(), SignalSet::all());
@@ -52,7 +53,7 @@ fn signal_set() {
         assert_eq!(set.size(), size);
 
         // Test `contains`.
-        let mut contains_iter = (&expected).into_iter().cloned();
+        let mut contains_iter = (&expected).iter().cloned();
         while let Some(signal) = contains_iter.next() {
             assert!(set.contains(signal));
             assert!(set.contains::<SignalSet>(signal.into()));

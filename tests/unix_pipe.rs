@@ -14,7 +14,7 @@ use self::util::{expect_events, init, init_with_os_queue};
 const SENDER_ID: event::Id = event::Id(0);
 const RECEIVER_ID: event::Id = event::Id(1);
 
-const DATA: &'static [u8] = b"Hello world!";
+const DATA: &[u8] = b"Hello world!";
 
 #[test]
 fn unix_pipe() {

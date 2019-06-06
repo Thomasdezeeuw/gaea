@@ -130,7 +130,7 @@ fn write_address(id: event::Id, stream: &mut TcpStream, peer_address: SocketAddr
     eprintln!("Error writing to connection: {}: id={}", err, id);
     // The connection is broken we can remove it from the map, the client will
     // have to reconnect.
-    return true;
+    true
 }
 
 /// Returns true if `err` is of kind `WouldBlock`, one we can safely ignore.
