@@ -140,9 +140,6 @@
 // Disallow warnings in examples, we want to set a good example after all.
 #![doc(test(attr(deny(warnings))))]
 
-// Disallow clippy warnings.
-#![deny(clippy::all)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(all(not(feature = "std"), feature = "user_space"))]
