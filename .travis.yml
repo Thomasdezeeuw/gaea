@@ -1,4 +1,9 @@
-cache: cargo
+cache:
+  directories:
+    - $HOME/.cargo
+before_cache:
+  # Caching takes too long.
+  - rm -rf $HOME/.cargo/registry
 os:
   - linux
   - osx
