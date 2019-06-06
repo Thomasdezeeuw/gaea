@@ -26,10 +26,10 @@ type nchanges_t = libc::size_t;
 type kevent_filter_t = libc::c_short;
 #[cfg(target_os = "macos")]
 #[allow(non_camel_case_types)]
-type kevent_filter_t = libc::int16_t;
+type kevent_filter_t = i16;
 #[cfg(target_os = "netbsd")]
 #[allow(non_camel_case_types)]
-type kevent_filter_t = libc::uint32_t;
+type kevent_filter_t = u32;
 
 // Type of the `flags` field in the `kevent` structure.
 #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
@@ -37,10 +37,10 @@ type kevent_filter_t = libc::uint32_t;
 type kevent_flags_t = libc::c_ushort;
 #[cfg(target_os = "macos")]
 #[allow(non_camel_case_types)]
-type kevent_flags_t = libc::uint16_t;
+type kevent_flags_t = u16;
 #[cfg(target_os = "netbsd")]
 #[allow(non_camel_case_types)]
-type kevent_flags_t = libc::uint32_t;
+type kevent_flags_t = u32;
 
 // Type of the `data` field in the `kevent` structure.
 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
@@ -48,7 +48,7 @@ type kevent_flags_t = libc::uint32_t;
 type kevent_data_t = libc::intptr_t;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 #[allow(non_camel_case_types)]
-type kevent_data_t = libc::int64_t;
+type kevent_data_t = i64;
 
 // Type of the `udata` field in the `kevent` structure.
 #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "openbsd"))]

@@ -102,8 +102,8 @@ fn ep_event_to_event(ep_event: &libc::epoll_event) -> Event {
 }
 
 /// Whether or not the provided `flags` contains the provided `flag`.
-const fn contains_flag(flags: libc::uint32_t, flag: libc::c_int) -> bool {
-    (flags & flag as libc::uint32_t) != 0
+const fn contains_flag(flags: u32, flag: libc::c_int) -> bool {
+    (flags & flag as u32) != 0
 }
 
 /// Create a new `epoll_event`.
@@ -114,7 +114,7 @@ fn new_epoll_event(interests: Interests, opt: RegisterOption, id: event::Id) -> 
     }
 }
 
-fn to_epoll_events(interests: Interests, opt: RegisterOption) -> libc::uint32_t {
+fn to_epoll_events(interests: Interests, opt: RegisterOption) -> u32 {
     let mut events = libc::EPOLLPRI | libc::EPOLLRDHUP;
 
     if interests.is_readable() {
@@ -132,7 +132,7 @@ fn to_epoll_events(interests: Interests, opt: RegisterOption) -> libc::uint32_t 
     if opt.is_oneshot() {
         events |= libc::EPOLLONESHOT;
     }
-    events as libc::uint32_t
+    events as u32
 }
 
 fn epoll_ctl(epfd: RawFd, op: libc::c_int, fd: RawFd, event: *mut libc::epoll_event) -> io::Result<()> {

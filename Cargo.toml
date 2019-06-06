@@ -17,7 +17,7 @@ edition       = "2018"
 travis-ci = { repository = "Thomasdezeeuw/mio-st", branch = "master" }
 
 [dependencies]
-libc = "0.2.55"
+libc = "0.2.58"
 log  = "0.4.6"
 
 [dev-dependencies]
