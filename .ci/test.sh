@@ -6,7 +6,7 @@ set -x
 cargo --version
 rustc --version
 
-FEATURES=""
+FEATURES="$1"
 
 if [ "$TRAVIS_OS_NAME" = "osx" ]; then
 	FEATURES="$FEATURES disable_test_deadline"
