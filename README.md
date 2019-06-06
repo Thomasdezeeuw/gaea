@@ -42,8 +42,8 @@ The following platforms are supported:
 The following platforms should work, as in the code compiles:
 
  - FreeBSD,
- - ~~NetBSD~~ (see issue #69), and
- - ~~OpenBSD~~ (see issue #69).
+ - NetBSD, and
+ - OpenBSD.
 
 
 ## Documentation
