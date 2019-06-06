@@ -14,7 +14,7 @@ use mio_st::{event, poll};
 // listener.
 const SERVER_ID: event::Id = event::Id(0);
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a Operating System backed (epoll or kqueue) queue.
     let mut os_queue = OsQueue::new()?;
     // Create our event sink.

@@ -26,7 +26,7 @@ use crate::{event, sys};
 /// listens for messages and prints them to standard out.
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io;
 ///
 /// use mio_st::{event, poll};
@@ -102,7 +102,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// // We must bind it to an open address.
@@ -137,7 +137,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use mio_st::net::UdpSocket;
     ///
     /// let address = "127.0.0.1:7003".parse()?;
@@ -156,7 +156,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::net::UdpSocket;
@@ -194,7 +194,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::net::UdpSocket;
@@ -239,7 +239,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::net::UdpSocket;
@@ -286,7 +286,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::net::UdpSocket;
@@ -341,7 +341,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::net::UdpSocket;
@@ -396,7 +396,7 @@ impl UdpSocket {
     /// # Examples
     ///
     /// ```
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
     /// use mio_st::net::UdpSocket;

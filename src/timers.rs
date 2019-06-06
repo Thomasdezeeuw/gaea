@@ -16,7 +16,7 @@ use crate::event::{self, Event, Ready};
 /// # Examples
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::time::Instant;
 ///
 /// use mio_st::{Event, Timers, Ready, event, poll};

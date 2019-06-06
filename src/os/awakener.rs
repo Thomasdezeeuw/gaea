@@ -39,7 +39,7 @@ use crate::{event, sys};
 /// Wake an [`OsQueue`] from another thread.
 ///
 /// ```
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io;
 /// use std::thread;
 /// use std::time::Duration;
