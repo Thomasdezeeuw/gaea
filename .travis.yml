@@ -7,6 +7,9 @@ env:
 matrix:
   fast_finish: false
   include:
+  - rust: nightly
+    name: "Testing nightly feature"
+    script: cargo test --verbose --features nightly
   - rust: stable
     name: "Build check Linux musl"
     script: .ci/build_check.sh "x86_64-unknown-linux-musl"
