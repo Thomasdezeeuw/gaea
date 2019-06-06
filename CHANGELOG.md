@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.3.0
+
+The crate was renamed to Gaea, which comes with a complete redesign of the
+crate's API.
+
+### New
+
+ * Now supports OpenBSD and NetBSD (properly).
+ * Supports `no_std` environments.
+ * New `event::Sink` trait that allows for a custom containers for events.
+   `Events` was removed.
+ * New `event::Source` trait to allow polling for events from different event
+   sources.
+ * `Queue`, an `event::Source` for user space queue for events.
+ * `Timers`, an `event::Source` for deadlines and timeouts.
+ * `poll` polls one or more event sources.
+ * Add `os::Signals`, allows for handling of Unix signals.
+ * Support for vectored I/O, when the "nightly" feature is enabled.
+
+### Renamed/changed
+
+ * Renamed `EventedId` to `event::Id` (in the `event` module).
+ * Renamed `Poller` to `OsQueue` and moved it to a new `os` module.
+ * Renamed `PollOption` to `RegisterOption` and moved it to the `os` module.
+ * Moved `Evented` to the `os` module.
+ * Moved `Awakener` to the `os` module.
+
+### Removed
+
+ * `EventedIo`, use `EventedFd` instead.
+ * `ConnectedUdpSocket`, use `UdpSocket` instead.
+ * `Events`, use `event::Sink` instead, for example with `Vec<Event>`.
+
 ## v0.2.3
 
 ### Changes
