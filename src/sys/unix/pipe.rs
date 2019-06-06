@@ -29,9 +29,9 @@ use crate::sys::unix::EventedFd;
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io::{self, Read, Write};
 ///
-/// use mio_st::os::{OsQueue, RegisterOption};
-/// use mio_st::unix::{new_pipe, Sender, Receiver};
-/// use mio_st::{event, poll};
+/// use gaea::os::{OsQueue, RegisterOption};
+/// use gaea::unix::{new_pipe, Sender, Receiver};
+/// use gaea::{event, poll};
 ///
 /// // Unique ids for the two ends of the channel.
 /// const CHANNEL_RECV_ID: event::Id = event::Id(0);

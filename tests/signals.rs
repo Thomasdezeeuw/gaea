@@ -5,8 +5,8 @@ use std::process::{Child, Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-use mio_st::event;
-use mio_st::os::{Signal, Signals, SignalSet};
+use gaea::event;
+use gaea::os::{Signal, Signals, SignalSet};
 
 mod util;
 

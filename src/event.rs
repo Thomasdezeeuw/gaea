@@ -21,7 +21,7 @@ use core::time::Duration;
 /// ```
 /// use std::time::Duration;
 ///
-/// use mio_st::{event, Event, poll};
+/// use gaea::{event, Event, poll};
 ///
 /// /// Our event source that implements `event::Source`.
 /// struct MyEventSource(Vec<Event>);
@@ -171,7 +171,7 @@ impl<S, ES, E> Source<ES, E> for &mut S
 ///
 /// ```
 /// # fn main() -> Result<(), ()> {
-/// use mio_st::{event, Event, Queue, Ready, poll};
+/// use gaea::{event, Event, Queue, Ready, poll};
 ///
 /// const EVENTS_SIZE: usize = 32;
 ///
@@ -290,7 +290,7 @@ impl Capacity {
     /// For event sinks without a capacity limit it will always return `right`.
     ///
     /// ```
-    /// use mio_st::event::Sink;
+    /// use gaea::event::Sink;
     ///
     /// let n_events = 5;
     /// let events = Vec::new();
@@ -300,8 +300,8 @@ impl Capacity {
     /// For limited capacity event sinks it will take the minimum value.
     ///
     /// ```
-    /// use mio_st::{event, Event, Ready};
-    /// use mio_st::event::Sink;
+    /// use gaea::{event, Event, Ready};
+    /// use gaea::event::Sink;
     ///
     /// struct MyEventContainer(Option<Event>);
     ///
@@ -348,7 +348,7 @@ impl Capacity {
 /// # Examples
 ///
 /// ```
-/// use mio_st::{event, Event, Ready};
+/// use gaea::{event, Event, Ready};
 ///
 /// let my_event = Event::new(event::Id(0), Ready::READABLE | Ready::WRITABLE);
 ///
@@ -431,7 +431,7 @@ impl fmt::Display for Id {
 /// # Examples
 ///
 /// ```
-/// use mio_st::Ready;
+/// use gaea::Ready;
 ///
 /// let ready = Ready::READABLE | Ready::WRITABLE;
 ///

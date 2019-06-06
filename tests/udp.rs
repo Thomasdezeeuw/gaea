@@ -5,10 +5,10 @@ use std::sync::{Arc, Barrier};
 use std::thread::{self, sleep};
 use std::time::Duration;
 
-use mio_st::event::{Event, Ready};
-use mio_st::net::UdpSocket;
-use mio_st::os::{Interests, RegisterOption};
-use mio_st::{event, poll};
+use gaea::event::{Event, Ready};
+use gaea::net::UdpSocket;
+use gaea::os::{Interests, RegisterOption};
+use gaea::{event, poll};
 
 mod util;
 

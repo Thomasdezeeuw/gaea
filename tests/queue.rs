@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use mio_st::event::{self, Capacity, Ready, Source};
-use mio_st::{Event, Queue};
+use gaea::event::{self, Capacity, Ready, Source};
+use gaea::{Event, Queue};
 
 mod util;
 

@@ -35,9 +35,9 @@ use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 /// use std::net::TcpListener;
 /// use std::os::unix::io::AsRawFd;
 ///
-/// use mio_st::event;
-/// use mio_st::os::{Interests, RegisterOption, OsQueue};
-/// use mio_st::unix::EventedFd;
+/// use gaea::event;
+/// use gaea::os::{Interests, RegisterOption, OsQueue};
+/// use gaea::unix::EventedFd;
 ///
 /// // Bind a listener from the standard library.
 /// let listener = TcpListener::bind("127.0.0.1:0")?;
@@ -56,9 +56,9 @@ use crate::os::{Evented, Interests, OsQueue, RegisterOption};
 /// use std::io;
 /// use std::os::unix::io::RawFd;
 ///
-/// use mio_st::event;
-/// use mio_st::os::{Evented, Interests, RegisterOption, OsQueue};
-/// use mio_st::unix::EventedFd;
+/// use gaea::event;
+/// use gaea::os::{Evented, Interests, RegisterOption, OsQueue};
+/// use gaea::unix::EventedFd;
 ///
 /// # #[allow(dead_code)]
 /// pub struct MyIo {

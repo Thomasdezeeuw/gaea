@@ -44,9 +44,9 @@ use crate::{event, sys};
 /// use std::thread;
 /// use std::time::Duration;
 ///
-/// use mio_st::{event, poll};
-/// use mio_st::event::{Event, Ready};
-/// use mio_st::os::{OsQueue, Awakener};
+/// use gaea::{event, poll};
+/// use gaea::event::{Event, Ready};
+/// use gaea::os::{OsQueue, Awakener};
 ///
 /// const WAKE_ID: event::Id = event::Id(10);
 ///

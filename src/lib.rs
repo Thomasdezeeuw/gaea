@@ -17,7 +17,7 @@
 //! Using the crate starts by creating one or more [`event::Source`]s.
 //!
 //! ```
-//! # use mio_st::{OsQueue, Queue};
+//! # use gaea::{OsQueue, Queue};
 //! # fn main() -> std::io::Result<()> {
 //! // `OsQueue` implements `event::Source` and is backed by epoll or kqueue.
 //! let os_queue = OsQueue::new()?;
@@ -40,7 +40,7 @@
 //! ```
 //! // `Vec`tor implements `event::Sink`.
 //! let events = Vec::new();
-//! # drop::<Vec<mio_st::Event>>(events);
+//! # drop::<Vec<gaea::Event>>(events);
 //! ```
 //!
 //! Just like `event::Source`, `event::Sink` is also a trait. When, for example,
@@ -58,12 +58,12 @@
 //! ```
 //! # use std::io;
 //! # use std::time::Duration;
-//! # use mio_st::{poll, OsQueue, Queue};
+//! # use gaea::{poll, OsQueue, Queue};
 //! # fn main() -> io::Result<()> {
 //! # let mut os_queue = OsQueue::new()?;
 //! # let mut queue = Queue::new();
 //! # // Let poll return quickly.
-//! # queue.add(mio_st::Event::new(mio_st::event::Id(0), mio_st::Ready::READABLE));
+//! # queue.add(gaea::Event::new(gaea::event::Id(0), gaea::Ready::READABLE));
 //! # let mut events = Vec::new();
 //! // Poll both `os_queue` and `queue` for readiness events, with a maximum
 //! // timeout of 1 seconds. Here we use an `io::Error` as error, see `poll`
@@ -84,14 +84,14 @@
 //! use std::io;
 //! use std::time::Duration;
 //!
-//! use mio_st::{poll, OsQueue, Queue};
+//! use gaea::{poll, OsQueue, Queue};
 //!
 //! # fn main() -> std::io::Result<()> {
 //! // Create our `event::Source`s.
 //! let mut os_queue = OsQueue::new()?;
 //! let mut queue = Queue::new();
 //! # // Let poll return quickly.
-//! # queue.add(mio_st::Event::new(mio_st::event::Id(0), mio_st::Ready::READABLE));
+//! # queue.add(gaea::Event::new(gaea::event::Id(0), gaea::Ready::READABLE));
 //!
 //! // And our `event::Sink`.
 //! let mut events = Vec::new();
@@ -119,7 +119,7 @@
 //! More complete examples of how to use the crate can be found in the examples
 //! directory of the source code ([on GitHub]).
 //!
-//! [on GitHub]: https://github.com/Thomasdezeeuw/mio-st/tree/master/examples
+//! [on GitHub]: https://github.com/Thomasdezeeuw/gaea/tree/master/examples
 
 #![warn(anonymous_parameters,
         bare_trait_objects,
@@ -234,7 +234,7 @@ pub use crate::os::OsQueue;
 /// use std::io;
 /// use std::time::Instant;
 ///
-/// use mio_st::{event, OsQueue, Timers, Queue, Event, Ready, poll};
+/// use gaea::{event, OsQueue, Timers, Queue, Event, Ready, poll};
 ///
 /// # fn main() -> io::Result<()> {
 /// // Our event sources.
@@ -264,8 +264,8 @@ pub use crate::os::OsQueue;
 /// ```
 /// # use std::time::Duration;
 /// #
-/// # use mio_st::event;
-/// use mio_st::poll;
+/// # use gaea::event;
+/// use gaea::poll;
 ///
 /// /// Our custom `event::Source`s.
 /// // Note: implementations not shown for brevity. See `event::Source` for an

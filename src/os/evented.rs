@@ -40,9 +40,9 @@ use crate::os::{Interests, OsQueue, RegisterOption};
 /// ```
 /// use std::io;
 ///
-/// use mio_st::event;
-/// use mio_st::net::TcpStream;
-/// use mio_st::os::{Evented, Interests, RegisterOption, OsQueue};
+/// use gaea::event;
+/// use gaea::net::TcpStream;
+/// use gaea::os::{Evented, Interests, RegisterOption, OsQueue};
 ///
 /// # #[allow(dead_code)]
 /// pub struct MyEvented {

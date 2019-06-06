@@ -3,9 +3,9 @@ use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use mio_st::event::{self, Capacity, Event, Ready};
-use mio_st::os::{Awakener, Evented, Interests, OsQueue, RegisterOption};
-use mio_st::unix::new_pipe;
+use gaea::event::{self, Capacity, Event, Ready};
+use gaea::os::{Awakener, Evented, Interests, OsQueue, RegisterOption};
+use gaea::unix::new_pipe;
 
 mod util;
 

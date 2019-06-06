@@ -1,7 +1,7 @@
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use mio_st::{event, poll};
+use gaea::{event, poll};
 
 mod util;
 

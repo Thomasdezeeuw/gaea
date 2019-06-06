@@ -24,10 +24,10 @@ use crate::{event, sys};
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::io;
 ///
-/// use mio_st::{event, poll};
-/// use mio_st::net::TcpStream;
-/// # use mio_st::net::TcpListener;
-/// use mio_st::os::{OsQueue, RegisterOption};
+/// use gaea::{event, poll};
+/// use gaea::net::TcpStream;
+/// # use gaea::net::TcpListener;
+/// use gaea::os::{OsQueue, RegisterOption};
 ///
 /// let address = "127.0.0.1:8999".parse()?;
 /// # let listener = TcpListener::bind(address)?;
@@ -200,9 +200,9 @@ impl AsRawFd for TcpStream {
 /// use std::io;
 /// use std::time::Duration;
 ///
-/// use mio_st::{event, poll};
-/// use mio_st::net::TcpListener;
-/// use mio_st::os::{OsQueue, RegisterOption};
+/// use gaea::{event, poll};
+/// use gaea::net::TcpListener;
+/// use gaea::os::{OsQueue, RegisterOption};
 ///
 /// let address = "127.0.0.1:8001".parse()?;
 /// let mut listener = TcpListener::bind(address)?;

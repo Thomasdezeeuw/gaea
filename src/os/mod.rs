@@ -58,9 +58,9 @@
 //! use std::thread;
 //! use std::time::Duration;
 //!
-//! use mio_st::event;
-//! use mio_st::net::TcpStream;
-//! use mio_st::os::{OsQueue, RegisterOption};
+//! use gaea::event;
+//! use gaea::net::TcpStream;
+//! use gaea::os::{OsQueue, RegisterOption};
 //!
 //! let address = "216.58.193.100:80".parse()?;
 //! let mut stream = TcpStream::connect(address)?;
@@ -172,8 +172,8 @@ impl OsQueue {
     /// use std::io;
     /// use std::time::Duration;
     ///
-    /// use mio_st::os::OsQueue;
-    /// use mio_st::poll;
+    /// use gaea::os::OsQueue;
+    /// use gaea::poll;
     ///
     /// // Create a new OS backed readiness event queue.
     /// let mut os_queue = OsQueue::new()?;
@@ -246,9 +246,9 @@ impl OsQueue {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::net::TcpStream;
-    /// use mio_st::os::{OsQueue, RegisterOption};
-    /// use mio_st::{event, poll};
+    /// use gaea::net::TcpStream;
+    /// use gaea::os::{OsQueue, RegisterOption};
+    /// use gaea::{event, poll};
     ///
     /// // Create a new `OsQueue` as well a containers for the events.
     /// let mut os_queue = OsQueue::new()?;
@@ -309,9 +309,9 @@ impl OsQueue {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io;
     ///
-    /// use mio_st::{event, poll};
-    /// use mio_st::net::TcpStream;
-    /// use mio_st::os::{Interests, RegisterOption, OsQueue};
+    /// use gaea::{event, poll};
+    /// use gaea::net::TcpStream;
+    /// use gaea::os::{Interests, RegisterOption, OsQueue};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
@@ -378,9 +378,9 @@ impl OsQueue {
     /// use std::io;
     /// use std::time::Duration;
     ///
-    /// use mio_st::{event, poll};
-    /// use mio_st::net::TcpStream;
-    /// use mio_st::os::{OsQueue, RegisterOption};
+    /// use gaea::{event, poll};
+    /// use gaea::net::TcpStream;
+    /// use gaea::os::{OsQueue, RegisterOption};
     ///
     /// let mut os_queue = OsQueue::new()?;
     /// let mut events = Vec::new();
