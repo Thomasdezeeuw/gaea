@@ -25,6 +25,11 @@ matrix:
   - rust: nightly
     name: "Build check user_space feature"
     script: cargo build --no-default-features --features user_space
+  - rust: nightly
+    name: "Clippy check"
+    # Failing the `cognitive-complexity' lint is allowed because the tests are
+    # too complex.
+    script: cargo clippy --all-targets --features "std nightly" -- -D warnings -A clippy::cognitive-complexity
 language: rust
 rust:
   - 1.33.0
