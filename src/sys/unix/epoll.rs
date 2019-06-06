@@ -66,14 +66,13 @@ impl Selector {
     }
 }
 
-const MILLIS_PER_SEC: u64 = 1_000;
-const NANOS_PER_MILLI: u64 = 1_000_000;
-
 /// Convert a `Duration` to milliseconds.
+///
+/// # Notes
+///
+/// Uses 24 hours as maximum to match kqueue.
 pub fn duration_to_millis(duration: Duration) -> libc::c_int {
-    let millis = duration.as_secs().saturating_mul(MILLIS_PER_SEC)
-        .saturating_add((duration.subsec_nanos() as u64 / NANOS_PER_MILLI) + 1);
-    min(millis, libc::c_int::max_value() as u64) as libc::c_int
+    min(duration.as_millis(), 24 * 60 * 60 * 1_000) as libc::c_int
 }
 
 /// Convert a `epoll_event` into an `Event`.
