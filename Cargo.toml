@@ -1,6 +1,6 @@
 [package]
 name          = "gaea"
-version       = "0.3.0"
+version       = "0.3.1"
 authors       = ["Thomas de Zeeuw <thomasdezeeuw@gmail.com>", "Carl Lerche <me@carllerche.com>"]
 license       = "MIT"
 description   = "Low-level library to build event driven applications, supporting lightweight non-blocking I/O."
@@ -14,6 +14,7 @@ edition       = "2018"
 
 [badges]
 travis-ci = { repository = "Thomasdezeeuw/gaea", branch = "master" }
+maintenance = { status = "deprecated" }
 
 [dependencies]
 libc = "0.2.58"
