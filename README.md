@@ -19,6 +19,14 @@ Rust version 1.33 or higher is required as gaea makes use of Rust 2018 edition
 features.
 
 
+# Deprecation notice
+
+Gaea is deprecated in favour of [Mio] as I've joined the Mio team and will
+continue developing the Mio crate instead of Gaea.
+
+[Mio]: https://crates.io/crates/mio
+
+
 ## Differences compared to mio
 
 The main two differences compared to [mio] are:
